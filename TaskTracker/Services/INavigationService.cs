@@ -5,10 +5,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace TaskTracker.ViewModels
+namespace TaskTracker.Services
 {
-    public class HomeViewModel : ObservableObject
+    public interface INavigationService
     {
-
+        ObservableObject CurrentView { get; }
+        void NavigateTo<T>() where T : ObservableObject;
     }
 }

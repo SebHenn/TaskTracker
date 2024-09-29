@@ -71,7 +71,7 @@
             </DockPanel>
 
             <Border Grid.Column="1" Grid.Row="1" CornerRadius="10" Background="#FF1D1B1B" Grid.RowSpan="3">
-            
+                <ContentControl Margin="20" Content="{Binding NavigationService.CurrentView}"></ContentControl>
             </Border>
         </Grid>
     </Border>
