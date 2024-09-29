@@ -9,6 +9,7 @@
                 <ResourceDictionary Source="Styles/ScrollBarStyle.xaml" />                
                 <ResourceDictionary Source="Styles/SideBarItemStyle.xaml" />                
                 <ResourceDictionary Source="Styles/TitleButtonStyle.xaml" />
+                <ResourceDictionary Source="Styles/ProjectItemStyle.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>

@@ -44,33 +44,26 @@
             <StackPanel MinWidth="150" Grid.Row="1">
                 <Label FontSize="30" Foreground="white" Margin="10,0,0,10">Projects</Label>
 
-                <controls:SideBarItem Image="/Assets/Home-32.png" Margin="5" Height="40">Home</controls:SideBarItem>
+                <controls:ProjectItem GroupName="checkboxes" Image="/Assets/Home-32.png" Margin="5" Height="40">Home</controls:ProjectItem>
 
                 <Rectangle Height="1" Margin="5" Fill="Black"></Rectangle>
             </StackPanel>
             
             <ScrollViewer VerticalScrollBarVisibility="Auto" MinWidth="150" Grid.Row="2" Margin="0,0,0,120">
                 <StackPanel>
-                    <controls:SideBarItem Image="/Assets/Project-32.png" Margin="5" Height="40">Project 1</controls:SideBarItem>
-                    <controls:SideBarItem Image="/Assets/Project-32.png" Margin="5" Height="40">Project 2</controls:SideBarItem>
-                    <controls:SideBarItem Image="/Assets/Project-32.png" Margin="5" Height="40">Project 3</controls:SideBarItem>
-                    <controls:SideBarItem Image="/Assets/Project-32.png" Margin="5" Height="40">Project 4</controls:SideBarItem>
-                    <controls:SideBarItem Image="/Assets/Project-32.png" Margin="5" Height="40">Project 4</controls:SideBarItem>
-                    <controls:SideBarItem Image="/Assets/Project-32.png" Margin="5" Height="40">Project 4</controls:SideBarItem>
-                    <controls:SideBarItem Image="/Assets/Project-32.png" Margin="5" Height="40">Project 4</controls:SideBarItem>
-                    <controls:SideBarItem Image="/Assets/Project-32.png" Margin="5" Height="40">Project 4</controls:SideBarItem>
-                    <controls:SideBarItem Image="/Assets/Project-32.png" Margin="5" Height="40">Project 4</controls:SideBarItem>
-                    <controls:SideBarItem Image="/Assets/Project-32.png" Margin="5" Height="40">Project 4</controls:SideBarItem>
-                    <controls:SideBarItem Image="/Assets/Project-32.png" Margin="5" Height="40">Project 4</controls:SideBarItem>
-                    <controls:SideBarItem Image="/Assets/Project-32.png" Margin="5" Height="40">Project 4</controls:SideBarItem>
-                    <controls:SideBarItem Image="/Assets/Project-32.png" Margin="5" Height="40">Project 4</controls:SideBarItem>
-                    <controls:SideBarItem Image="/Assets/Project-32.png" Margin="5" Height="40">Project 4</controls:SideBarItem>
-                    
+                    <controls:ProjectItem GroupName="checkboxes" Image="/Assets/Project-32.png" Margin="5" Height="40">Project 1</controls:ProjectItem>
+                    <controls:ProjectItem GroupName="checkboxes" Image="/Assets/Project-32.png" Margin="5" Height="40">Project 1</controls:ProjectItem>
+                    <controls:ProjectItem GroupName="checkboxes" Image="/Assets/Project-32.png" Margin="5" Height="40">Project 1</controls:ProjectItem>
+                    <controls:ProjectItem GroupName="checkboxes" Image="/Assets/Project-32.png" Margin="5" Height="40">Project 1</controls:ProjectItem>
+                    <controls:ProjectItem GroupName="checkboxes" Image="/Assets/Project-32.png" Margin="5" Height="40">Project 1</controls:ProjectItem>
+                    <controls:ProjectItem GroupName="checkboxes" Image="/Assets/Project-32.png" Margin="5" Height="40">Project 1</controls:ProjectItem>
+                    <controls:ProjectItem GroupName="checkboxes" Image="/Assets/Project-32.png" Margin="5" Height="40">Project 1</controls:ProjectItem>
+                 
                     </StackPanel>
             </ScrollViewer>
            
             <DockPanel LastChildFill="False" Grid.Row="2">
-                <controls:SideBarItem Image="/Assets/Settings-32.png" DockPanel.Dock="Bottom" Margin="5" Height="40">Settings</controls:SideBarItem>
+                <controls:ProjectItem GroupName="checkboxes" Image="/Assets/Settings-32.png" DockPanel.Dock="Bottom" Margin="5" Height="40">Settings</controls:ProjectItem>
 
                 <Rectangle Height="1" Margin="5" Fill="Black" DockPanel.Dock="Bottom"></Rectangle>
 
