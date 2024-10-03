@@ -44,20 +44,20 @@
             <StackPanel MinWidth="150" Grid.Row="1">
                 <Label FontSize="30" Foreground="white" Margin="10,0,0,10">Projects</Label>
 
-                <controls:ProjectItem GroupName="checkboxes" Image="/Assets/Home-32.png" Margin="5" Height="40">Home</controls:ProjectItem>
+                <controls:ProjectItem Command="{Binding NavigateToHomeCommand}" GroupName="checkboxes" Image="/Assets/Home-32.png" Margin="5" Height="40">Home</controls:ProjectItem>
 
                 <Rectangle Height="1" Margin="5" Fill="Black"></Rectangle>
             </StackPanel>
             
             <ScrollViewer VerticalScrollBarVisibility="Auto" MinWidth="150" Grid.Row="2" Margin="0,0,0,120">
                 <StackPanel>
-                    <controls:ProjectItem GroupName="checkboxes" Image="/Assets/Project-32.png" Margin="5" Height="40">Project 1</controls:ProjectItem>
-                    <controls:ProjectItem GroupName="checkboxes" Image="/Assets/Project-32.png" Margin="5" Height="40">Project 1</controls:ProjectItem>
-                    <controls:ProjectItem GroupName="checkboxes" Image="/Assets/Project-32.png" Margin="5" Height="40">Project 1</controls:ProjectItem>
-                    <controls:ProjectItem GroupName="checkboxes" Image="/Assets/Project-32.png" Margin="5" Height="40">Project 1</controls:ProjectItem>
-                    <controls:ProjectItem GroupName="checkboxes" Image="/Assets/Project-32.png" Margin="5" Height="40">Project 1</controls:ProjectItem>
-                    <controls:ProjectItem GroupName="checkboxes" Image="/Assets/Project-32.png" Margin="5" Height="40">Project 1</controls:ProjectItem>
-                    <controls:ProjectItem GroupName="checkboxes" Image="/Assets/Project-32.png" Margin="5" Height="40">Project 1</controls:ProjectItem>
+                    <controls:ProjectItem Command="{Binding NavigateToProjectCommand}" CommandParameter="Project 1" GroupName="checkboxes" Image="/Assets/Project-32.png" Margin="5" Height="40">Project 1</controls:ProjectItem>
+                    <controls:ProjectItem Command="{Binding NavigateToProjectCommand}" CommandParameter="Project 2" GroupName="checkboxes" Image="/Assets/Project-32.png" Margin="5" Height="40">Project 2</controls:ProjectItem>
+                    <controls:ProjectItem Command="{Binding NavigateToProjectCommand}" CommandParameter="Project 3" GroupName="checkboxes" Image="/Assets/Project-32.png" Margin="5" Height="40">Project 3</controls:ProjectItem>
+                    <controls:ProjectItem Command="{Binding NavigateToProjectCommand}" CommandParameter="Project 4" GroupName="checkboxes" Image="/Assets/Project-32.png" Margin="5" Height="40">Project 4</controls:ProjectItem>
+                    <controls:ProjectItem Command="{Binding NavigateToProjectCommand}" CommandParameter="Project 5" GroupName="checkboxes" Image="/Assets/Project-32.png" Margin="5" Height="40">Project 5</controls:ProjectItem>
+                    <controls:ProjectItem Command="{Binding NavigateToProjectCommand}" CommandParameter="Project 6" GroupName="checkboxes" Image="/Assets/Project-32.png" Margin="5" Height="40">Project 6</controls:ProjectItem>
+                    <controls:ProjectItem Command="{Binding NavigateToProjectCommand}" CommandParameter="Project 7" GroupName="checkboxes" Image="/Assets/Project-32.png" Margin="5" Height="40">Project 7</controls:ProjectItem>
                  
                     </StackPanel>
             </ScrollViewer>

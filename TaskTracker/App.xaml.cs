@@ -6,6 +6,7 @@ using System.Windows;
 using System.Windows.Threading;
 using TaskTracker.Services;
 using TaskTracker.ViewModels;
+using TaskTracker.Views;
 
 namespace TaskTracker
 {
@@ -25,6 +26,7 @@ namespace TaskTracker
             });
             services.AddSingleton<MainViewModel>();
             services.AddSingleton<HomeViewModel>();
+            services.AddSingleton<ProjectViewModel>();
 
             services.AddSingleton<INavigationService, NavigationService>();
 

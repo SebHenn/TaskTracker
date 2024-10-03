@@ -9,6 +9,9 @@
             <DataTemplate DataType="{x:Type viewModels:HomeViewModel}">
                 <views:HomeView/>
             </DataTemplate>
+            <DataTemplate DataType="{x:Type viewModels:ProjectViewModel}">
+                <views:ProjectView/>
+            </DataTemplate>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="Styles/ScrollBarStyle.xaml" />                
                 <ResourceDictionary Source="Styles/SideBarItemStyle.xaml" />                

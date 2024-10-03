@@ -7,8 +7,9 @@ using System.Threading.Tasks;
 
 namespace TaskTracker.ViewModels
 {
-    public class HomeViewModel : ObservableObject
+    public partial class HomeViewModel : ObservableObject
     {
-
+        [ObservableProperty]
+        public string _text = "bornana";
     }
 }
