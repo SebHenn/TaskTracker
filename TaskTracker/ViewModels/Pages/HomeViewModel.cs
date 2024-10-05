@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace TaskTracker.ViewModels
+namespace TaskTracker.ViewModels.Pages
 {
     public partial class HomeViewModel : ObservableObject
     {

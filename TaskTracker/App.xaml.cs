@@ -5,8 +5,10 @@ using System.Data;
 using System.Windows;
 using System.Windows.Threading;
 using TaskTracker.Services;
-using TaskTracker.ViewModels;
-using TaskTracker.Views;
+using TaskTracker.ViewModels.Pages;
+using TaskTracker.ViewModels.Windows;
+using TaskTracker.Views.Pages;
+using TaskTracker.Views.Windows;
 
 namespace TaskTracker
 {
@@ -27,6 +29,10 @@ namespace TaskTracker
             services.AddSingleton<MainViewModel>();
             services.AddSingleton<HomeViewModel>();
             services.AddSingleton<ProjectViewModel>();
+            services.AddTransient<NewProjectWindow>(provider => new NewProjectWindow(
+                provider.GetRequiredService<NewProjectWindowViewModel>()));
+            services.AddTransient<NewProjectWindowViewModel>();
+
 
             services.AddSingleton<INavigationService, NavigationService>();
 

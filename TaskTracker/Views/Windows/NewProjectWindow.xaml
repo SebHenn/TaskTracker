@@ -1,0 +1,49 @@
+﻿<Window x:Class="TaskTracker.Views.Windows.NewProjectWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:TaskTracker.Views.Windows"
+        mc:Ignorable="d" Background="Transparent" WindowStyle="None"
+        Title="NewProjectWindow" Height="200" Width="400"
+        WindowStartupLocation="CenterOwner"
+        AllowsTransparency="True"
+        ResizeMode="CanResize">
+    <Border Background="#FF383333" CornerRadius="10">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="auto" />
+            </Grid.RowDefinitions>
+            
+            <Border Grid.ColumnSpan="2" Height="30">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="auto" />
+                    </Grid.ColumnDefinitions>
+                
+                    <Label Content="Create new Project" Foreground="White" Margin="5,2,0,0" />
+                    
+                    <Rectangle Fill="Transparent" MouseLeftButtonDown="Rectangle_MouseLeftButtonDown" />
+                    
+                    <Button Style="{DynamicResource TitleButton}" Height="30" Width="30" Click="CloseButton_Click" Grid.Column="1" HorizontalAlignment="Right">✖</Button>
+                </Grid>
+            </Border>
+            
+            <TextBox Grid.Row="1" Height="30" Text="{Binding Name, Mode=TwoWay}"></TextBox>
+
+            <Grid Grid.Row="2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="auto" />
+                    <ColumnDefinition Width="auto" />
+                </Grid.ColumnDefinitions>
+
+                <Button Click="Button_Click" Grid.Column="1" Margin="5" Padding="5" Style="{DynamicResource WindowButton}" Command="{Binding ConfirmCommand}">Confirm</Button>    
+                <Button Click="Button_Click" Grid.Column="2" Margin="5" Padding="5" Style="{DynamicResource WindowButton}" Command="{Binding CancelCommand}">Cancel</Button>    
+            </Grid>
+        </Grid>
+    </Border>
+</Window>

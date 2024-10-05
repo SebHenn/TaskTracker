@@ -1,19 +1,24 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Controls;
 using TaskTracker.Models;
 using TaskTracker.Services;
+using TaskTracker.ViewModels.Pages;
+using TaskTracker.Views.Windows;
 
-namespace TaskTracker.ViewModels
+namespace TaskTracker.ViewModels.Windows
 {
     public partial class MainViewModel : ObservableObject
     {
+        private readonly IServiceProvider _serviceProvider;
         private INavigationService _navigationService;
 
         public INavigationService NavigationService
@@ -52,7 +57,25 @@ namespace TaskTracker.ViewModels
             NavigationService.NavigateTo<ProjectViewModel>();
         }
 
-        public MainViewModel(INavigationService navigationService)
+        [RelayCommand]
+        private void OnNewProjectClick()
+        {
+            var newProjectWindow = _serviceProvider.GetRequiredService<NewProjectWindow>();
+
+            newProjectWindow.ShowDialog();
+
+            if (newProjectWindow.DataContext is NewProjectWindowViewModel vm && vm.DialogResult == true)
+            {
+                string enteredName = vm.Name;
+                MessageBox.Show($"Entered name: {enteredName}");
+            }
+            else
+            {
+                MessageBox.Show("Operation canceled.");
+            }
+        }
+
+        public MainViewModel(INavigationService navigationService, IServiceProvider serviceProvider)
         {
             Projects = new ObservableCollection<ProjectModel>
             {
@@ -63,6 +86,8 @@ namespace TaskTracker.ViewModels
             SelectedProject = Projects[0];
 
             NavigationService = navigationService;
+
+            _serviceProvider = serviceProvider;
 
             NavigationService.NavigateTo<HomeViewModel>();
         }

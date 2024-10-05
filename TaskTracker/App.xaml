@@ -2,21 +2,24 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:TaskTracker"
-             xmlns:viewModels="clr-namespace:TaskTracker.ViewModels"
-             xmlns:views="clr-namespace:TaskTracker.Views">
+             xmlns:viewModelPages="clr-namespace:TaskTracker.ViewModels.Pages"
+             xmlns:viewModelWindows="clr-namespace:TaskTracker.ViewModels.Windows"
+             xmlns:windowsViews="clr-namespace:TaskTracker.Views.Windows"
+             xmlns:pagesViews="clr-namespace:TaskTracker.Views.Pages">
     <Application.Resources>
         <ResourceDictionary>
-            <DataTemplate DataType="{x:Type viewModels:HomeViewModel}">
-                <views:HomeView/>
+            <DataTemplate DataType="{x:Type viewModelPages:HomeViewModel}">
+                <pagesViews:HomeView/>
             </DataTemplate>
-            <DataTemplate DataType="{x:Type viewModels:ProjectViewModel}">
-                <views:ProjectView/>
+            <DataTemplate DataType="{x:Type viewModelPages:ProjectViewModel}">
+                <pagesViews:ProjectView/>
             </DataTemplate>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="Styles/ScrollBarStyle.xaml" />                
                 <ResourceDictionary Source="Styles/SideBarItemStyle.xaml" />                
                 <ResourceDictionary Source="Styles/TitleButtonStyle.xaml" />
                 <ResourceDictionary Source="Styles/ProjectItemStyle.xaml" />
+                <ResourceDictionary Source="Styles/WindowButtonStyle.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>

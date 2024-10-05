@@ -13,14 +13,14 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace TaskTracker.Views
+namespace TaskTracker.Views.Pages
 {
     /// <summary>
-    /// Interaction logic for HomeView.xaml
+    /// Interaction logic for ProjectView.xaml
     /// </summary>
-    public partial class HomeView : UserControl
+    public partial class ProjectView : UserControl
     {
-        public HomeView()
+        public ProjectView()
         {
             InitializeComponent();
         }

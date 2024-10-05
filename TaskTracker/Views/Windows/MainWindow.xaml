@@ -67,7 +67,7 @@
 
                 <Rectangle Height="1" Margin="5" Fill="Black" DockPanel.Dock="Bottom"></Rectangle>
 
-                <controls:SideBarItem Image="/Assets/Add-32.png" DockPanel.Dock="Bottom" Margin="5" Height="40">Add Project</controls:SideBarItem>
+                <controls:SideBarItem Command="{Binding NewProjectClickCommand}" Image="/Assets/Add-32.png" DockPanel.Dock="Bottom" Margin="5" Height="40">Add Project</controls:SideBarItem>
             </DockPanel>
 
             <Border Grid.Column="1" Grid.Row="1" CornerRadius="10" Background="#FF1D1B1B" Grid.RowSpan="3">

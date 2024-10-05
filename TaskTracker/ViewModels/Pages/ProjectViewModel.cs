@@ -5,8 +5,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using TaskTracker.Models;
+using TaskTracker.ViewModels.Windows;
 
-namespace TaskTracker.ViewModels
+namespace TaskTracker.ViewModels.Pages
 {
     public class ProjectViewModel : ObservableObject
     {
