@@ -19,7 +19,7 @@ namespace TaskTracker.Services
 
         public void AddProject(string project)
         {
-            projectModels.Add(new ProjectModel() { Name = project });
+            projectModels.Add(new ProjectModel() { Name = project, Description = "this is a not so cool project" });
         }
 
         public void RemoveProject(string project)

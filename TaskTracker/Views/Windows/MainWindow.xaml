@@ -45,7 +45,7 @@
                 <Label FontSize="30" Foreground="white" Margin="10,0,0,10">Projects</Label>
 
                 <controls:ProjectItem Command="{Binding NavigateToHomeCommand}" GroupName="checkboxes" Image="/Assets/Home-32.png" Margin="5" Height="40">Home</controls:ProjectItem>
-
+                
                 <Rectangle Height="1" Margin="5" Fill="Black"></Rectangle>
             </StackPanel>
             
