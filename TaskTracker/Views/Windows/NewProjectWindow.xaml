@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:TaskTracker.Views.Windows"
         mc:Ignorable="d" Background="Transparent" WindowStyle="None"
         Title="NewProjectWindow" Height="200" Width="400"
-        WindowStartupLocation="CenterOwner"
+        WindowStartupLocation="CenterScreen"
         AllowsTransparency="True"
         ResizeMode="CanResize">
     <Border Background="#FF383333" CornerRadius="10">

@@ -31,7 +31,8 @@ namespace TaskTracker.ViewModels.Windows
             }
         }
 
-        public ObservableCollection<ProjectModel> Projects { get; set; }
+        private IProjectsService _projectsService;
+
         private ProjectModel _selectedProject;
 
         public ProjectModel SelectedProject
@@ -44,6 +45,9 @@ namespace TaskTracker.ViewModels.Windows
             }
         }
 
+        [ObservableProperty]
+        private ObservableCollection<ProjectModel> _projects;
+
         [RelayCommand]
         private void OnNavigateToHome()
         {
@@ -53,7 +57,7 @@ namespace TaskTracker.ViewModels.Windows
         [RelayCommand]
         private void OnNavigateToProject(string para)
         {
-            SelectedProject = Projects.FirstOrDefault(x => x.Name == para);
+            SelectedProject = _projectsService.projectModels.FirstOrDefault(x => x.Name == para);
             NavigationService.NavigateTo<ProjectViewModel>();
         }
 
@@ -64,9 +68,10 @@ namespace TaskTracker.ViewModels.Windows
 
             newProjectWindow.ShowDialog();
 
-            if (newProjectWindow.DataContext is NewProjectWindowViewModel vm && vm.DialogResult == true)
+            if (newProjectWindow.DataContext is NewProjectViewModel vm && vm.DialogResult == true)
             {
                 string enteredName = vm.Name;
+                _projectsService.AddProject(enteredName);
                 MessageBox.Show($"Entered name: {enteredName}");
             }
             else
@@ -75,15 +80,14 @@ namespace TaskTracker.ViewModels.Windows
             }
         }
 
-        public MainViewModel(INavigationService navigationService, IServiceProvider serviceProvider)
+        public MainViewModel(INavigationService navigationService, IServiceProvider serviceProvider, IProjectsService projectsService)
         {
-            Projects = new ObservableCollection<ProjectModel>
-            {
-                new ProjectModel { Name = "Project 1", Description = "Details about Project 1" },
-                new ProjectModel { Name = "Project 2", Description = "Details about Project 2" }
-            };
+            _projectsService = projectsService;
 
-            SelectedProject = Projects[0];
+            Projects = _projectsService.projectModels;
+
+            if(projectsService.projectModels.Count > 0)
+                SelectedProject = projectsService.projectModels[0];
 
             NavigationService = navigationService;
 

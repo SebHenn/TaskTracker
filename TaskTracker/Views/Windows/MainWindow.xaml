@@ -50,16 +50,19 @@
             </StackPanel>
             
             <ScrollViewer VerticalScrollBarVisibility="Auto" MinWidth="150" Grid.Row="2" Margin="0,0,0,120">
-                <StackPanel>
-                    <controls:ProjectItem Command="{Binding NavigateToProjectCommand}" CommandParameter="Project 1" GroupName="checkboxes" Image="/Assets/Project-32.png" Margin="5" Height="40">Project 1</controls:ProjectItem>
-                    <controls:ProjectItem Command="{Binding NavigateToProjectCommand}" CommandParameter="Project 2" GroupName="checkboxes" Image="/Assets/Project-32.png" Margin="5" Height="40">Project 2</controls:ProjectItem>
-                    <controls:ProjectItem Command="{Binding NavigateToProjectCommand}" CommandParameter="Project 3" GroupName="checkboxes" Image="/Assets/Project-32.png" Margin="5" Height="40">Project 3</controls:ProjectItem>
-                    <controls:ProjectItem Command="{Binding NavigateToProjectCommand}" CommandParameter="Project 4" GroupName="checkboxes" Image="/Assets/Project-32.png" Margin="5" Height="40">Project 4</controls:ProjectItem>
-                    <controls:ProjectItem Command="{Binding NavigateToProjectCommand}" CommandParameter="Project 5" GroupName="checkboxes" Image="/Assets/Project-32.png" Margin="5" Height="40">Project 5</controls:ProjectItem>
-                    <controls:ProjectItem Command="{Binding NavigateToProjectCommand}" CommandParameter="Project 6" GroupName="checkboxes" Image="/Assets/Project-32.png" Margin="5" Height="40">Project 6</controls:ProjectItem>
-                    <controls:ProjectItem Command="{Binding NavigateToProjectCommand}" CommandParameter="Project 7" GroupName="checkboxes" Image="/Assets/Project-32.png" Margin="5" Height="40">Project 7</controls:ProjectItem>
-                 
-                    </StackPanel>
+                <ItemsControl ItemsSource="{Binding Projects}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <controls:ProjectItem Command="{Binding DataContext.NavigateToProjectCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                      CommandParameter="{Binding Name}"
+                                      GroupName="checkboxes"
+                                      Image="/Assets/Project-32.png"
+                                      Margin="5" Height="40">
+                                <TextBlock Text="{Binding Name}" />
+                            </controls:ProjectItem>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
             </ScrollViewer>
            
             <DockPanel LastChildFill="False" Grid.Row="2">

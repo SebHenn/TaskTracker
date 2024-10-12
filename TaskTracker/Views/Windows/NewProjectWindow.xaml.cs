@@ -20,9 +20,9 @@ namespace TaskTracker.Views.Windows
     /// </summary>
     public partial class NewProjectWindow : Window
     {
-        public NewProjectWindowViewModel _viewModel;
+        public NewProjectViewModel _viewModel;
 
-        public NewProjectWindow(NewProjectWindowViewModel ViewModel)
+        public NewProjectWindow(NewProjectViewModel ViewModel)
         {
             InitializeComponent();
             _viewModel = ViewModel;

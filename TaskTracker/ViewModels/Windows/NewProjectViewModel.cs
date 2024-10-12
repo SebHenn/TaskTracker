@@ -9,9 +9,9 @@ using TaskTracker.Views.Windows;
 
 namespace TaskTracker.ViewModels.Windows
 {
-    public partial class NewProjectWindowViewModel : ObservableObject
+    public partial class NewProjectViewModel : ObservableObject
     {
-        public NewProjectWindowViewModel() 
+        public NewProjectViewModel() 
         {
 
         }

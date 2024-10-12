@@ -30,11 +30,12 @@ namespace TaskTracker
             services.AddSingleton<HomeViewModel>();
             services.AddSingleton<ProjectViewModel>();
             services.AddTransient<NewProjectWindow>(provider => new NewProjectWindow(
-                provider.GetRequiredService<NewProjectWindowViewModel>()));
-            services.AddTransient<NewProjectWindowViewModel>();
+                provider.GetRequiredService<NewProjectViewModel>()));
+            services.AddTransient<NewProjectViewModel>();
 
 
             services.AddSingleton<INavigationService, NavigationService>();
+            services.AddSingleton<IProjectsService, ProjectsService>();
 
             services.AddSingleton<Func<Type, ObservableObject>>(serviceProvider => viewModelType => (ObservableObject)serviceProvider.GetRequiredService(viewModelType));
 
