@@ -17,24 +17,35 @@ namespace TaskTracker.Services
             projectModels = new ObservableCollection<ProjectModel>();
         }
 
-        public void AddProject(string project)
+        public void AddProject(string project, string description)
         {
-            projectModels.Add(new ProjectModel() { Name = project, Description = "this is a not so cool project" });
+            projectModels.Add(new ProjectModel() { Name = project, Description = description });
         }
 
-        public void RemoveProject(string project)
+        public void RemoveProject(ProjectModel project)
         {
-            projectModels.Remove(projectModels.FirstOrDefault(x => x.Name == project));
+            projectModels.Remove(project);
         }
 
-        public void AddTaskToProject(string project, TaskModel task)
+        public void ChangeProjectName(ProjectModel project, string newName)
         {
-            projectModels.FirstOrDefault(x => x.Name == project).Tasks.Add(task);
+            project.Name = newName;
         }
 
-        public void RemoveTaskFromProject(string project, TaskModel task)
+        public void ChangeProjectDescription(ProjectModel project, string newDescription)
         {
-            projectModels.FirstOrDefault(x => x.Name == project).Tasks.Remove(task);
+            var projectModel = project;
+            projectModel.Description = newDescription;
+        }
+
+        public void AddTaskToProject(ProjectModel project, TaskModel task)
+        {
+            project.Tasks.Add(task);
+        }
+
+        public void RemoveTaskFromProject(ProjectModel project, TaskModel task)
+        {
+            project.Tasks.Remove(task);
         }
     }
 }

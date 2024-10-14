@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -7,10 +8,15 @@ using System.Threading.Tasks;
 
 namespace TaskTracker.Models
 {
-    public class ProjectModel
+    public partial class ProjectModel : ObservableObject
     {
-        public string Name { get; set; }
-        public string Description { get; set; }
-        public ObservableCollection<TaskModel> Tasks = new ObservableCollection<TaskModel>();
+        [ObservableProperty]
+        private string _name = "";
+
+        [ObservableProperty]
+        private string _description = "";
+
+        [ObservableProperty]
+        private ObservableCollection<TaskModel> _tasks = new ObservableCollection<TaskModel>();
     }
 }

@@ -33,17 +33,8 @@ namespace TaskTracker.ViewModels.Windows
 
         private IProjectsService _projectsService;
 
+        [ObservableProperty]
         private ProjectModel _selectedProject;
-
-        public ProjectModel SelectedProject
-        {
-            get => _selectedProject;
-            set
-            {
-                _selectedProject = value;
-                OnPropertyChanged();
-            }
-        }
 
         [ObservableProperty]
         private ObservableCollection<ProjectModel> _projects;
@@ -71,12 +62,9 @@ namespace TaskTracker.ViewModels.Windows
             if (newProjectWindow.DataContext is NewProjectViewModel vm && vm.DialogResult == true)
             {
                 string enteredName = vm.Name;
-                _projectsService.AddProject(enteredName);
-                MessageBox.Show($"Entered name: {enteredName}");
-            }
-            else
-            {
-                MessageBox.Show("Operation canceled.");
+                string enteredDescription = vm.Description;
+                _projectsService.AddProject(enteredName, enteredDescription);
+                OnNavigateToProject(enteredName);
             }
         }
 

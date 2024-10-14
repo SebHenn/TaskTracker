@@ -13,12 +13,16 @@ namespace TaskTracker.Services
     {
         ObservableCollection<ProjectModel> projectModels { get; }
 
-        void AddProject(string project);
+        void AddProject(string project, string description);
 
-        void RemoveProject(string project);
+        void RemoveProject(ProjectModel project);
 
-        void AddTaskToProject(string project, TaskModel task);
+        void ChangeProjectName(ProjectModel oldName, string newName);
 
-        void RemoveTaskFromProject(string project, TaskModel task);
+        void ChangeProjectDescription(ProjectModel project, string newDescription);
+
+        void AddTaskToProject(ProjectModel project, TaskModel task);
+
+        void RemoveTaskFromProject(ProjectModel project, TaskModel task);
     }
 }

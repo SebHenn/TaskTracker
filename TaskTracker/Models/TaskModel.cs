@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,10 +7,15 @@ using System.Threading.Tasks;
 
 namespace TaskTracker.Models
 {
-    public class TaskModel
+    public partial class TaskModel : ObservableObject
     {
-        public string Title { get; set; }
-        public string Description { get; set; }
-        public bool IsDone {  get; set; } 
+        [ObservableProperty]
+        private string _title = "";
+
+        [ObservableProperty]
+        private string _description = "";
+
+        [ObservableProperty]
+        private bool _isDone = false;
     }
 }

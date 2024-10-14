@@ -5,13 +5,15 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:TaskTracker.Views.Windows"
         mc:Ignorable="d" Background="Transparent" WindowStyle="None"
-        Title="NewProjectWindow" Height="200" Width="400"
+        Title="NewProjectWindow" Height="300" Width="560"
         WindowStartupLocation="CenterScreen"
         AllowsTransparency="True"
         ResizeMode="CanResize">
     <Border Background="#FF383333" CornerRadius="10">
         <Grid>
             <Grid.RowDefinitions>
+                <RowDefinition Height="auto" />
+                <RowDefinition Height="*" />
                 <RowDefinition Height="auto" />
                 <RowDefinition Height="*" />
                 <RowDefinition Height="auto" />
@@ -24,17 +26,22 @@
                         <ColumnDefinition Width="auto" />
                     </Grid.ColumnDefinitions>
                 
-                    <Label Content="Create new Project" Foreground="White" Margin="5,2,0,0" />
+                    <Label Content="{Binding TitleString}" Foreground="White" Margin="5,2,0,0" />
                     
                     <Rectangle Fill="Transparent" MouseLeftButtonDown="Rectangle_MouseLeftButtonDown" />
                     
                     <Button Style="{DynamicResource TitleButton}" Height="30" Width="30" Click="CloseButton_Click" Grid.Column="1" HorizontalAlignment="Right">✖</Button>
                 </Grid>
             </Border>
-            
-            <TextBox Grid.Row="1" Height="30" Text="{Binding Name, Mode=TwoWay}"></TextBox>
 
-            <Grid Grid.Row="2">
+            <StackPanel Grid.Row="2" Margin="10">
+                <Label Foreground="White">Project Name</Label>
+                <TextBox Height="30" Text="{Binding Name, Mode=TwoWay}"></TextBox>
+                <Label Margin="0,10,0,0" Foreground="White">Project Description</Label>
+                <TextBox Height="30" Text="{Binding Description, Mode=TwoWay}"></TextBox>
+            </StackPanel>
+
+            <Grid Grid.Row="4">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="auto" />
@@ -42,7 +49,7 @@
                 </Grid.ColumnDefinitions>
 
                 <Button Click="Button_Click" Grid.Column="1" Margin="5" Padding="5" Style="{DynamicResource WindowButton}" Command="{Binding ConfirmCommand}">Confirm</Button>    
-                <Button Click="Button_Click" Grid.Column="2" Margin="5" Padding="5" Style="{DynamicResource WindowButton}" Command="{Binding CancelCommand}">Cancel</Button>    
+                <Button Click="Button_Click" Grid.Column="2" Margin="5,5,10,5" Padding="5" Style="{DynamicResource WindowButton}" Command="{Binding CancelCommand}">Cancel</Button>    
             </Grid>
         </Grid>
     </Border>

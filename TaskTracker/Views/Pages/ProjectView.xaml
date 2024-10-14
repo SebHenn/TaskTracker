@@ -22,10 +22,10 @@
         </StackPanel>
 
         <StackPanel Grid.Column="1" Margin="10" Orientation="Horizontal">
-            <Button Height="30" Width="30" Style="{DynamicResource WindowButton}" Background="#FF1D45BF">
+            <Button Height="30" Width="30" Style="{DynamicResource WindowButton}" Command="{Binding ChangeProjectCommand}" Background="#FF1D45BF">
                 <Image Margin="2" Source="/Assets/Edit-32.png"></Image>
             </Button>
-            <Button Margin="10,0,0,0" Height="30" Width="30" Style="{DynamicResource WindowButton}" Background="#FFBF1D1D">
+            <Button Margin="10,0,0,0" Height="30" Width="30" Style="{DynamicResource WindowButton}" Command="{Binding DeleteProjectCommand}" Background="#FFBF1D1D">
                 <Image Margin="2" Source="/Assets/Trash-32.png"></Image>
             </Button>
         </StackPanel>
