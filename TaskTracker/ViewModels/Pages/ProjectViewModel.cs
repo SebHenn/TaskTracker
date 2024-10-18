@@ -18,6 +18,7 @@ namespace TaskTracker.ViewModels.Pages
         private IProjectsService _projectsService;
         private INavigationService _navigationService;
         private IServiceProvider _serviceProvider;
+        private MainViewModel _mainViewModel;
 
         [ObservableProperty]
         private bool _isEditing = false;
@@ -27,6 +28,7 @@ namespace TaskTracker.ViewModels.Pages
 
         public ProjectViewModel(MainViewModel mainViewModel, IProjectsService projectsService, INavigationService navigationService, IServiceProvider serviceProvider)
         {
+            _mainViewModel = mainViewModel;
             _projectsService = projectsService;
             _navigationService = navigationService;
             _serviceProvider = serviceProvider;
@@ -65,6 +67,7 @@ namespace TaskTracker.ViewModels.Pages
         private void OnDeleteProject()
         {
             _projectsService.RemoveProject(CurrentProject);
+            _mainViewModel.IsHomeSelected = true;
             _navigationService.NavigateTo<HomeViewModel>();
         }
     }

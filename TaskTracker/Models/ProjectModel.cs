@@ -18,5 +18,8 @@ namespace TaskTracker.Models
 
         [ObservableProperty]
         private ObservableCollection<TaskModel> _tasks = new ObservableCollection<TaskModel>();
+
+        [ObservableProperty]
+        private bool _isSelected = false;
     }
 }

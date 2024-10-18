@@ -34,6 +34,12 @@ namespace TaskTracker.ViewModels.Windows
         private IProjectsService _projectsService;
 
         [ObservableProperty]
+        private bool _isHomeSelected = true;
+
+        [ObservableProperty]
+        private bool _isSettingsSelected = false;
+
+        [ObservableProperty]
         private ProjectModel _selectedProject;
 
         [ObservableProperty]
@@ -46,9 +52,34 @@ namespace TaskTracker.ViewModels.Windows
         }
 
         [RelayCommand]
+        private void OnNavigateToSettings()
+        {
+            NavigationService.NavigateTo<SettingsViewModel>();
+        }
+
+        [RelayCommand]
         private void OnNavigateToProject(string para)
         {
-            SelectedProject = _projectsService.projectModels.FirstOrDefault(x => x.Name == para);
+            if(IsHomeSelected)
+            {
+                IsHomeSelected = false;
+            }
+            else if(IsSettingsSelected)
+            {
+                IsSettingsSelected = false;
+            }
+            else
+            {
+                SelectedProject.IsSelected = false;
+            }
+
+            var selectedProject = _projectsService.projectModels.FirstOrDefault(x => x.Name == para);
+            if (selectedProject != null)
+            {
+                selectedProject.IsSelected = true;
+                SelectedProject = selectedProject;
+            }
+
             NavigationService.NavigateTo<ProjectViewModel>();
         }
 

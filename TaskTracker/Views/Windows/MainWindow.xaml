@@ -44,7 +44,7 @@
             <StackPanel MinWidth="150" Grid.Row="1">
                 <Label FontSize="30" Foreground="white" Margin="10,0,0,10">Projects</Label>
 
-                <controls:ProjectItem Command="{Binding NavigateToHomeCommand}" GroupName="checkboxes" Image="/Assets/Home-32.png" Margin="5" Height="40">Home</controls:ProjectItem>
+                <controls:ProjectItem IsChecked="{Binding IsHomeSelected}" Command="{Binding NavigateToHomeCommand}" GroupName="checkboxes" Image="/Assets/Home-32.png" Margin="5" Height="40">Home</controls:ProjectItem>
                 
                 <Rectangle Height="1" Margin="5" Fill="Black"></Rectangle>
             </StackPanel>
@@ -56,6 +56,7 @@
                             <controls:ProjectItem Command="{Binding DataContext.NavigateToProjectCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                       CommandParameter="{Binding Name}"
                                       GroupName="checkboxes"
+                                      IsChecked="{Binding IsSelected, Mode=TwoWay}"
                                       Image="/Assets/Project-32.png"
                                       Margin="5" Height="40">
                                 <TextBlock Text="{Binding Name}" />
@@ -66,7 +67,7 @@
             </ScrollViewer>
            
             <DockPanel LastChildFill="False" Grid.Row="2">
-                <controls:ProjectItem GroupName="checkboxes" Image="/Assets/Settings-32.png" DockPanel.Dock="Bottom" Margin="5" Height="40">Settings</controls:ProjectItem>
+                <controls:ProjectItem IsChecked="{Binding IsSettingsSelected}" Command="{Binding NavigateToSettingsCommand}" GroupName="checkboxes" Image="/Assets/Settings-32.png" DockPanel.Dock="Bottom" Margin="5" Height="40">Settings</controls:ProjectItem>
 
                 <Rectangle Height="1" Margin="5" Fill="Black" DockPanel.Dock="Bottom"></Rectangle>
 
