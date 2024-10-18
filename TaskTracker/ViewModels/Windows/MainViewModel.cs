@@ -92,10 +92,15 @@ namespace TaskTracker.ViewModels.Windows
 
             if (newProjectWindow.DataContext is NewProjectViewModel vm && vm.DialogResult == true)
             {
-                string enteredName = vm.Name;
-                string enteredDescription = vm.Description;
-                _projectsService.AddProject(enteredName, enteredDescription);
-                OnNavigateToProject(enteredName);
+                if (!string.IsNullOrWhiteSpace(vm.Name) && !Projects.Any(x => x.Name == vm.Name))
+                {
+                    string enteredName = vm.Name;
+                    string enteredDescription = vm.Description;
+                    _projectsService.AddProject(enteredName, enteredDescription);
+                    OnNavigateToProject(enteredName);
+                    return;
+                }
+                MessageBox.Show("Invalid project name or already exists");
             }
         }
 
