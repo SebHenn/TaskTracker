@@ -124,7 +124,7 @@
                     <Grid>
                         <TextBox x:Name="PART_TextBox"
                                  Text="{Binding Text, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
-                                 Padding="5"
+                                 Padding="5,0,25,0"
                                  VerticalContentAlignment="Center"/>
                         <Label Content="{TemplateBinding Hint}"
                                Margin="5,0,0,0"
