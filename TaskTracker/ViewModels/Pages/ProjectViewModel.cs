@@ -50,6 +50,9 @@ namespace TaskTracker.ViewModels.Pages
 
             var newProjectWindow = _serviceProvider.GetRequiredService<NewProjectWindow>();
 
+            ((NewProjectViewModel)newProjectWindow.DataContext).Name = CurrentProject.Name;
+            ((NewProjectViewModel)newProjectWindow.DataContext).Description = CurrentProject.Description;
+
             newProjectWindow.ShowDialog();
 
             if (newProjectWindow.DataContext is NewProjectViewModel vm && vm.DialogResult == true)
