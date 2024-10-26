@@ -38,6 +38,7 @@ namespace TaskTracker
             services.AddSingleton<INavigationService, NavigationService>();
             services.AddSingleton<IProjectsService, ProjectsService>();
             services.AddSingleton<ILanguageService, LanguageService>();
+            services.AddSingleton<IThemeService, ThemeService>();
 
             services.AddSingleton<Func<Type, ObservableObject>>(serviceProvider => viewModelType => (ObservableObject)serviceProvider.GetRequiredService(viewModelType));
 

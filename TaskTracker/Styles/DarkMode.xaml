@@ -1,0 +1,12 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    x:Name="DarkTheme">
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="DarkMode/ProjectItemDarkStyle.xaml" />
+        <ResourceDictionary Source="DarkMode/ScrollBarDarkStyle.xaml" />
+        <ResourceDictionary Source="DarkMode/SideBarItemDarkStyle.xaml" />
+        <ResourceDictionary Source="DarkMode/TextBoxDarkStyle.xaml" />
+        <ResourceDictionary Source="DarkMode/TitleButtonDarkStyle.xaml" />
+        <ResourceDictionary Source="DarkMode/WindowButtonDarkStyle.xaml" />
+    </ResourceDictionary.MergedDictionaries>
+</ResourceDictionary>

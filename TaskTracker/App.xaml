@@ -18,12 +18,7 @@
                 <pagesViews:ProjectView/>
             </DataTemplate>
             <ResourceDictionary.MergedDictionaries>
-                <ResourceDictionary Source="Styles/ProjectItemStyle.xaml" />
-                <ResourceDictionary Source="Styles/ScrollBarStyle.xaml" />                
-                <ResourceDictionary Source="Styles/SideBarItemStyle.xaml" />                
-                <ResourceDictionary Source="Styles/TextBoxStyle.xaml" />                
-                <ResourceDictionary Source="Styles/TitleButtonStyle.xaml" />
-                <ResourceDictionary Source="Styles/WindowButtonStyle.xaml" />
+                <ResourceDictionary Source="Styles/DarkMode.xaml"/>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>

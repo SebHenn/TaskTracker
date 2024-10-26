@@ -11,5 +11,6 @@
         <ComboBox ItemsSource="{Binding AvailableLanguages}"
                   DisplayMemberPath="NativeName"
                   SelectedItem="{Binding SelectedLanguage, Mode=TwoWay}" />
+        <CheckBox IsChecked="{Binding IsDark}" Command="{Binding ThemeCheckCommand}">isDark</CheckBox>
     </StackPanel>
 </UserControl>
