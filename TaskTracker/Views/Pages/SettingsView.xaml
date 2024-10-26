@@ -6,7 +6,10 @@
              xmlns:local="clr-namespace:TaskTracker.Views.Pages"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
-    <Grid>
+    <StackPanel>
         <Label Foreground="White">u stoopid</Label>
-    </Grid>
+        <ComboBox ItemsSource="{Binding AvailableLanguages}"
+                  DisplayMemberPath="NativeName"
+                  SelectedItem="{Binding SelectedLanguage, Mode=TwoWay}" />
+    </StackPanel>
 </UserControl>

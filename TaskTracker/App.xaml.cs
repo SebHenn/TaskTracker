@@ -37,6 +37,7 @@ namespace TaskTracker
 
             services.AddSingleton<INavigationService, NavigationService>();
             services.AddSingleton<IProjectsService, ProjectsService>();
+            services.AddSingleton<ILanguageService, LanguageService>();
 
             services.AddSingleton<Func<Type, ObservableObject>>(serviceProvider => viewModelType => (ObservableObject)serviceProvider.GetRequiredService(viewModelType));
 
@@ -46,10 +47,13 @@ namespace TaskTracker
 
         protected override void OnStartup(StartupEventArgs e)
         {
+            var langservice = _serviceProvider.GetService<ILanguageService>();
             var window = _serviceProvider.GetRequiredService<MainWindow>();
             window.Show();
             
             base.OnStartup(e);
+
+            langservice.ChangeLanguage("en");
         }
     }
 }
