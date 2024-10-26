@@ -14,12 +14,13 @@ namespace TaskTracker.Services
 
         public ProjectsService() 
         {
-            projectModels = new ObservableCollection<ProjectModel>();
+            projectModels = Config.LoadProjects();
         }
 
         public void AddProject(string project, string description)
         {
             projectModels.Add(new ProjectModel() { Name = project, Description = description });
+            Config.SaveProjects(projectModels);
         }
 
         public void RemoveProject(ProjectModel project)
