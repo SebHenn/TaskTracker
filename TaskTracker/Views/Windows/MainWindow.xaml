@@ -6,77 +6,62 @@
         xmlns:local="clr-namespace:TaskTracker"
         xmlns:controls="clr-namespace:TaskTracker.Controls"
         mc:Ignorable="d"
-        AllowsTransparency="True"
+        Style="{DynamicResource WindowStyle}"
+        WindowState="{Binding WindowState}"
+        WindowStyle="None" 
+        AllowsTransparency="True" 
+        Background="Transparent"
         ResizeMode="CanResize"
         Title="MainWindow" Height="800" Width="1200"
-        WindowStartupLocation="CenterScreen" WindowStyle="None" 
-        Background="Transparent">
-    <Border Background="#FF383333" CornerRadius="10">
-        <Grid>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="auto" />
-                <RowDefinition Height="auto" />
-                <RowDefinition Height="*" />
-                <RowDefinition Height="auto" />
-            </Grid.RowDefinitions>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="auto" />
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
+        WindowStartupLocation="CenterScreen">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="auto" />
+            <RowDefinition Height="auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="auto" />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="auto" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
 
-            <Border Grid.ColumnSpan="2" Height="30">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="auto" />
-                    </Grid.ColumnDefinitions>
-                    <Label Content="TaskTracker" Foreground="White" Margin="10,2,0,0" />
-                    <Rectangle Fill="Transparent" MouseLeftButtonDown="Rectangle_MouseLeftButtonDown" />
+        <StackPanel MinWidth="150" Grid.Row="1">
+            <Label Content="{DynamicResource Projects}" FontSize="30" Foreground="white" Margin="10,0,0,10"></Label>
 
-                    <StackPanel Grid.Column="1" Orientation="Horizontal">
-                        <Button Style="{DynamicResource TitleButton}" Height="30" Width="30" Click="MinimizeButton_Click">➖</Button>
-                        <Button Style="{DynamicResource TitleButton}" Height="30" Width="30" Click="MaximizeButton_Click" FontSize="18">▢</Button>
-                        <Button Style="{DynamicResource TitleButton}" Height="30" Width="30" Click="CloseButton_Click">✖</Button>
-                    </StackPanel>
-                </Grid>
-            </Border>
-
-            <StackPanel MinWidth="150" Grid.Row="1">
-                <Label Content="{DynamicResource Projects}" FontSize="30" Foreground="white" Margin="10,0,0,10"></Label>
-
-                <controls:ProjectItem IsChecked="{Binding IsHomeSelected}" Command="{Binding NavigateToHomeCommand}" GroupName="checkboxes" Image="/Assets/Home-32.png" Margin="5" Height="40">Home</controls:ProjectItem>
+            <controls:ProjectItem IsChecked="{Binding IsHomeSelected}" Command="{Binding NavigateToHomeCommand}" GroupName="checkboxes" Image="/Assets/Home-32.png" Margin="5" Height="40">Home</controls:ProjectItem>
                 
-                <Rectangle Height="1" Margin="5" Fill="Black"></Rectangle>
-            </StackPanel>
+            <Rectangle Height="1" Margin="5" Fill="Black"></Rectangle>
+        </StackPanel>
             
-            <ScrollViewer VerticalScrollBarVisibility="Auto" MinWidth="150" Grid.Row="2" Margin="0,0,0,120">
-                <ItemsControl ItemsSource="{Binding Projects}">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <controls:ProjectItem Command="{Binding DataContext.NavigateToProjectCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                      CommandParameter="{Binding Name}"
-                                      GroupName="checkboxes"
-                                      IsChecked="{Binding IsSelected, Mode=TwoWay}"
-                                      Image="/Assets/Project-32.png"
-                                      Margin="5" Height="40">
-                                <TextBlock Text="{Binding Name}" />
-                            </controls:ProjectItem>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-            </ScrollViewer>
+        <ScrollViewer VerticalScrollBarVisibility="Auto" MinWidth="150" Grid.Row="2" Margin="0,0,0,120">
+            <ItemsControl ItemsSource="{Binding Projects}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <controls:ProjectItem Command="{Binding DataContext.NavigateToProjectCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                    CommandParameter="{Binding Name}"
+                                    GroupName="checkboxes"
+                                    IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                    Tag="IsProject"
+                                    Image="/Assets/Project-32.png"
+                                    Margin="5" Height="40">
+                            <TextBlock Text="{Binding Name}" />
+                        </controls:ProjectItem>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
            
-            <DockPanel LastChildFill="False" Grid.Row="2">
-                <controls:ProjectItem Content="{DynamicResource Settings}" IsChecked="{Binding IsSettingsSelected}" Command="{Binding NavigateToSettingsCommand}" GroupName="checkboxes" Image="/Assets/Settings-32.png" DockPanel.Dock="Bottom" Margin="5" Height="40"></controls:ProjectItem>
+        <DockPanel LastChildFill="False" Grid.Row="2">
+            <controls:ProjectItem Content="{DynamicResource Settings}" IsChecked="{Binding IsSettingsSelected}" Command="{Binding NavigateToSettingsCommand}" GroupName="checkboxes" Image="/Assets/Settings-32.png" DockPanel.Dock="Bottom" Margin="5" Height="40"></controls:ProjectItem>
 
-                <Rectangle Height="1" Margin="5" Fill="Black" DockPanel.Dock="Bottom"></Rectangle>
+            <Rectangle Height="1" Margin="5" Fill="Black" DockPanel.Dock="Bottom"></Rectangle>
 
-                <controls:SideBarItem Command="{Binding NewProjectClickCommand}" Image="/Assets/Add-32.png" DockPanel.Dock="Bottom" Margin="5" Height="40">Add Project</controls:SideBarItem>
-            </DockPanel>
+            <controls:SideBarItem Command="{Binding NewProjectClickCommand}" Image="/Assets/Add-32.png" DockPanel.Dock="Bottom" Margin="5" Height="40">Add Project</controls:SideBarItem>
+        </DockPanel>
 
-            <Border Grid.Column="1" Grid.Row="1" CornerRadius="10" Background="#FF1D1B1B" Grid.RowSpan="3">
-                <ContentControl Margin="20" Content="{Binding NavigationService.CurrentView}"></ContentControl>
-            </Border>
-        </Grid>
-    </Border>
+        <Border Grid.Column="1" Grid.Row="1" CornerRadius="10" Background="#FF1D1B1B" Grid.RowSpan="3">
+            <ContentControl Margin="20" Content="{Binding NavigationService.CurrentView}"></ContentControl>
+        </Border>
+    </Grid>
 </Window>

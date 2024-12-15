@@ -45,6 +45,35 @@ namespace TaskTracker.ViewModels.Windows
         [ObservableProperty]
         private ObservableCollection<ProjectModel> _projects;
 
+        [ObservableProperty]
+        private WindowState _windowState = WindowState.Normal;
+
+        [RelayCommand]
+        public void OnMinimize()
+        {
+            WindowState = WindowState.Minimized;
+        }
+
+        [RelayCommand]
+        public void OnMaximize()
+        {
+            if (WindowState == WindowState.Maximized)
+            {
+                WindowState = WindowState.Normal;
+            }
+            else
+            {
+                WindowState = WindowState.Maximized;
+            }
+        }
+
+        [RelayCommand]
+        public void OnClose()
+        {
+            Application.Current.Shutdown();
+        }
+
+
         [RelayCommand]
         private void OnNavigateToHome()
         {

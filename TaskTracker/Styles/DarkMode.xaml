@@ -8,5 +8,6 @@
         <ResourceDictionary Source="DarkMode/TextBoxDarkStyle.xaml" />
         <ResourceDictionary Source="DarkMode/TitleButtonDarkStyle.xaml" />
         <ResourceDictionary Source="DarkMode/WindowButtonDarkStyle.xaml" />
+        <ResourceDictionary Source="DarkMode/WindowDarkStyle.xaml" />
     </ResourceDictionary.MergedDictionaries>
 </ResourceDictionary>
