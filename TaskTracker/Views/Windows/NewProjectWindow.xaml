@@ -36,10 +36,10 @@
             </Border>
 
             <StackPanel Grid.Row="2" Margin="10">
-                <Label Foreground="White">Project Name</Label>
+                <Label Foreground="White" Content="{Binding NameString}"></Label>
                 <controls:CustomTextBox Height="30" Text="{Binding Name, Mode=TwoWay}"></controls:CustomTextBox>
                 <!--<TextBox Height="30" ></TextBox>-->
-                <Label Margin="0,10,0,0" Foreground="White">Project Description</Label>
+                <Label Margin="0,10,0,0" Foreground="White" Content="{Binding DescriptionString}"></Label>
                 <controls:CustomTextBox Height="30" Text="{Binding Description, Mode=TwoWay}"></controls:CustomTextBox>
                 <!--<TextBox Height="30" ></TextBox>-->
             </StackPanel>

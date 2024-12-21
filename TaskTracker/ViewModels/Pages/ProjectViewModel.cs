@@ -31,6 +31,9 @@ namespace TaskTracker.ViewModels.Pages
         private bool _isEditing = false;
 
         [ObservableProperty]
+        private bool _isCreateTask = false;
+
+        [ObservableProperty]
         private ProjectModel _currentProject;
 
         public ProjectViewModel(MainViewModel mainViewModel, IProjectsService projectsService, INavigationService navigationService, IServiceProvider serviceProvider)
@@ -88,6 +91,31 @@ namespace TaskTracker.ViewModels.Pages
             _projectsService.RemoveProject(CurrentProject);
             _mainViewModel.IsHomeSelected = true;
             _navigationService.NavigateTo<HomeViewModel>();
+        }
+
+        [RelayCommand]
+        private void OnNewTaskClick()
+        {
+            IsCreateTask = true;
+
+            TaskModel task = new TaskModel();
+
+            var newProjectWindow = _serviceProvider.GetRequiredService<NewProjectWindow>();
+
+            newProjectWindow.ShowDialog();
+
+            if (newProjectWindow.DataContext is NewProjectViewModel vm && vm.DialogResult == true)
+            {
+                string enteredName = vm.Name;
+                string enteredDescription = vm.Description;
+                task.Title = enteredName;
+                task.Description = enteredDescription;
+                task.IsDone = false;
+                CurrentProject.Tasks.Add(task);
+                CategorizeTasks();
+            }
+
+            IsCreateTask = false;
         }
     }
 }

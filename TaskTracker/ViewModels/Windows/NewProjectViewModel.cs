@@ -16,6 +16,12 @@ namespace TaskTracker.ViewModels.Windows
         private string _titleString = "";
 
         [ObservableProperty]
+        private string _nameString = "";
+
+        [ObservableProperty]
+        private string _descriptionString = "";
+
+        [ObservableProperty]
         private string _name = "";
 
         [ObservableProperty]
@@ -38,7 +44,9 @@ namespace TaskTracker.ViewModels.Windows
 
         public NewProjectViewModel(ProjectViewModel projectViewModel)
         {
-            TitleString = projectViewModel.IsEditing == true ? "Change current Project" : "Create new Project";
+            TitleString = projectViewModel.IsEditing ? "Change current Project" : projectViewModel.IsCreateTask ? "Create new Task" : "Create new Project";
+            NameString = projectViewModel.IsCreateTask ? "Task Name" : "Project Name";
+            DescriptionString = projectViewModel.IsCreateTask ? "Task Description" : "Project Description";
         }
     }
 }

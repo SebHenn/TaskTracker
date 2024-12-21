@@ -34,7 +34,7 @@
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
                             <Image Source="{Binding Image, RelativeSource={RelativeSource TemplatedParent}}" Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="15,7,0,7"/>
-                            <ContentPresenter HorizontalAlignment="Center" Grid.Column="1" x:Name="contentPresenter" Focusable="False" RecognizesAccessKey="True" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                            <ContentPresenter HorizontalAlignment="Center" Grid.Column="1" x:Name="contentPresenter" Focusable="False" RecognizesAccessKey="True" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}" Margin="7,0,15,0"/>
                         </Grid>
                     </Border>
                     <ControlTemplate.Triggers>
