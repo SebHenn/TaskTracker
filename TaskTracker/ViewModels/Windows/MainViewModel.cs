@@ -70,6 +70,7 @@ namespace TaskTracker.ViewModels.Windows
         [RelayCommand]
         public void OnClose()
         {
+            Config.SaveProjects(Projects);
             Application.Current.Shutdown();
         }
 

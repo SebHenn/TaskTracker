@@ -17,5 +17,8 @@ namespace TaskTracker.Models
 
         [ObservableProperty]
         private bool _isDone = false;
+
+        [ObservableProperty]
+        private Guid _id = Guid.NewGuid();
     }
 }

@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -19,6 +20,12 @@ namespace TaskTracker.ViewModels.Pages
         private INavigationService _navigationService;
         private IServiceProvider _serviceProvider;
         private MainViewModel _mainViewModel;
+
+        [ObservableProperty]
+        private ObservableCollection<TaskModel> _notDoneTasks = [];
+
+        [ObservableProperty]
+        private ObservableCollection<TaskModel> _doneTasks = [];
 
         [ObservableProperty]
         private bool _isEditing = false;
@@ -39,8 +46,17 @@ namespace TaskTracker.ViewModels.Pages
                 if (args.PropertyName == nameof(mainViewModel.SelectedProject))
                 {
                     CurrentProject = mainViewModel.SelectedProject;
+
+                    CategorizeTasks();
                 }
             };
+            CategorizeTasks();
+        }
+
+        private void CategorizeTasks()
+        {
+            NotDoneTasks = new ObservableCollection<TaskModel>(CurrentProject.Tasks.Where(task => !task.IsDone));
+            DoneTasks = new ObservableCollection<TaskModel>(CurrentProject.Tasks.Where(task => task.IsDone));
         }
 
         [RelayCommand]

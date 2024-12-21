@@ -56,5 +56,13 @@ namespace TaskTracker
 
             langservice.ChangeLanguage("en");
         }
+
+        protected override void OnExit(ExitEventArgs e)
+        {
+            var main = _serviceProvider.GetRequiredService<MainViewModel>();
+            Config.SaveProjects(main.Projects);
+
+            base.OnExit(e);
+        }
     }
 }

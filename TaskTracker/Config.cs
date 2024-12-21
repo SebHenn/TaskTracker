@@ -16,6 +16,11 @@ namespace TaskTracker
 
         public static void SaveProjects(ObservableCollection<ProjectModel> projects)
         {
+            foreach (var project in projects)
+            {
+                project.IsSelected = false;
+            }
+
             var folderPath = Path.GetDirectoryName(SaveFilePath);
             if (folderPath != null && !Directory.Exists(folderPath))
             {
