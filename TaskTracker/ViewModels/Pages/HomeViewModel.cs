@@ -10,6 +10,9 @@ namespace TaskTracker.ViewModels.Pages
     public partial class HomeViewModel : ObservableObject
     {
         [ObservableProperty]
-        public string _text = "bornana";
+        public string _name = "Tasktracker";
+
+        [ObservableProperty]
+        public string _description = "Keep track of multiple projects by adding Tasks to them";
     }
 }

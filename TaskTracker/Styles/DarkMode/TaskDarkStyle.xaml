@@ -2,15 +2,5 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:models="clr-namespace:TaskTracker.Models">
 
-    <DataTemplate DataType="{x:Type models:TaskModel}">
-        <Border Background="CadetBlue" Margin="5" Padding="10" Tag="{Binding Id}" CornerRadius="3">
-            <Border.Effect>
-                <DropShadowEffect BlurRadius="10" ShadowDepth="0" Color="Black" Opacity="0.3" />
-            </Border.Effect>
-            <StackPanel>
-                <TextBlock Text="{Binding Title}" FontSize="16" FontWeight="Bold" Foreground="White" />
-                <TextBlock Text="{Binding Description}" FontSize="14" Foreground="White" TextWrapping="Wrap" />
-            </StackPanel>
-        </Border>
-    </DataTemplate>
+   
 </ResourceDictionary>

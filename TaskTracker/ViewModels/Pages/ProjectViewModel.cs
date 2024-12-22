@@ -117,5 +117,40 @@ namespace TaskTracker.ViewModels.Pages
 
             IsCreateTask = false;
         }
+
+        [RelayCommand]
+        private void OnMarkAsDone(TaskModel task)
+        {
+            task.IsDone = true;
+            CategorizeTasks();
+        }
+
+        [RelayCommand]
+        private void OnEditTask(TaskModel task)
+        {
+            var newProjectWindow = _serviceProvider.GetRequiredService<NewProjectWindow>();
+
+            if (newProjectWindow.DataContext is NewProjectViewModel vm)
+            {
+                vm.Name = task.Title;
+                vm.Description = task.Description;
+            }
+
+            newProjectWindow.ShowDialog();
+
+            if (newProjectWindow.DataContext is NewProjectViewModel resultVm && resultVm.DialogResult == true)
+            {
+                task.Title = resultVm.Name;
+                task.Description = resultVm.Description;
+                CategorizeTasks();
+            }
+        }
+
+        [RelayCommand]
+        private void OnDeleteTask(TaskModel task)
+        {
+            CurrentProject.Tasks.Remove(task);
+            CategorizeTasks();
+        }
     }
 }
