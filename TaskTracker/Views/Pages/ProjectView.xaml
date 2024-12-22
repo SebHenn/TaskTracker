@@ -5,8 +5,12 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:TaskTracker.Views.Pages"
              xmlns:controls="clr-namespace:TaskTracker.Controls"
+             xmlns:helpers="clr-namespace:TaskTracker.Helpers"
              mc:Ignorable="d"
              d:DesignHeight="450" d:DesignWidth="800">
+    <UserControl.Resources>
+        <helpers:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
+    </UserControl.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="auto" />
@@ -60,17 +64,17 @@
                                     </StackPanel>
                                     <Border.ContextMenu>
                                         <ContextMenu>
-                                            <!-- Mark as Done Command -->
                                             <MenuItem Header="Mark as Done" 
                                               Command="{Binding PlacementTarget.Tag.MarkAsDoneCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" 
-                                              CommandParameter="{Binding}" />
-
-                                            <!-- Edit Task Command -->
+                                              CommandParameter="{Binding}" 
+                                              Visibility="{Binding IsDone, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=False}"/>
+                                            <MenuItem Header="Mark as In Progress" 
+                                              Command="{Binding PlacementTarget.Tag.MarkAsInProgressCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" 
+                                              CommandParameter="{Binding}" 
+                                              Visibility="{Binding IsDone, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=True}"/>
                                             <MenuItem Header="Edit Task" 
                                               Command="{Binding PlacementTarget.Tag.EditTaskCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" 
                                               CommandParameter="{Binding}" />
-
-                                            <!-- Delete Task Command -->
                                             <MenuItem Header="Delete Task" 
                                               Command="{Binding PlacementTarget.Tag.DeleteTaskCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" 
                                               CommandParameter="{Binding}" />
@@ -109,17 +113,17 @@
                                     </StackPanel>
                                     <Border.ContextMenu>
                                         <ContextMenu>
-                                            <!-- Mark as Done Command -->
                                             <MenuItem Header="Mark as Done" 
                                               Command="{Binding PlacementTarget.Tag.MarkAsDoneCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" 
-                                              CommandParameter="{Binding}" />
-
-                                            <!-- Edit Task Command -->
+                                              CommandParameter="{Binding}" 
+                                              Visibility="{Binding IsDone, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=False}"/>
+                                            <MenuItem Header="Mark as In Progress" 
+                                              Command="{Binding PlacementTarget.Tag.MarkAsInProgressCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" 
+                                              CommandParameter="{Binding}" 
+                                              Visibility="{Binding IsDone, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=True}"/>
                                             <MenuItem Header="Edit Task" 
                                               Command="{Binding PlacementTarget.Tag.EditTaskCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" 
                                               CommandParameter="{Binding}" />
-
-                                            <!-- Delete Task Command -->
                                             <MenuItem Header="Delete Task" 
                                               Command="{Binding PlacementTarget.Tag.DeleteTaskCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" 
                                               CommandParameter="{Binding}" />

@@ -34,6 +34,9 @@ namespace TaskTracker.ViewModels.Pages
         private bool _isCreateTask = false;
 
         [ObservableProperty]
+        private bool _isEditTask = false;
+
+        [ObservableProperty]
         private ProjectModel _currentProject;
 
         public ProjectViewModel(MainViewModel mainViewModel, IProjectsService projectsService, INavigationService navigationService, IServiceProvider serviceProvider)
@@ -126,8 +129,17 @@ namespace TaskTracker.ViewModels.Pages
         }
 
         [RelayCommand]
+        private void OnMarkAsInProgress(TaskModel task)
+        {
+            task.IsDone = false;
+            CategorizeTasks();
+        }
+
+        [RelayCommand]
         private void OnEditTask(TaskModel task)
         {
+            IsEditTask = true;
+
             var newProjectWindow = _serviceProvider.GetRequiredService<NewProjectWindow>();
 
             if (newProjectWindow.DataContext is NewProjectViewModel vm)
@@ -144,6 +156,8 @@ namespace TaskTracker.ViewModels.Pages
                 task.Description = resultVm.Description;
                 CategorizeTasks();
             }
+
+            IsEditTask = false;
         }
 
         [RelayCommand]

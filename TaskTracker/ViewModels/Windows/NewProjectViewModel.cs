@@ -44,9 +44,9 @@ namespace TaskTracker.ViewModels.Windows
 
         public NewProjectViewModel(ProjectViewModel projectViewModel)
         {
-            TitleString = projectViewModel.IsEditing ? "Change current Project" : projectViewModel.IsCreateTask ? "Create new Task" : "Create new Project";
-            NameString = projectViewModel.IsCreateTask ? "Task Name" : "Project Name";
-            DescriptionString = projectViewModel.IsCreateTask ? "Task Description" : "Project Description";
+            TitleString = projectViewModel.IsEditing ? "Change current Project" : projectViewModel.IsCreateTask ? "Create new Task" : projectViewModel.IsEditTask ? "Change current Task" : "Create new Project";
+            NameString = projectViewModel.IsCreateTask || projectViewModel.IsEditTask ? "Task Name" : "Project Name";
+            DescriptionString = projectViewModel.IsCreateTask || projectViewModel.IsEditTask ? "Task Description" : "Project Description";
         }
     }
 }
