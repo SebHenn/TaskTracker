@@ -12,9 +12,29 @@ namespace TaskTracker.Services
     {
         public ObservableCollection<ProjectModel> projectModels { get; set; }
 
+        public ObservableCollection<ProjectModel> RecentProjects { get; } = new ObservableCollection<ProjectModel>();
+
         public ProjectsService() 
         {
             projectModels = Config.LoadProjects();
+            RecentProjects = Config.LoadRecentProjects();
+        }
+
+        public void AddRecentProject(ProjectModel project)
+        {
+            ProjectModel? existingProjetc = RecentProjects.FirstOrDefault(x => x.Name == project.Name);
+
+            if (existingProjetc != null)
+            {
+                RecentProjects.Remove(existingProjetc);
+            }
+
+            RecentProjects.Insert(0, project);
+
+            if (RecentProjects.Count > 5)
+            {
+                RecentProjects.RemoveAt(RecentProjects.Count - 1);
+            }
         }
 
         public void AddProject(string project, string description)
@@ -26,6 +46,7 @@ namespace TaskTracker.Services
         public void RemoveProject(ProjectModel project)
         {
             projectModels.Remove(project);
+            RecentProjects.Remove(project);
         }
 
         public void ChangeProjectName(ProjectModel project, string newName)

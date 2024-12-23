@@ -108,6 +108,8 @@ namespace TaskTracker.ViewModels.Windows
             {
                 selectedProject.IsSelected = true;
                 SelectedProject = selectedProject;
+
+                _projectsService.AddRecentProject(selectedProject);
             }
 
             NavigationService.NavigateTo<ProjectViewModel>();

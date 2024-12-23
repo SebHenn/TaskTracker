@@ -4,12 +4,30 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:TaskTracker.Views.Pages" 
+             xmlns:controls="clr-namespace:TaskTracker.Controls"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
     <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
         <StackPanel>
             <Label Content="{Binding Name}" FontSize="30" Foreground="White"/>
             <TextBlock Text="{Binding Description}" FontSize="16" Foreground="LightGray" Margin="0,10,0,0"/>
+        </StackPanel>
+
+        <StackPanel Grid.Row="2">
+            <Label HorizontalAlignment="Center" Content="Recent Projects:" FontSize="24" Foreground="White" Margin="0,20,0,10"/>
+            <ItemsControl ItemsSource="{Binding RecentProjects}" HorizontalAlignment="Center">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <controls:SideBarItem Image="/Assets/Project-32.png" Margin="10" Height="35" Content="{Binding Name}" Command="{Binding DataContext.ProjectClickCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" CommandParameter="{Binding}"></controls:SideBarItem>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
         </StackPanel>
     </Grid>
 </UserControl>
