@@ -1,11 +1,13 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TaskTracker.Messages;
 using TaskTracker.Models;
 using TaskTracker.Services;
 using TaskTracker.ViewModels.Windows;
@@ -38,15 +40,7 @@ namespace TaskTracker.ViewModels.Pages
         [RelayCommand]
         private void OnProjectClick(ProjectModel para)
         {
-            var selectedProject = _projectsService.projectModels.FirstOrDefault(x => x.Name == para.Name);
-            if (selectedProject != null)
-            {
-                selectedProject.IsSelected = true;
-
-                _projectsService.AddRecentProject(selectedProject);
-            }
-
-            _navigationService.NavigateTo<ProjectViewModel>();
+            WeakReferenceMessenger.Default.Send(new ProjectSelectClickMessage(para));
         }
     }
 }

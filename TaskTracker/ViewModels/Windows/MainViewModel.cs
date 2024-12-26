@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
@@ -9,6 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using TaskTracker.Messages;
 using TaskTracker.Models;
 using TaskTracker.Services;
 using TaskTracker.ViewModels.Pages;
@@ -16,7 +18,7 @@ using TaskTracker.Views.Windows;
 
 namespace TaskTracker.ViewModels.Windows
 {
-    public partial class MainViewModel : ObservableObject
+    public partial class MainViewModel : ObservableObject, IRecipient<ProjectSelectClickMessage>
     {
         private readonly IServiceProvider _serviceProvider;
         private INavigationService _navigationService;
@@ -136,9 +138,16 @@ namespace TaskTracker.ViewModels.Windows
             }
         }
 
+        public void Receive(ProjectSelectClickMessage message)
+        {
+            OnNavigateToProject(message.Value.Name);
+        }
+
         public MainViewModel(INavigationService navigationService, IServiceProvider serviceProvider, IProjectsService projectsService)
         {
             _projectsService = projectsService;
+
+            WeakReferenceMessenger.Default.Register<ProjectSelectClickMessage>(this);
 
             Projects = _projectsService.projectModels;
 
