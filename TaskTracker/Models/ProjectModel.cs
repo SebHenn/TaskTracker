@@ -25,6 +25,9 @@ namespace TaskTracker.Models
         private bool _isSelected = false;
 
         [ObservableProperty]
+        private bool _isFavourite = false;
+
+        [ObservableProperty]
         private Guid _id = Guid.NewGuid();
     }
 }

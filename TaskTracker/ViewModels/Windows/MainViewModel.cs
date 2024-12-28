@@ -48,6 +48,9 @@ namespace TaskTracker.ViewModels.Windows
         private ObservableCollection<ProjectModel> _projects;
 
         [ObservableProperty]
+        private ObservableCollection<ProjectModel> _shownProjects;
+
+        [ObservableProperty]
         private WindowState _windowState = WindowState.Normal;
 
         [RelayCommand]
@@ -87,6 +90,53 @@ namespace TaskTracker.ViewModels.Windows
         private void OnNavigateToSettings()
         {
             NavigationService.NavigateTo<SettingsViewModel>();
+        }
+
+        [ObservableProperty]
+        public bool _isShowEmpty = true;
+
+        [ObservableProperty]
+        public bool _isShowDone = false;
+
+        [ObservableProperty]
+        public bool _isShowOnlyFav = false;
+
+        [RelayCommand]
+        private void OnSortClick()
+        {
+            var sortProjectWindow = _serviceProvider.GetRequiredService<SortProjectWindow>();
+            
+            sortProjectWindow.ShowDialog();
+
+            if(sortProjectWindow.DataContext is SortProjectViewModel vm && vm.DialogResult == true)
+            {
+                IsShowEmpty = vm.IsShowEmpty;
+                IsShowDone = vm.IsShowDone;
+                IsShowOnlyFav = vm.IsShowOnlyFav;
+                ResortProjects();
+            }
+        }
+
+        public void ResortProjects()
+        {
+            var filteredProjects = Projects.Where(p =>
+            {
+                if(IsShowOnlyFav && !p.IsFavourite)
+                    return false;
+
+                if (IsShowEmpty && !p.Tasks.Any())
+                    return true;
+                if (IsShowDone && p.Tasks.Any() && p.Tasks.All(t => t.IsDone))
+                    return true;
+                if (!IsShowDone && p.Tasks.Any() && p.Tasks.All(t => t.IsDone))
+                    return false;
+                if (!IsShowEmpty && !p.Tasks.Any())
+                    return false;
+
+                return true;
+            });
+
+            ShownProjects = new ObservableCollection<ProjectModel>(filteredProjects);
         }
 
         [RelayCommand]
@@ -136,6 +186,8 @@ namespace TaskTracker.ViewModels.Windows
                 }
                 MessageBox.Show("Invalid project name or already exists");
             }
+
+            ResortProjects();
         }
 
         public void Receive(ProjectSelectClickMessage message)
@@ -150,6 +202,8 @@ namespace TaskTracker.ViewModels.Windows
             WeakReferenceMessenger.Default.Register<ProjectSelectClickMessage>(this);
 
             Projects = _projectsService.projectModels;
+            ShownProjects = Projects;
+            ResortProjects();
 
             if(projectsService.projectModels.Count > 0)
                 SelectedProject = projectsService.projectModels[0];

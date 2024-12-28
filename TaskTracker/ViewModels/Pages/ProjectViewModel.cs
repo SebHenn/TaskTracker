@@ -22,6 +22,25 @@ namespace TaskTracker.ViewModels.Pages
         private MainViewModel _mainViewModel;
 
         [ObservableProperty]
+        private string _favImage = "/Assets/starEmpty-32.png";
+
+        [RelayCommand]
+        public void OnFavProject()
+        {
+            CurrentProject.IsFavourite = !CurrentProject.IsFavourite;
+            SetImage();
+            _mainViewModel.ResortProjects();
+        }
+
+        private void SetImage()
+        {
+            if (CurrentProject.IsFavourite)
+                FavImage = "/Assets/starFull-32.png";
+            else
+                FavImage = "/Assets/starEmpty-32.png";
+        }
+
+        [ObservableProperty]
         private ObservableCollection<TaskModel> _notDoneTasks = [];
 
         [ObservableProperty]
@@ -54,9 +73,11 @@ namespace TaskTracker.ViewModels.Pages
                     CurrentProject = mainViewModel.SelectedProject;
 
                     CategorizeTasks();
+                    SetImage();
                 }
             };
             CategorizeTasks();
+            SetImage();
         }
 
         private void CategorizeTasks()
@@ -93,6 +114,7 @@ namespace TaskTracker.ViewModels.Pages
         {
             _projectsService.RemoveProject(CurrentProject);
             _mainViewModel.IsHomeSelected = true;
+            _mainViewModel.ResortProjects();
             _navigationService.NavigateTo<HomeViewModel>();
         }
 

@@ -32,10 +32,12 @@
             <controls:ProjectItem IsChecked="{Binding IsHomeSelected}" Command="{Binding NavigateToHomeCommand}" GroupName="checkboxes" Image="/Assets/Home-32.png" Margin="5" Height="40">Home</controls:ProjectItem>
                 
             <Rectangle Height="1" Margin="5" Fill="Black"></Rectangle>
+
+            <Button Style="{StaticResource TitleButton}" HorizontalAlignment="Right" Margin="5" Command="{Binding SortClickCommand}">Sort</Button>
         </StackPanel>
             
         <ScrollViewer VerticalScrollBarVisibility="Auto" MinWidth="150" Grid.Row="2" Margin="0,0,0,120">
-            <ItemsControl ItemsSource="{Binding Projects}">
+            <ItemsControl ItemsSource="{Binding ShownProjects}">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
                         <controls:ProjectItem Command="{Binding DataContext.NavigateToProjectCommand, RelativeSource={RelativeSource AncestorType=Window}}"

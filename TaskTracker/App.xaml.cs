@@ -32,7 +32,10 @@ namespace TaskTracker
             services.AddSingleton<ProjectViewModel>();
             services.AddTransient<NewProjectWindow>(provider => new NewProjectWindow(
                 provider.GetRequiredService<NewProjectViewModel>()));
+            services.AddTransient<SortProjectWindow>(provider => new SortProjectWindow(
+                provider.GetRequiredService<SortProjectViewModel>()));
             services.AddTransient<NewProjectViewModel>();
+            services.AddTransient<SortProjectViewModel>();
 
 
             services.AddSingleton<INavigationService, NavigationService>();
