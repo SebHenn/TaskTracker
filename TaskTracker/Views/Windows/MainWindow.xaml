@@ -41,7 +41,7 @@
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
                         <controls:ProjectItem Command="{Binding DataContext.NavigateToProjectCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                    CommandParameter="{Binding Name}"
+                                    CommandParameter="{Binding Id}"
                                     GroupName="checkboxes"
                                     IsChecked="{Binding IsSelected, Mode=TwoWay}"
                                     Tag="IsProject"

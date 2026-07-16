@@ -43,7 +43,7 @@ namespace TaskTracker.ViewModels.Windows
         private bool _isSettingsSelected = false;
 
         [ObservableProperty]
-        private ProjectModel _selectedProject;
+        private ProjectModel? _selectedProject;
 
         [ObservableProperty]
         private ObservableCollection<ProjectModel> _projects;
@@ -76,7 +76,7 @@ namespace TaskTracker.ViewModels.Windows
         [RelayCommand]
         public void OnClose()
         {
-            Config.SaveProjects(Projects);
+            _projectsService.SaveNow();
             Application.Current.Shutdown();
         }
 
@@ -141,7 +141,7 @@ namespace TaskTracker.ViewModels.Windows
         }
 
         [RelayCommand]
-        private void OnNavigateToProject(string para)
+        private void OnNavigateToProject(Guid projectId)
         {
             if(IsHomeSelected)
             {
@@ -151,12 +151,12 @@ namespace TaskTracker.ViewModels.Windows
             {
                 IsSettingsSelected = false;
             }
-            else
+            else if (SelectedProject != null)
             {
                 SelectedProject.IsSelected = false;
             }
 
-            var selectedProject = _projectsService.projectModels.FirstOrDefault(x => x.Name == para);
+            var selectedProject = _projectsService.projectModels.FirstOrDefault(x => x.Id == projectId);
             if (selectedProject != null)
             {
                 selectedProject.IsSelected = true;
@@ -179,10 +179,8 @@ namespace TaskTracker.ViewModels.Windows
             {
                 if (!string.IsNullOrWhiteSpace(vm.Name) && !Projects.Any(x => x.Name == vm.Name))
                 {
-                    string enteredName = vm.Name;
-                    string enteredDescription = vm.Description;
-                    _projectsService.AddProject(enteredName, enteredDescription);
-                    OnNavigateToProject(enteredName);
+                    var created = _projectsService.AddProject(vm.Name, vm.Description);
+                    OnNavigateToProject(created.Id);
                     return;
                 }
                 MessageBox.Show("Invalid project name or already exists");
@@ -193,7 +191,25 @@ namespace TaskTracker.ViewModels.Windows
 
         public void Receive(ProjectSelectClickMessage message)
         {
-            OnNavigateToProject(message.Value.Name);
+            OnNavigateToProject(message.Value.Id);
+        }
+
+        public void Receive(StoreReloadedMessage message)
+        {
+            // The store was replaced from disk; our object references may be stale.
+            SelectedProject = SelectedProject != null
+                ? Projects.FirstOrDefault(p => p.Id == SelectedProject.Id)
+                : null;
+            if (SelectedProject == null && !IsSettingsSelected)
+            {
+                IsHomeSelected = true;
+                NavigationService.NavigateTo<HomeViewModel>();
+            }
+            else if (SelectedProject != null && !IsHomeSelected && !IsSettingsSelected)
+            {
+                SelectedProject.IsSelected = true;
+            }
+            ResortProjects();
         }
 
         public MainViewModel(INavigationService navigationService, IServiceProvider serviceProvider, IProjectsService projectsService)
@@ -201,6 +217,7 @@ namespace TaskTracker.ViewModels.Windows
             _projectsService = projectsService;
 
             WeakReferenceMessenger.Default.Register<ProjectSelectClickMessage>(this);
+            WeakReferenceMessenger.Default.Register<StoreReloadedMessage>(this, (r, m) => ((MainViewModel)r).Receive(m));
 
             Projects = _projectsService.projectModels;
             ShownProjects = Projects;

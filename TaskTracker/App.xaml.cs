@@ -64,8 +64,8 @@ namespace TaskTracker
         protected override void OnExit(ExitEventArgs e)
         {
             var projectsService = _serviceProvider.GetRequiredService<IProjectsService>();
-            Config.SaveProjects(projectsService.projectModels);
-            Config.SaveRecentProjects(projectsService.RecentProjects);
+            projectsService.SaveNow();
+            (projectsService as IDisposable)?.Dispose();
 
             base.OnExit(e);
         }

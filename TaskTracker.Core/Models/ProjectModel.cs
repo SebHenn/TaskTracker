@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace TaskTracker.Core.Models
@@ -22,6 +23,7 @@ namespace TaskTracker.Core.Models
         private ObservableCollection<TaskModel> _tasks = new ObservableCollection<TaskModel>();
 
         [ObservableProperty]
+        [property: JsonIgnore]
         private bool _isSelected = false;
 
         [ObservableProperty]

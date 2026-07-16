@@ -27,6 +27,7 @@ namespace TaskTracker.ViewModels.Pages
         [RelayCommand]
         public void OnFavProject()
         {
+            if (CurrentProject == null) return;
             CurrentProject.IsFavourite = !CurrentProject.IsFavourite;
             SetImage();
             _mainViewModel.ResortProjects();
@@ -34,7 +35,7 @@ namespace TaskTracker.ViewModels.Pages
 
         private void SetImage()
         {
-            if (CurrentProject.IsFavourite)
+            if (CurrentProject != null && CurrentProject.IsFavourite)
                 FavImage = "/Assets/starFull-32.png";
             else
                 FavImage = "/Assets/starEmpty-32.png";
@@ -56,7 +57,7 @@ namespace TaskTracker.ViewModels.Pages
         private bool _isEditTask = false;
 
         [ObservableProperty]
-        private ProjectModel _currentProject;
+        private ProjectModel? _currentProject;
 
         public ProjectViewModel(MainViewModel mainViewModel, IProjectsService projectsService, INavigationService navigationService, IServiceProvider serviceProvider)
         {
@@ -76,12 +77,28 @@ namespace TaskTracker.ViewModels.Pages
                     SetImage();
                 }
             };
+            CommunityToolkit.Mvvm.Messaging.WeakReferenceMessenger.Default.Register<Messages.StoreReloadedMessage>(
+                this, (r, m) =>
+                {
+                    // MainViewModel re-resolves SelectedProject first (registration order),
+                    // but re-read it here in case the PropertyChanged value was identical.
+                    var vm = (ProjectViewModel)r;
+                    vm.CurrentProject = vm._mainViewModel.SelectedProject;
+                    vm.CategorizeTasks();
+                    vm.SetImage();
+                });
             CategorizeTasks();
             SetImage();
         }
 
         private void CategorizeTasks()
         {
+            if (CurrentProject == null)
+            {
+                NotDoneTasks = new ObservableCollection<TaskModel>();
+                DoneTasks = new ObservableCollection<TaskModel>();
+                return;
+            }
             NotDoneTasks = new ObservableCollection<TaskModel>(CurrentProject.Tasks.Where(task => !task.IsDone));
             DoneTasks = new ObservableCollection<TaskModel>(CurrentProject.Tasks.Where(task => task.IsDone));
         }
@@ -89,6 +106,7 @@ namespace TaskTracker.ViewModels.Pages
         [RelayCommand]
         private void OnChangeProject()
         {
+            if (CurrentProject == null) return;
             IsEditing = true;
 
             var newProjectWindow = _serviceProvider.GetRequiredService<NewProjectWindow>();
@@ -112,6 +130,7 @@ namespace TaskTracker.ViewModels.Pages
         [RelayCommand]
         private void OnDeleteProject()
         {
+            if (CurrentProject == null) return;
             _projectsService.RemoveProject(CurrentProject);
             _mainViewModel.IsHomeSelected = true;
             _mainViewModel.ResortProjects();
@@ -121,6 +140,7 @@ namespace TaskTracker.ViewModels.Pages
         [RelayCommand]
         private void OnNewTaskClick()
         {
+            if (CurrentProject == null) return;
             IsCreateTask = true;
 
             TaskModel task = new TaskModel();
@@ -185,6 +205,7 @@ namespace TaskTracker.ViewModels.Pages
         [RelayCommand]
         private void OnDeleteTask(TaskModel task)
         {
+            if (CurrentProject == null) return;
             CurrentProject.Tasks.Remove(task);
             CategorizeTasks();
         }
