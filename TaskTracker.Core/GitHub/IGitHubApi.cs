@@ -1,0 +1,21 @@
+namespace TaskTracker.Core.GitHub
+{
+    public record GitHubIssue(
+        int Number,
+        string Title,
+        string? Body,
+        string State,
+        DateTime UpdatedAt,
+        IReadOnlyList<string> Labels,
+        bool IsPullRequest);
+
+    public interface IGitHubApi
+    {
+        /// <summary>Lists issues (including PRs, which callers must skip). state: "open", "closed", or "all".</summary>
+        Task<IReadOnlyList<GitHubIssue>> ListIssuesAsync(string owner, string repo, string state, CancellationToken ct = default);
+
+        Task CloseIssueAsync(string owner, string repo, int number, CancellationToken ct = default);
+
+        Task ReopenIssueAsync(string owner, string repo, int number, CancellationToken ct = default);
+    }
+}
