@@ -18,7 +18,8 @@ namespace TaskTracker.Utilities
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            throw new NotImplementedException();
+            // One-way converter (hint visibility); nothing sensible to write back.
+            return Binding.DoNothing;
         }
     }
 }

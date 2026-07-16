@@ -25,21 +25,21 @@
             <StackPanel Orientation="Horizontal">
                 <Label Content="{Binding CurrentProject.Name}" FontSize="30" Foreground="{DynamicResource Brush.Text.Primary}"/>
                 <Border Style="{StaticResource TaskChip}" Visibility="{Binding CurrentProject.IsArchived, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=True}">
-                    <TextBlock Style="{StaticResource TaskChipText}" Text="Archived" Foreground="{DynamicResource Brush.Text.Primary}" />
+                    <TextBlock Style="{StaticResource TaskChipText}" Text="{DynamicResource Archived}" Foreground="{DynamicResource Brush.Text.Primary}" />
                 </Border>
             </StackPanel>
             <TextBlock Text="{Binding CurrentProject.Description}" FontSize="16" Foreground="{DynamicResource Brush.Text.Secondary}" Margin="0,10,0,0"/>
         </StackPanel>
 
         <StackPanel Grid.Column="2" Margin="10" Orientation="Horizontal">
-            <Button Height="30" Width="30" Style="{DynamicResource WindowButton}" Command="{Binding FavProjectCommand}" Background="White" ToolTip="Favourite">
+            <Button Height="30" Width="30" Style="{DynamicResource WindowButton}" Command="{Binding FavProjectCommand}" Background="White" ToolTip="{DynamicResource TooltipFavourite}">
                 <Image Margin="2" Source="{Binding FavImage}" />
             </Button>
-            <Button Margin="10,0,0,0" Height="30" Width="30" Style="{DynamicResource WindowButton}" Command="{Binding ChangeProjectCommand}" Background="{DynamicResource Brush.Accent}" ToolTip="Edit project">
+            <Button Margin="10,0,0,0" Height="30" Width="30" Style="{DynamicResource WindowButton}" Command="{Binding ChangeProjectCommand}" Background="{DynamicResource Brush.Accent}" ToolTip="{DynamicResource TooltipEditProject}">
                 <Image Margin="2" Source="/Assets/Edit-32.png" />
             </Button>
-            <Button Margin="10,0,0,0" Height="30" Padding="8,0" Style="{DynamicResource WindowButton}" Command="{Binding ArchiveProjectCommand}" Background="{DynamicResource Brush.Chip.Background}" Foreground="{DynamicResource Brush.Text.Primary}" Content="{Binding ArchiveButtonText}" ToolTip="Archive project" />
-            <Button Margin="10,0,0,0" Height="30" Width="30" Style="{DynamicResource WindowButton}" Command="{Binding DeleteProjectCommand}" Background="{DynamicResource Brush.Danger}" ToolTip="Delete project">
+            <Button Margin="10,0,0,0" Height="30" Padding="8,0" Style="{DynamicResource WindowButton}" Command="{Binding ArchiveProjectCommand}" Background="{DynamicResource Brush.Chip.Background}" Foreground="{DynamicResource Brush.Text.Primary}" Content="{Binding ArchiveButtonText}" ToolTip="{DynamicResource TooltipArchiveProject}" />
+            <Button Margin="10,0,0,0" Height="30" Width="30" Style="{DynamicResource WindowButton}" Command="{Binding DeleteProjectCommand}" Background="{DynamicResource Brush.Danger}" ToolTip="{DynamicResource TooltipDeleteProject}">
                 <Image Margin="2" Source="/Assets/Trash-32.png" />
             </Button>
         </StackPanel>
@@ -47,24 +47,24 @@
         <!-- Statistics -->
         <Expander Grid.Row="1" Grid.ColumnSpan="3" Margin="10,5" Foreground="{DynamicResource Brush.Text.Primary}">
             <Expander.Header>
-                <TextBlock Text="Statistics" FontSize="14" Foreground="{DynamicResource Brush.Text.Primary}" />
+                <TextBlock Text="{DynamicResource Statistics}" FontSize="14" Foreground="{DynamicResource Brush.Text.Primary}" />
             </Expander.Header>
             <StackPanel Orientation="Horizontal" Margin="10,5">
                 <StackPanel Margin="0,0,30,0">
                     <TextBlock Foreground="{DynamicResource Brush.Text.Primary}" FontSize="24" HorizontalAlignment="Center" Text="{Binding Stats.OpenCount}" />
-                    <TextBlock Foreground="{DynamicResource Brush.Text.Secondary}" Text="Open" HorizontalAlignment="Center" />
+                    <TextBlock Foreground="{DynamicResource Brush.Text.Secondary}" Text="{DynamicResource Open}" HorizontalAlignment="Center" />
                 </StackPanel>
                 <StackPanel Margin="0,0,30,0">
                     <TextBlock Foreground="{DynamicResource Brush.Text.Primary}" FontSize="24" HorizontalAlignment="Center" Text="{Binding Stats.DoneCount}" />
-                    <TextBlock Foreground="{DynamicResource Brush.Text.Secondary}" Text="Done" HorizontalAlignment="Center" />
+                    <TextBlock Foreground="{DynamicResource Brush.Text.Secondary}" Text="{DynamicResource Done}" HorizontalAlignment="Center" />
                 </StackPanel>
                 <StackPanel Margin="0,0,30,0">
                     <TextBlock Foreground="{DynamicResource Brush.Text.Primary}" FontSize="24" HorizontalAlignment="Center" Text="{Binding Stats.OverdueCount}" />
-                    <TextBlock Foreground="{DynamicResource Brush.Text.Secondary}" Text="Overdue" HorizontalAlignment="Center" />
+                    <TextBlock Foreground="{DynamicResource Brush.Text.Secondary}" Text="{DynamicResource Overdue}" HorizontalAlignment="Center" />
                 </StackPanel>
                 <StackPanel Margin="0,0,40,0">
                     <TextBlock Foreground="{DynamicResource Brush.Text.Primary}" FontSize="24" HorizontalAlignment="Center" Text="{Binding Stats.CompletionPercent, StringFormat={}{0:0}%}" />
-                    <TextBlock Foreground="{DynamicResource Brush.Text.Secondary}" Text="Complete" HorizontalAlignment="Center" />
+                    <TextBlock Foreground="{DynamicResource Brush.Text.Secondary}" Text="{DynamicResource Complete}" HorizontalAlignment="Center" />
                 </StackPanel>
                 <!-- Done-per-week bars, oldest to newest -->
                 <StackPanel>
@@ -83,7 +83,7 @@
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
-                    <TextBlock Text="Tasks completed per week" FontSize="10" Foreground="{DynamicResource Brush.Text.Secondary}" HorizontalAlignment="Center" Margin="0,3,0,0" />
+                    <TextBlock Text="{DynamicResource TasksCompletedPerWeek}" FontSize="10" Foreground="{DynamicResource Brush.Text.Secondary}" HorizontalAlignment="Center" Margin="0,3,0,0" />
                 </StackPanel>
             </StackPanel>
         </Expander>
@@ -91,7 +91,7 @@
         <!-- Label filter -->
         <StackPanel Grid.Row="2" Grid.ColumnSpan="3" Orientation="Horizontal" Margin="10,0,10,5"
                     Visibility="{Binding HasLabels, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=True}">
-            <Label Content="Filter by label:" Foreground="{DynamicResource Brush.Text.Secondary}" VerticalAlignment="Center" />
+            <Label Content="{DynamicResource FilterByLabel}" Foreground="{DynamicResource Brush.Text.Secondary}" VerticalAlignment="Center" />
             <ComboBox MinWidth="120" VerticalAlignment="Center"
                       ItemsSource="{Binding AvailableLabels}"
                       SelectedItem="{Binding SelectedLabelFilter, Mode=TwoWay}" />
@@ -109,7 +109,7 @@
                     <RowDefinition Height="auto" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
-                <Label Content="In Progress" FontSize="20" Foreground="{DynamicResource Brush.Text.Primary}" Margin="0,0,0,5"/>
+                <Label Content="{DynamicResource InProgress}" FontSize="20" Foreground="{DynamicResource Brush.Text.Primary}" Margin="0,0,0,5"/>
                 <Border Grid.Row="1" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1" CornerRadius="5" AllowDrop="True" Background="Transparent">
                     <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Hidden">
                         <ItemsControl ItemsSource="{Binding NotDoneTasks}" ItemTemplate="{DynamicResource TaskCardTemplate}">
@@ -129,7 +129,7 @@
                     <RowDefinition Height="auto" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
-                <Label Content="Done" FontSize="20" Foreground="{DynamicResource Brush.Text.Primary}" Margin="0,0,0,5"/>
+                <Label Content="{DynamicResource Done}" FontSize="20" Foreground="{DynamicResource Brush.Text.Primary}" Margin="0,0,0,5"/>
                 <Border Grid.Row="1" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1" CornerRadius="5" AllowDrop="True" Background="Transparent">
                     <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Hidden">
                         <ItemsControl ItemsSource="{Binding DoneTasks}" ItemTemplate="{DynamicResource TaskCardTemplate}">
@@ -144,6 +144,6 @@
             </Grid>
         </Grid>
 
-        <controls:SideBarItem Grid.Row="4" Command="{Binding NewTaskClickCommand}" Image="/Assets/Add-32.png" Margin="5" Height="40">Add Task</controls:SideBarItem>
+        <controls:SideBarItem Grid.Row="4" Command="{Binding NewTaskClickCommand}" Image="/Assets/Add-32.png" Margin="5" Height="40" Content="{DynamicResource AddTask}"></controls:SideBarItem>
     </Grid>
 </UserControl>

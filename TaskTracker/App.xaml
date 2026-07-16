@@ -21,7 +21,15 @@
                 <pagesViews:SearchView/>
             </DataTemplate>
             <ResourceDictionary.MergedDictionaries>
+                <!-- Theme-independent control templates; colors resolve via DynamicResource -->
+                <ResourceDictionary Source="Styles/Controls/ButtonStyles.xaml"/>
+                <ResourceDictionary Source="Styles/Controls/TextBoxStyle.xaml"/>
+                <ResourceDictionary Source="Styles/Controls/ScrollBarStyle.xaml"/>
+                <ResourceDictionary Source="Styles/Controls/SideBarItemStyle.xaml"/>
+                <ResourceDictionary Source="Styles/Controls/ProjectItemStyle.xaml"/>
+                <ResourceDictionary Source="Styles/Controls/WindowStyle.xaml"/>
                 <ResourceDictionary Source="Styles/Shared.xaml"/>
+                <!-- The active theme palette; ThemeService swaps this entry -->
                 <ResourceDictionary Source="Styles/DarkMode.xaml"/>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>

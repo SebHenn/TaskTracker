@@ -1,13 +1,17 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-    <!-- Semantic brushes for the dark theme. LightMode defines the same keys. -->
+    <!-- Dark palette. LightMode/ColorsLight.xaml defines the same keys; all
+         control templates live in Styles/Controls and reference these via
+         DynamicResource, so swapping the palette swaps the theme. -->
+
     <SolidColorBrush x:Key="Brush.Window.Background" Color="#FF383333" />
     <SolidColorBrush x:Key="Brush.Content.Background" Color="#FF1D1B1B" />
     <SolidColorBrush x:Key="Brush.Card.Background" Color="#FF5F9EA0" />
     <SolidColorBrush x:Key="Brush.Text.Primary" Color="White" />
     <SolidColorBrush x:Key="Brush.Text.Secondary" Color="LightGray" />
     <SolidColorBrush x:Key="Brush.Text.OnCard" Color="White" />
+    <SolidColorBrush x:Key="Brush.Text.Hint" Color="Gray" />
     <SolidColorBrush x:Key="Brush.Border" Color="LightGray" />
     <SolidColorBrush x:Key="Brush.Divider" Color="Black" />
     <SolidColorBrush x:Key="Brush.Accent" Color="#FF1D45BF" />
@@ -16,5 +20,25 @@
     <SolidColorBrush x:Key="Brush.Priority.Low" Color="#FF66BB6A" />
     <SolidColorBrush x:Key="Brush.Priority.Medium" Color="#FFFFB74D" />
     <SolidColorBrush x:Key="Brush.Priority.High" Color="#FFEF5350" />
+
+    <!-- Flat buttons (title bar, delete) -->
+    <SolidColorBrush x:Key="Brush.Button.Flat.Background" Color="Transparent" />
+    <SolidColorBrush x:Key="Brush.Button.Flat.Hover" Color="#FF4A4A4A" />
+    <SolidColorBrush x:Key="Brush.Button.Flat.Pressed" Color="#FF4E4E4E" />
+    <!-- Solid buttons (sidebar items, project items, round window buttons) -->
+    <SolidColorBrush x:Key="Brush.Button.Solid.Background" Color="#18181a" />
+    <SolidColorBrush x:Key="Brush.Button.Solid.Hover" Color="#242526" />
+    <SolidColorBrush x:Key="Brush.Button.Solid.Pressed" Color="#2a2b2e" />
+    <SolidColorBrush x:Key="Brush.Button.Foreground" Color="White" />
+    <SolidColorBrush x:Key="Brush.Indicator" Color="#FFFFFF" />
+
+    <SolidColorBrush x:Key="Brush.ScrollBar.Thumb" Color="#18181a" />
+
+    <SolidColorBrush x:Key="Brush.TextBox.Background" Color="#FF272727" />
+    <SolidColorBrush x:Key="Brush.TextBox.Border" Color="#FF323232" />
+    <SolidColorBrush x:Key="Brush.TextBox.Foreground" Color="#FFEBEBEB" />
+    <SolidColorBrush x:Key="Brush.TextBox.Selection" Color="#FF2084E8" />
+    <SolidColorBrush x:Key="Brush.TextBox.Border.Hover" Color="#FF414141" />
+    <SolidColorBrush x:Key="Brush.TextBox.Border.Focus" Color="#FF373737" />
 
 </ResourceDictionary>

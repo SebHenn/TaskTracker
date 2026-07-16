@@ -27,15 +27,15 @@
         </Grid.ColumnDefinitions>
 
         <StackPanel MinWidth="150" Grid.Row="1">
-            <Label Content="{DynamicResource Projects}" FontSize="30" Foreground="white" Margin="10,0,0,10"></Label>
+            <Label Content="{DynamicResource Projects}" FontSize="30" Foreground="{DynamicResource Brush.Text.Primary}" Margin="10,0,0,10"></Label>
 
-            <controls:ProjectItem IsChecked="{Binding IsHomeSelected}" Command="{Binding NavigateToHomeCommand}" GroupName="checkboxes" Image="/Assets/Home-32.png" Margin="5" Height="40">Home</controls:ProjectItem>
+            <controls:ProjectItem IsChecked="{Binding IsHomeSelected}" Command="{Binding NavigateToHomeCommand}" GroupName="checkboxes" Image="/Assets/Home-32.png" Margin="5" Height="40" Content="{DynamicResource Home}"></controls:ProjectItem>
                 
-            <Rectangle Height="1" Margin="5" Fill="Black"></Rectangle>
+            <Rectangle Height="1" Margin="5" Fill="{DynamicResource Brush.Divider}"></Rectangle>
 
-            <controls:CustomTextBox Height="30" Margin="5" Hint="Search tasks..." Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+            <controls:CustomTextBox Height="30" Margin="5" Hint="{DynamicResource SearchHint}" Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
-            <Button Style="{StaticResource TitleButton}" HorizontalAlignment="Right" Margin="5" Command="{Binding SortClickCommand}">Sort</Button>
+            <Button Style="{DynamicResource TitleButton}" HorizontalAlignment="Right" Margin="5" Command="{Binding SortClickCommand}" Content="{DynamicResource Sort}"></Button>
         </StackPanel>
             
         <ScrollViewer VerticalScrollBarVisibility="Auto" MinWidth="150" Grid.Row="2" Margin="0,0,0,120">
@@ -59,12 +59,12 @@
         <DockPanel LastChildFill="False" Grid.Row="2">
             <controls:ProjectItem Content="{DynamicResource Settings}" IsChecked="{Binding IsSettingsSelected}" Command="{Binding NavigateToSettingsCommand}" GroupName="checkboxes" Image="/Assets/Settings-32.png" DockPanel.Dock="Bottom" Margin="5" Height="40"></controls:ProjectItem>
 
-            <Rectangle Height="1" Margin="5" Fill="Black" DockPanel.Dock="Bottom"></Rectangle>
+            <Rectangle Height="1" Margin="5" Fill="{DynamicResource Brush.Divider}" DockPanel.Dock="Bottom"></Rectangle>
 
-            <controls:SideBarItem Command="{Binding NewProjectClickCommand}" Image="/Assets/Add-32.png" DockPanel.Dock="Bottom" Margin="5" Height="40">Add Project</controls:SideBarItem>
+            <controls:SideBarItem Command="{Binding NewProjectClickCommand}" Image="/Assets/Add-32.png" DockPanel.Dock="Bottom" Margin="5" Height="40" Content="{DynamicResource AddProject}"></controls:SideBarItem>
         </DockPanel>
 
-        <Border Grid.Column="1" Grid.Row="1" CornerRadius="10" Background="#FF1D1B1B" Grid.RowSpan="3">
+        <Border Grid.Column="1" Grid.Row="1" CornerRadius="10" Background="{DynamicResource Brush.Content.Background}" Grid.RowSpan="3">
             <ContentControl Margin="20" Content="{Binding NavigationService.CurrentView}"></ContentControl>
         </Border>
     </Grid>

@@ -103,18 +103,18 @@
             </StackPanel>
             <Border.ContextMenu>
                 <ContextMenu>
-                    <MenuItem Header="Mark as Done"
+                    <MenuItem Header="{DynamicResource MarkAsDone}"
                               Command="{Binding PlacementTarget.Tag.MarkAsDoneCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                               CommandParameter="{Binding}"
                               Visibility="{Binding IsDone, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=False}" />
-                    <MenuItem Header="Mark as In Progress"
+                    <MenuItem Header="{DynamicResource MarkAsInProgress}"
                               Command="{Binding PlacementTarget.Tag.MarkAsInProgressCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                               CommandParameter="{Binding}"
                               Visibility="{Binding IsDone, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=True}" />
-                    <MenuItem Header="Edit Task"
+                    <MenuItem Header="{DynamicResource EditTask}"
                               Command="{Binding PlacementTarget.Tag.EditTaskCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                               CommandParameter="{Binding}" />
-                    <MenuItem Header="Delete Task"
+                    <MenuItem Header="{DynamicResource DeleteTask}"
                               Command="{Binding PlacementTarget.Tag.DeleteTaskCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                               CommandParameter="{Binding}" />
                 </ContextMenu>

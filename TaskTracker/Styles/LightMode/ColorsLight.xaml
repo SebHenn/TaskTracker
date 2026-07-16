@@ -1,0 +1,40 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Light palette. Must define exactly the same keys as DarkMode/ColorsDark.xaml. -->
+
+    <SolidColorBrush x:Key="Brush.Window.Background" Color="#FFE8E8E8" />
+    <SolidColorBrush x:Key="Brush.Content.Background" Color="#FFFAFAFA" />
+    <SolidColorBrush x:Key="Brush.Card.Background" Color="#FFAFD3D5" />
+    <SolidColorBrush x:Key="Brush.Text.Primary" Color="#FF1B1B1B" />
+    <SolidColorBrush x:Key="Brush.Text.Secondary" Color="#FF555555" />
+    <SolidColorBrush x:Key="Brush.Text.OnCard" Color="#FF16302F" />
+    <SolidColorBrush x:Key="Brush.Text.Hint" Color="#FF8A8A8A" />
+    <SolidColorBrush x:Key="Brush.Border" Color="#FF9E9E9E" />
+    <SolidColorBrush x:Key="Brush.Divider" Color="#FFC4C4C4" />
+    <SolidColorBrush x:Key="Brush.Accent" Color="#FF1D45BF" />
+    <SolidColorBrush x:Key="Brush.Danger" Color="#FFD32F2F" />
+    <SolidColorBrush x:Key="Brush.Chip.Background" Color="#22000000" />
+    <SolidColorBrush x:Key="Brush.Priority.Low" Color="#FF2E7D32" />
+    <SolidColorBrush x:Key="Brush.Priority.Medium" Color="#FFEF6C00" />
+    <SolidColorBrush x:Key="Brush.Priority.High" Color="#FFC62828" />
+
+    <SolidColorBrush x:Key="Brush.Button.Flat.Background" Color="Transparent" />
+    <SolidColorBrush x:Key="Brush.Button.Flat.Hover" Color="#FFD0D0D0" />
+    <SolidColorBrush x:Key="Brush.Button.Flat.Pressed" Color="#FFC0C0C0" />
+    <SolidColorBrush x:Key="Brush.Button.Solid.Background" Color="#FFDDDDDD" />
+    <SolidColorBrush x:Key="Brush.Button.Solid.Hover" Color="#FFD0D0D0" />
+    <SolidColorBrush x:Key="Brush.Button.Solid.Pressed" Color="#FFC2C2C2" />
+    <SolidColorBrush x:Key="Brush.Button.Foreground" Color="#FF1B1B1B" />
+    <SolidColorBrush x:Key="Brush.Indicator" Color="#FF1D45BF" />
+
+    <SolidColorBrush x:Key="Brush.ScrollBar.Thumb" Color="#FFB0B0B0" />
+
+    <SolidColorBrush x:Key="Brush.TextBox.Background" Color="#FFFFFFFF" />
+    <SolidColorBrush x:Key="Brush.TextBox.Border" Color="#FFBDBDBD" />
+    <SolidColorBrush x:Key="Brush.TextBox.Foreground" Color="#FF1B1B1B" />
+    <SolidColorBrush x:Key="Brush.TextBox.Selection" Color="#FF2084E8" />
+    <SolidColorBrush x:Key="Brush.TextBox.Border.Hover" Color="#FF909090" />
+    <SolidColorBrush x:Key="Brush.TextBox.Border.Focus" Color="#FF1D45BF" />
+
+</ResourceDictionary>

@@ -13,9 +13,9 @@
         </Grid.RowDefinitions>
 
         <StackPanel>
-            <Label Content="Search Results" FontSize="30" Foreground="{DynamicResource Brush.Text.Primary}" />
+            <Label Content="{DynamicResource SearchResults}" FontSize="30" Foreground="{DynamicResource Brush.Text.Primary}" />
             <TextBlock FontSize="14" Foreground="{DynamicResource Brush.Text.Secondary}" Margin="5,0,0,10">
-                <Run Text="{Binding ResultCount, Mode=OneWay}" /> <Run Text="results for" /> "<Run Text="{Binding Query, Mode=OneWay}" />"
+                <Run Text="{Binding ResultCount, Mode=OneWay}" /> <Run Text="{DynamicResource ResultsFor}" /> "<Run Text="{Binding Query, Mode=OneWay}" />"
             </TextBlock>
         </StackPanel>
 
@@ -36,7 +36,7 @@
                                     <TextBlock Text="{Binding Task.Title}" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource Brush.Text.OnCard}" />
                                     <Border Style="{StaticResource TaskChip}" Margin="8,0,0,0"
                                             Visibility="{Binding Task.IsDone, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=True}">
-                                        <TextBlock Style="{StaticResource TaskChipText}" Text="Done" />
+                                        <TextBlock Style="{StaticResource TaskChipText}" Text="{DynamicResource Done}" />
                                     </Border>
                                 </StackPanel>
                                 <TextBlock Text="{Binding Task.Description}" FontSize="13" Foreground="{DynamicResource Brush.Text.OnCard}" TextWrapping="Wrap" />

@@ -21,20 +21,23 @@ namespace TaskTracker.ViewModels.Pages
         private INavigationService _navigationService;
 
         [ObservableProperty]
-        public string _name = "Tasktracker";
+        public string _name = "TaskTracker";
 
         [ObservableProperty]
-        public string _description = "Keep track of multiple projects by adding Tasks to them";
+        public string _description = "";
 
         [ObservableProperty]
         public ObservableCollection<ProjectModel> _recentProjects;
 
-        public HomeViewModel(IProjectsService projectsService,INavigationService navigationService) 
+        public HomeViewModel(IProjectsService projectsService, INavigationService navigationService, ILanguageService languageService)
         {
             _projectsService = projectsService;
             _navigationService = navigationService;
 
             RecentProjects = _projectsService.RecentProjects;
+
+            Description = languageService.GetString("AppTagline");
+            languageService.LanguageChanged += () => Description = languageService.GetString("AppTagline");
         }
 
         [RelayCommand]

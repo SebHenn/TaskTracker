@@ -1,37 +1,32 @@
-﻿using System;
-using System.Collections.Generic;
+using System;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Controls.Primitives;
 using System.Windows;
 
 namespace TaskTracker.Services
 {
     public class ThemeService : IThemeService
     {
+        private const string DarkPath = "Styles/DarkMode.xaml";
+        private const string LightPath = "Styles/LightMode.xaml";
+
         public void ChangeTheme(string theme)
         {
-            var applicationResources = Application.Current.Resources;
+            var merged = Application.Current.Resources.MergedDictionaries;
+            var targetPath = theme == "light" ? LightPath : DarkPath;
 
-            string themeDictionaryPath = theme == "dark" ? "Styles/DarkMode.xaml" : "Styles/LightMode.xaml";
+            var current = merged.FirstOrDefault(md =>
+                md.Source != null &&
+                (md.Source.OriginalString.Equals(DarkPath) || md.Source.OriginalString.Equals(LightPath)));
 
-            var newThemeDictionary = new ResourceDictionary
-            {
-                Source = new Uri(themeDictionaryPath, UriKind.Relative)
-            };
+            if (current?.Source?.OriginalString.Equals(targetPath) == true)
+                return;
 
-            var existingThemeDictionary = applicationResources.MergedDictionaries.Where(md => md.Source.OriginalString.Equals(theme == "dark" ? "Styles/LightMode.xaml" : "Styles/DarkMode.xaml")).FirstOrDefault();
+            var newThemeDictionary = new ResourceDictionary { Source = new Uri(targetPath, UriKind.Relative) };
 
-            if (existingThemeDictionary != null)
-            {
-                int index = applicationResources.MergedDictionaries.IndexOf(existingThemeDictionary);
-                applicationResources.MergedDictionaries[index] = newThemeDictionary;
-            }
+            if (current != null)
+                merged[merged.IndexOf(current)] = newThemeDictionary;
             else
-            {
-                applicationResources.MergedDictionaries.Add(newThemeDictionary);
-            }
+                merged.Add(newThemeDictionary);
         }
     }
 }

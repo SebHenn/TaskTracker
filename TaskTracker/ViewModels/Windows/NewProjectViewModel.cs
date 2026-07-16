@@ -62,12 +62,16 @@ namespace TaskTracker.ViewModels.Windows
             DialogResult = false;
         }
 
-        public NewProjectViewModel(ProjectViewModel projectViewModel)
+        public NewProjectViewModel(ProjectViewModel projectViewModel, Services.ILanguageService languageService)
         {
             IsTaskMode = projectViewModel.IsCreateTask || projectViewModel.IsEditTask;
-            TitleString = projectViewModel.IsEditing ? "Change current Project" : projectViewModel.IsCreateTask ? "Create new Task" : projectViewModel.IsEditTask ? "Change current Task" : "Create new Project";
-            NameString = IsTaskMode ? "Task Name" : "Project Name";
-            DescriptionString = IsTaskMode ? "Task Description" : "Project Description";
+            TitleString = languageService.GetString(
+                projectViewModel.IsEditing ? "ChangeCurrentProject"
+                : projectViewModel.IsCreateTask ? "CreateNewTask"
+                : projectViewModel.IsEditTask ? "ChangeCurrentTask"
+                : "CreateNewProject");
+            NameString = languageService.GetString(IsTaskMode ? "TaskName" : "ProjectName");
+            DescriptionString = languageService.GetString(IsTaskMode ? "TaskDescription" : "ProjectDescription");
         }
     }
 }

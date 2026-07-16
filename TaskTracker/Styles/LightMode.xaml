@@ -2,6 +2,6 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     x:Name="LightTheme">
     <ResourceDictionary.MergedDictionaries>
-        <ResourceDictionary Source="LightMode/TitleButtonLightStyle.xaml" />
+        <ResourceDictionary Source="LightMode/ColorsLight.xaml" />
     </ResourceDictionary.MergedDictionaries>
 </ResourceDictionary>

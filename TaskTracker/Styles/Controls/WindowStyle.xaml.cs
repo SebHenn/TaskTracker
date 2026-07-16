@@ -1,16 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Input;
 using System.Windows;
+using System.Windows.Input;
 
-namespace TaskTracker.Styles.DarkMode
+namespace TaskTracker.Styles.Controls
 {
-    public partial class WindowDarkStyle : ResourceDictionary
+    public partial class WindowStyleDictionary : ResourceDictionary
     {
-        public WindowDarkStyle()
+        public WindowStyleDictionary()
         {
             InitializeComponent();
         }

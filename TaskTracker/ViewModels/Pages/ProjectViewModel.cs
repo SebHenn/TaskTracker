@@ -18,13 +18,15 @@ namespace TaskTracker.ViewModels.Pages
 
     public partial class ProjectViewModel : ObservableObject
     {
-        public const string AllLabelsFilter = "All";
         private const double MaxBarHeight = 48;
 
         private IProjectsService _projectsService;
         private INavigationService _navigationService;
         private IServiceProvider _serviceProvider;
         private MainViewModel _mainViewModel;
+        private ILanguageService _languageService;
+
+        private string AllLabelsFilter => _languageService.GetString("AllLabels");
 
         [ObservableProperty]
         private string _favImage = "/Assets/starEmpty-32.png";
@@ -51,7 +53,7 @@ namespace TaskTracker.ViewModels.Pages
         private ObservableCollection<string> _availableLabels = [];
 
         [ObservableProperty]
-        private string _selectedLabelFilter = AllLabelsFilter;
+        private string _selectedLabelFilter = "";
 
         [ObservableProperty]
         private bool _hasLabels = false;
@@ -65,12 +67,15 @@ namespace TaskTracker.ViewModels.Pages
         [ObservableProperty]
         private string _archiveButtonText = "Archive";
 
-        public ProjectViewModel(MainViewModel mainViewModel, IProjectsService projectsService, INavigationService navigationService, IServiceProvider serviceProvider)
+        public ProjectViewModel(MainViewModel mainViewModel, IProjectsService projectsService, INavigationService navigationService, IServiceProvider serviceProvider, ILanguageService languageService)
         {
             _mainViewModel = mainViewModel;
             _projectsService = projectsService;
             _navigationService = navigationService;
             _serviceProvider = serviceProvider;
+            _languageService = languageService;
+            _selectedLabelFilter = AllLabelsFilter;
+            languageService.LanguageChanged += RefreshFromProject;
 
             CurrentProject = mainViewModel.SelectedProject;
             mainViewModel.PropertyChanged += (sender, args) =>
@@ -98,7 +103,7 @@ namespace TaskTracker.ViewModels.Pages
             SelectedLabelFilter = AllLabelsFilter;
             CategorizeTasks();
             SetImage();
-            ArchiveButtonText = CurrentProject?.IsArchived == true ? "Unarchive" : "Archive";
+            ArchiveButtonText = _languageService.GetString(CurrentProject?.IsArchived == true ? "Unarchive" : "Archive");
         }
 
         partial void OnSelectedLabelFilterChanged(string value) => CategorizeTasks();
@@ -152,8 +157,9 @@ namespace TaskTracker.ViewModels.Pages
             var stats = ProjectStats.Compute(CurrentProject);
             Stats = stats;
             var max = Math.Max(1, stats.DonePerWeek.Max(w => w.Count));
+            var weekOf = _languageService.GetString("WeekOf");
             WeekBars = new ObservableCollection<WeekBarItem>(stats.DonePerWeek.Select(w =>
-                new WeekBarItem($"Week of {w.WeekStart:d}", w.Count, w.Count == 0 ? 2 : MaxBarHeight * w.Count / max)));
+                new WeekBarItem($"{weekOf} {w.WeekStart:d}", w.Count, w.Count == 0 ? 2 : MaxBarHeight * w.Count / max)));
         }
 
         [RelayCommand]
@@ -181,7 +187,7 @@ namespace TaskTracker.ViewModels.Pages
             {
                 CurrentProject.IsArchived = false;
                 CurrentProject.ArchivedAtUtc = null;
-                ArchiveButtonText = "Archive";
+                ArchiveButtonText = _languageService.GetString("Archive");
                 _mainViewModel.ResortProjects();
             }
             else

@@ -15,12 +15,12 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
         <StackPanel>
-            <Label Content="{Binding Name}" FontSize="30" Foreground="White"/>
-            <TextBlock Text="{Binding Description}" FontSize="16" Foreground="LightGray" Margin="0,10,0,0"/>
+            <Label Content="{Binding Name}" FontSize="30" Foreground="{DynamicResource Brush.Text.Primary}"/>
+            <TextBlock Text="{Binding Description}" FontSize="16" Foreground="{DynamicResource Brush.Text.Secondary}" Margin="0,10,0,0"/>
         </StackPanel>
 
         <StackPanel Grid.Row="2">
-            <Label HorizontalAlignment="Center" Content="Recent Projects:" FontSize="24" Foreground="White" Margin="0,20,0,10"/>
+            <Label HorizontalAlignment="Center" Content="{DynamicResource RecentProjects}" FontSize="24" Foreground="{DynamicResource Brush.Text.Primary}" Margin="0,20,0,10"/>
             <ItemsControl ItemsSource="{Binding RecentProjects}" HorizontalAlignment="Center">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
