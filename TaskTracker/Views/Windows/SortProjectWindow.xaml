@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:TaskTracker.Views.Windows"
         mc:Ignorable="d" Background="Transparent" WindowStyle="None"
-        Title="SortProjectWindow" Height="200" Width="360"
+        Title="SortProjectWindow" Height="230" Width="360"
         WindowStartupLocation="CenterScreen"
         AllowsTransparency="True"
         ResizeMode="CanResize">
@@ -38,6 +38,7 @@
                 <CheckBox Margin="5" Foreground="White" IsChecked="{Binding IsShowEmpty}">Show Empty</CheckBox>
                 <CheckBox Margin="5" Foreground="White" IsChecked="{Binding IsShowDone}">Show Done</CheckBox>
                 <CheckBox Margin="5" Foreground="White" IsChecked="{Binding IsShowOnlyFav}">Show only Favourite</CheckBox>
+                <CheckBox Margin="5" Foreground="White" IsChecked="{Binding IsShowArchived}">Show Archived</CheckBox>
             </StackPanel>
 
             <Grid Grid.Row="4">

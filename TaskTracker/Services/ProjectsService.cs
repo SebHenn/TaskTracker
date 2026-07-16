@@ -66,6 +66,8 @@ namespace TaskTracker.Services
         {
             if (_suppressChangeEvents)
                 return;
+            // Recents hide archived projects, so any change may affect the projection.
+            RebuildRecentProjection();
             // Debounce: bursts of edits collapse into one save.
             _saveTimer.Stop();
             _saveTimer.Start();
@@ -134,7 +136,7 @@ namespace TaskTracker.Services
             foreach (var id in _recentIds)
             {
                 var project = projectModels.FirstOrDefault(p => p.Id == id);
-                if (project != null)
+                if (project != null && !project.IsArchived)
                     RecentProjects.Add(project);
             }
         }

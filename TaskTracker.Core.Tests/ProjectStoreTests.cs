@@ -170,12 +170,23 @@ public class ProjectStoreTests : IDisposable
 
         var project = new ProjectModel { Name = "P" };
         projects.Add(project);                       // collection change
+        Assert.True(count > 0);
+
+        var afterAdd = count;
         project.Name = "P2";                         // project property
+        Assert.True(count > afterAdd);
+
+        var afterRename = count;
         var task = new TaskModel { Title = "T" };
         project.Tasks.Add(task);                     // nested collection change
-        task.IsDone = true;                          // task property (added after attach); also raises the two timestamp properties
-        project.IsSelected = true;                   // ignored UI-only property
+        Assert.True(count > afterRename);
 
-        Assert.Equal(6, count);
+        var afterTaskAdd = count;
+        task.IsDone = true;                          // task property (added after attach)
+        Assert.True(count > afterTaskAdd);
+
+        var afterDone = count;
+        project.IsSelected = true;                   // ignored UI-only property
+        Assert.Equal(afterDone, count);
     }
 }

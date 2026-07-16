@@ -17,7 +17,11 @@
             <DataTemplate DataType="{x:Type viewModelPages:ProjectViewModel}">
                 <pagesViews:ProjectView/>
             </DataTemplate>
+            <DataTemplate DataType="{x:Type viewModelPages:SearchViewModel}">
+                <pagesViews:SearchView/>
+            </DataTemplate>
             <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Styles/Shared.xaml"/>
                 <ResourceDictionary Source="Styles/DarkMode.xaml"/>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>

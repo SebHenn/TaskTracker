@@ -33,6 +33,8 @@
                 
             <Rectangle Height="1" Margin="5" Fill="Black"></Rectangle>
 
+            <controls:CustomTextBox Height="30" Margin="5" Hint="Search tasks..." Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
             <Button Style="{StaticResource TitleButton}" HorizontalAlignment="Right" Margin="5" Command="{Binding SortClickCommand}">Sort</Button>
         </StackPanel>
             

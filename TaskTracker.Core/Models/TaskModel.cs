@@ -13,12 +13,14 @@ namespace TaskTracker.Core.Models
         private string _description = "";
 
         [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(IsOverdue))]
         private bool _isDone = false;
 
         [ObservableProperty]
         private Guid _id = Guid.NewGuid();
 
         [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(IsOverdue))]
         private DateTime? _dueDate;
 
         [ObservableProperty]
@@ -44,6 +46,9 @@ namespace TaskTracker.Core.Models
         /// <summary>Issue state ("open"/"closed") observed at the last sync; the 3-way merge base.</summary>
         [ObservableProperty]
         private string? _lastSyncedIssueState;
+
+        [System.Text.Json.Serialization.JsonIgnore]
+        public bool IsOverdue => !IsDone && DueDate.HasValue && DueDate.Value.Date < DateTime.Today;
 
         partial void OnIsDoneChanged(bool value)
         {

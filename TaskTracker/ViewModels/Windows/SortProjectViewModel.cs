@@ -20,6 +20,9 @@ namespace TaskTracker.ViewModels.Windows
         public bool _isShowOnlyFav;
 
         [ObservableProperty]
+        public bool _isShowArchived;
+
+        [ObservableProperty]
         private bool _dialogResult = false;
 
         [RelayCommand]
@@ -39,6 +42,7 @@ namespace TaskTracker.ViewModels.Windows
             IsShowEmpty = mainViewModel.IsShowEmpty;
             IsShowDone = mainViewModel.IsShowDone;
             IsShowOnlyFav = mainViewModel.IsShowOnlyFav;
+            IsShowArchived = mainViewModel.IsShowArchived;
         }
     }
 }

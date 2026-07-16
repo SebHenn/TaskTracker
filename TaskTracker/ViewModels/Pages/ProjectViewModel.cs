@@ -1,21 +1,26 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Extensions.DependencyInjection;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using TaskTracker.Core.Models;
+using TaskTracker.Core.Services;
+using TaskTracker.Messages;
 using TaskTracker.Services;
 using TaskTracker.ViewModels.Windows;
 using TaskTracker.Views.Windows;
 
 namespace TaskTracker.ViewModels.Pages
 {
+    public record WeekBarItem(string Tooltip, int Count, double Height);
+
     public partial class ProjectViewModel : ObservableObject
     {
+        public const string AllLabelsFilter = "All";
+        private const double MaxBarHeight = 48;
+
         private IProjectsService _projectsService;
         private INavigationService _navigationService;
         private IServiceProvider _serviceProvider;
@@ -23,23 +28,6 @@ namespace TaskTracker.ViewModels.Pages
 
         [ObservableProperty]
         private string _favImage = "/Assets/starEmpty-32.png";
-
-        [RelayCommand]
-        public void OnFavProject()
-        {
-            if (CurrentProject == null) return;
-            CurrentProject.IsFavourite = !CurrentProject.IsFavourite;
-            SetImage();
-            _mainViewModel.ResortProjects();
-        }
-
-        private void SetImage()
-        {
-            if (CurrentProject != null && CurrentProject.IsFavourite)
-                FavImage = "/Assets/starFull-32.png";
-            else
-                FavImage = "/Assets/starEmpty-32.png";
-        }
 
         [ObservableProperty]
         private ObservableCollection<TaskModel> _notDoneTasks = [];
@@ -59,6 +47,24 @@ namespace TaskTracker.ViewModels.Pages
         [ObservableProperty]
         private ProjectModel? _currentProject;
 
+        [ObservableProperty]
+        private ObservableCollection<string> _availableLabels = [];
+
+        [ObservableProperty]
+        private string _selectedLabelFilter = AllLabelsFilter;
+
+        [ObservableProperty]
+        private bool _hasLabels = false;
+
+        [ObservableProperty]
+        private ProjectStatsResult? _stats;
+
+        [ObservableProperty]
+        private ObservableCollection<WeekBarItem> _weekBars = [];
+
+        [ObservableProperty]
+        private string _archiveButtonText = "Archive";
+
         public ProjectViewModel(MainViewModel mainViewModel, IProjectsService projectsService, INavigationService navigationService, IServiceProvider serviceProvider)
         {
             _mainViewModel = mainViewModel;
@@ -72,35 +78,120 @@ namespace TaskTracker.ViewModels.Pages
                 if (args.PropertyName == nameof(mainViewModel.SelectedProject))
                 {
                     CurrentProject = mainViewModel.SelectedProject;
-
-                    CategorizeTasks();
-                    SetImage();
+                    RefreshFromProject();
                 }
             };
-            CommunityToolkit.Mvvm.Messaging.WeakReferenceMessenger.Default.Register<Messages.StoreReloadedMessage>(
+            WeakReferenceMessenger.Default.Register<StoreReloadedMessage>(
                 this, (r, m) =>
                 {
                     // MainViewModel re-resolves SelectedProject first (registration order),
                     // but re-read it here in case the PropertyChanged value was identical.
                     var vm = (ProjectViewModel)r;
                     vm.CurrentProject = vm._mainViewModel.SelectedProject;
-                    vm.CategorizeTasks();
-                    vm.SetImage();
+                    vm.RefreshFromProject();
                 });
+            RefreshFromProject();
+        }
+
+        private void RefreshFromProject()
+        {
+            SelectedLabelFilter = AllLabelsFilter;
             CategorizeTasks();
             SetImage();
+            ArchiveButtonText = CurrentProject?.IsArchived == true ? "Unarchive" : "Archive";
         }
+
+        partial void OnSelectedLabelFilterChanged(string value) => CategorizeTasks();
 
         private void CategorizeTasks()
         {
             if (CurrentProject == null)
             {
-                NotDoneTasks = new ObservableCollection<TaskModel>();
-                DoneTasks = new ObservableCollection<TaskModel>();
+                NotDoneTasks = [];
+                DoneTasks = [];
+                AvailableLabels = [];
+                HasLabels = false;
+                Stats = null;
+                WeekBars = [];
                 return;
             }
-            NotDoneTasks = new ObservableCollection<TaskModel>(CurrentProject.Tasks.Where(task => !task.IsDone));
-            DoneTasks = new ObservableCollection<TaskModel>(CurrentProject.Tasks.Where(task => task.IsDone));
+
+            var labels = CurrentProject.Tasks
+                .SelectMany(t => t.Labels)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(l => l, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+            HasLabels = labels.Count > 0;
+            AvailableLabels = new ObservableCollection<string>(labels.Prepend(AllLabelsFilter));
+            if (!AvailableLabels.Contains(SelectedLabelFilter))
+            {
+                SelectedLabelFilter = AllLabelsFilter; // triggers one clean re-categorize
+                return;
+            }
+
+            var filtered = CurrentProject.Tasks.AsEnumerable();
+            if (SelectedLabelFilter != AllLabelsFilter)
+                filtered = filtered.Where(t => t.Labels.Contains(SelectedLabelFilter, StringComparer.OrdinalIgnoreCase));
+
+            var sorted = filtered
+                .OrderByDescending(t => t.Priority)
+                .ThenBy(t => t.DueDate ?? DateTime.MaxValue)
+                .ThenBy(t => t.Title, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            NotDoneTasks = new ObservableCollection<TaskModel>(sorted.Where(task => !task.IsDone));
+            DoneTasks = new ObservableCollection<TaskModel>(sorted.Where(task => task.IsDone));
+
+            RefreshStats();
+        }
+
+        private void RefreshStats()
+        {
+            if (CurrentProject == null)
+                return;
+            var stats = ProjectStats.Compute(CurrentProject);
+            Stats = stats;
+            var max = Math.Max(1, stats.DonePerWeek.Max(w => w.Count));
+            WeekBars = new ObservableCollection<WeekBarItem>(stats.DonePerWeek.Select(w =>
+                new WeekBarItem($"Week of {w.WeekStart:d}", w.Count, w.Count == 0 ? 2 : MaxBarHeight * w.Count / max)));
+        }
+
+        [RelayCommand]
+        public void OnFavProject()
+        {
+            if (CurrentProject == null) return;
+            CurrentProject.IsFavourite = !CurrentProject.IsFavourite;
+            SetImage();
+            _mainViewModel.ResortProjects();
+        }
+
+        private void SetImage()
+        {
+            if (CurrentProject != null && CurrentProject.IsFavourite)
+                FavImage = "/Assets/starFull-32.png";
+            else
+                FavImage = "/Assets/starEmpty-32.png";
+        }
+
+        [RelayCommand]
+        private void OnArchiveProject()
+        {
+            if (CurrentProject == null) return;
+            if (CurrentProject.IsArchived)
+            {
+                CurrentProject.IsArchived = false;
+                CurrentProject.ArchivedAtUtc = null;
+                ArchiveButtonText = "Archive";
+                _mainViewModel.ResortProjects();
+            }
+            else
+            {
+                CurrentProject.IsArchived = true;
+                CurrentProject.ArchivedAtUtc = DateTime.UtcNow;
+                _mainViewModel.IsHomeSelected = true;
+                _mainViewModel.ResortProjects();
+                _navigationService.NavigateTo<HomeViewModel>();
+            }
         }
 
         [RelayCommand]
@@ -118,10 +209,8 @@ namespace TaskTracker.ViewModels.Pages
 
             if (newProjectWindow.DataContext is NewProjectViewModel vm && vm.DialogResult == true)
             {
-                string enteredName = vm.Name;
-                string enteredDescription = vm.Description;
-                _projectsService.ChangeProjectName(CurrentProject, enteredName);
-                _projectsService.ChangeProjectDescription(CurrentProject, enteredDescription);
+                _projectsService.ChangeProjectName(CurrentProject, vm.Name);
+                _projectsService.ChangeProjectDescription(CurrentProject, vm.Description);
             }
 
             IsEditing = false;
@@ -143,19 +232,23 @@ namespace TaskTracker.ViewModels.Pages
             if (CurrentProject == null) return;
             IsCreateTask = true;
 
-            TaskModel task = new TaskModel();
-
             var newProjectWindow = _serviceProvider.GetRequiredService<NewProjectWindow>();
 
             newProjectWindow.ShowDialog();
 
             if (newProjectWindow.DataContext is NewProjectViewModel vm && vm.DialogResult == true)
             {
-                string enteredName = vm.Name;
-                string enteredDescription = vm.Description;
-                task.Title = enteredName;
-                task.Description = enteredDescription;
-                task.IsDone = false;
+                var task = new TaskModel
+                {
+                    Title = vm.Name,
+                    Description = vm.Description,
+                    IsDone = false,
+                    DueDate = vm.DueDate,
+                    Priority = vm.SelectedPriority,
+                    CreatedAtUtc = DateTime.UtcNow,
+                };
+                foreach (var label in vm.ParseLabels())
+                    task.Labels.Add(label);
                 CurrentProject.Tasks.Add(task);
                 CategorizeTasks();
             }
@@ -188,6 +281,9 @@ namespace TaskTracker.ViewModels.Pages
             {
                 vm.Name = task.Title;
                 vm.Description = task.Description;
+                vm.DueDate = task.DueDate;
+                vm.SelectedPriority = task.Priority;
+                vm.LabelsText = string.Join(", ", task.Labels);
             }
 
             newProjectWindow.ShowDialog();
@@ -196,6 +292,11 @@ namespace TaskTracker.ViewModels.Pages
             {
                 task.Title = resultVm.Name;
                 task.Description = resultVm.Description;
+                task.DueDate = resultVm.DueDate;
+                task.Priority = resultVm.SelectedPriority;
+                task.Labels.Clear();
+                foreach (var label in resultVm.ParseLabels())
+                    task.Labels.Add(label);
                 CategorizeTasks();
             }
 

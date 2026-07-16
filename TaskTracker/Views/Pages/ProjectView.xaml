@@ -1,16 +1,12 @@
-﻿<UserControl x:Class="TaskTracker.Views.Pages.ProjectView"
+<UserControl x:Class="TaskTracker.Views.Pages.ProjectView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="clr-namespace:TaskTracker.Views.Pages"
              xmlns:controls="clr-namespace:TaskTracker.Controls"
-             xmlns:helpers="clr-namespace:TaskTracker.Helpers"
              mc:Ignorable="d"
              d:DesignHeight="450" d:DesignWidth="800">
-    <UserControl.Resources>
-        <helpers:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
-    </UserControl.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="auto" />
@@ -19,28 +15,89 @@
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
             <RowDefinition Height="auto" />
+            <RowDefinition Height="auto" />
+            <RowDefinition Height="auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="auto" />
         </Grid.RowDefinitions>
-        
+
         <StackPanel Grid.ColumnSpan="2">
-            <Label Content="{Binding CurrentProject.Name}" FontSize="30" Foreground="White"/>
-            <TextBlock Text="{Binding CurrentProject.Description}" FontSize="16" Foreground="LightGray" Margin="0,10,0,0"/>
+            <StackPanel Orientation="Horizontal">
+                <Label Content="{Binding CurrentProject.Name}" FontSize="30" Foreground="{DynamicResource Brush.Text.Primary}"/>
+                <Border Style="{StaticResource TaskChip}" Visibility="{Binding CurrentProject.IsArchived, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=True}">
+                    <TextBlock Style="{StaticResource TaskChipText}" Text="Archived" Foreground="{DynamicResource Brush.Text.Primary}" />
+                </Border>
+            </StackPanel>
+            <TextBlock Text="{Binding CurrentProject.Description}" FontSize="16" Foreground="{DynamicResource Brush.Text.Secondary}" Margin="0,10,0,0"/>
         </StackPanel>
 
         <StackPanel Grid.Column="2" Margin="10" Orientation="Horizontal">
-            <Button Height="30" Width="30" Style="{DynamicResource WindowButton}" Command="{Binding FavProjectCommand}" Background="White">
+            <Button Height="30" Width="30" Style="{DynamicResource WindowButton}" Command="{Binding FavProjectCommand}" Background="White" ToolTip="Favourite">
                 <Image Margin="2" Source="{Binding FavImage}" />
             </Button>
-            <Button Margin="10,0,0,0" Height="30" Width="30" Style="{DynamicResource WindowButton}" Command="{Binding ChangeProjectCommand}" Background="#FF1D45BF">
+            <Button Margin="10,0,0,0" Height="30" Width="30" Style="{DynamicResource WindowButton}" Command="{Binding ChangeProjectCommand}" Background="{DynamicResource Brush.Accent}" ToolTip="Edit project">
                 <Image Margin="2" Source="/Assets/Edit-32.png" />
             </Button>
-            <Button Margin="10,0,0,0" Height="30" Width="30" Style="{DynamicResource WindowButton}" Command="{Binding DeleteProjectCommand}" Background="#FFBF1D1D">
+            <Button Margin="10,0,0,0" Height="30" Padding="8,0" Style="{DynamicResource WindowButton}" Command="{Binding ArchiveProjectCommand}" Background="{DynamicResource Brush.Chip.Background}" Foreground="{DynamicResource Brush.Text.Primary}" Content="{Binding ArchiveButtonText}" ToolTip="Archive project" />
+            <Button Margin="10,0,0,0" Height="30" Width="30" Style="{DynamicResource WindowButton}" Command="{Binding DeleteProjectCommand}" Background="{DynamicResource Brush.Danger}" ToolTip="Delete project">
                 <Image Margin="2" Source="/Assets/Trash-32.png" />
             </Button>
         </StackPanel>
-        
-        <Grid Grid.ColumnSpan="3" Grid.Row="1" Margin="10">
+
+        <!-- Statistics -->
+        <Expander Grid.Row="1" Grid.ColumnSpan="3" Margin="10,5" Foreground="{DynamicResource Brush.Text.Primary}">
+            <Expander.Header>
+                <TextBlock Text="Statistics" FontSize="14" Foreground="{DynamicResource Brush.Text.Primary}" />
+            </Expander.Header>
+            <StackPanel Orientation="Horizontal" Margin="10,5">
+                <StackPanel Margin="0,0,30,0">
+                    <TextBlock Foreground="{DynamicResource Brush.Text.Primary}" FontSize="24" HorizontalAlignment="Center" Text="{Binding Stats.OpenCount}" />
+                    <TextBlock Foreground="{DynamicResource Brush.Text.Secondary}" Text="Open" HorizontalAlignment="Center" />
+                </StackPanel>
+                <StackPanel Margin="0,0,30,0">
+                    <TextBlock Foreground="{DynamicResource Brush.Text.Primary}" FontSize="24" HorizontalAlignment="Center" Text="{Binding Stats.DoneCount}" />
+                    <TextBlock Foreground="{DynamicResource Brush.Text.Secondary}" Text="Done" HorizontalAlignment="Center" />
+                </StackPanel>
+                <StackPanel Margin="0,0,30,0">
+                    <TextBlock Foreground="{DynamicResource Brush.Text.Primary}" FontSize="24" HorizontalAlignment="Center" Text="{Binding Stats.OverdueCount}" />
+                    <TextBlock Foreground="{DynamicResource Brush.Text.Secondary}" Text="Overdue" HorizontalAlignment="Center" />
+                </StackPanel>
+                <StackPanel Margin="0,0,40,0">
+                    <TextBlock Foreground="{DynamicResource Brush.Text.Primary}" FontSize="24" HorizontalAlignment="Center" Text="{Binding Stats.CompletionPercent, StringFormat={}{0:0}%}" />
+                    <TextBlock Foreground="{DynamicResource Brush.Text.Secondary}" Text="Complete" HorizontalAlignment="Center" />
+                </StackPanel>
+                <!-- Done-per-week bars, oldest to newest -->
+                <StackPanel>
+                    <ItemsControl ItemsSource="{Binding WeekBars}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Margin="3,0" VerticalAlignment="Bottom" ToolTip="{Binding Tooltip}">
+                                    <TextBlock Text="{Binding Count}" FontSize="10" HorizontalAlignment="Center" Foreground="{DynamicResource Brush.Text.Secondary}" />
+                                    <Rectangle Width="18" Height="{Binding Height}" Fill="{DynamicResource Brush.Accent}" RadiusX="2" RadiusY="2" VerticalAlignment="Bottom" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <TextBlock Text="Tasks completed per week" FontSize="10" Foreground="{DynamicResource Brush.Text.Secondary}" HorizontalAlignment="Center" Margin="0,3,0,0" />
+                </StackPanel>
+            </StackPanel>
+        </Expander>
+
+        <!-- Label filter -->
+        <StackPanel Grid.Row="2" Grid.ColumnSpan="3" Orientation="Horizontal" Margin="10,0,10,5"
+                    Visibility="{Binding HasLabels, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=True}">
+            <Label Content="Filter by label:" Foreground="{DynamicResource Brush.Text.Secondary}" VerticalAlignment="Center" />
+            <ComboBox MinWidth="120" VerticalAlignment="Center"
+                      ItemsSource="{Binding AvailableLabels}"
+                      SelectedItem="{Binding SelectedLabelFilter, Mode=TwoWay}" />
+        </StackPanel>
+
+        <Grid Grid.ColumnSpan="3" Grid.Row="3" Margin="10">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="*" />
@@ -52,41 +109,10 @@
                     <RowDefinition Height="auto" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
-                <Label Content="In Progress" FontSize="20" Foreground="White" Margin="0,0,0,5"/>
-                <Border Grid.Row="1" BorderBrush="LightGray" BorderThickness="1" CornerRadius="5" AllowDrop="True" Background="Transparent">
+                <Label Content="In Progress" FontSize="20" Foreground="{DynamicResource Brush.Text.Primary}" Margin="0,0,0,5"/>
+                <Border Grid.Row="1" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1" CornerRadius="5" AllowDrop="True" Background="Transparent">
                     <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Hidden">
-                        <ItemsControl ItemsSource="{Binding NotDoneTasks}">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <Border Background="CadetBlue" Margin="5" Padding="10" CornerRadius="3" Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=ItemsControl}}">
-                                        <Border.Effect>
-                                            <DropShadowEffect BlurRadius="10" ShadowDepth="0" Color="Black" Opacity="0.3" />
-                                        </Border.Effect>
-                                        <StackPanel>
-                                            <TextBlock Text="{Binding Title}" FontSize="16" FontWeight="Bold" Foreground="White" />
-                                            <TextBlock Text="{Binding Description}" FontSize="14" Foreground="White" TextWrapping="Wrap" />
-                                        </StackPanel>
-                                        <Border.ContextMenu>
-                                            <ContextMenu>
-                                                <MenuItem Header="Mark as Done" 
-                                              Command="{Binding PlacementTarget.Tag.MarkAsDoneCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" 
-                                              CommandParameter="{Binding}" 
-                                              Visibility="{Binding IsDone, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=False}"/>
-                                                <MenuItem Header="Mark as In Progress" 
-                                              Command="{Binding PlacementTarget.Tag.MarkAsInProgressCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" 
-                                              CommandParameter="{Binding}" 
-                                              Visibility="{Binding IsDone, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=True}"/>
-                                                <MenuItem Header="Edit Task" 
-                                              Command="{Binding PlacementTarget.Tag.EditTaskCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" 
-                                              CommandParameter="{Binding}" />
-                                                <MenuItem Header="Delete Task" 
-                                              Command="{Binding PlacementTarget.Tag.DeleteTaskCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" 
-                                              CommandParameter="{Binding}" />
-                                            </ContextMenu>
-                                        </Border.ContextMenu>
-                                    </Border>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
+                        <ItemsControl ItemsSource="{Binding NotDoneTasks}" ItemTemplate="{DynamicResource TaskCardTemplate}">
                             <ItemsControl.ItemContainerStyle>
                                 <Style TargetType="ContentPresenter">
                                     <EventSetter Event="PreviewMouseLeftButtonDown" Handler="OnTaskPreviewMouseLeftButtonDown" />
@@ -103,41 +129,10 @@
                     <RowDefinition Height="auto" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
-                <Label Content="Done" FontSize="20" Foreground="White" Margin="0,0,0,5"/>
-                <Border Grid.Row="1" BorderBrush="LightGray" BorderThickness="1" CornerRadius="5" AllowDrop="True" Background="Transparent">
+                <Label Content="Done" FontSize="20" Foreground="{DynamicResource Brush.Text.Primary}" Margin="0,0,0,5"/>
+                <Border Grid.Row="1" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1" CornerRadius="5" AllowDrop="True" Background="Transparent">
                     <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Hidden">
-                        <ItemsControl ItemsSource="{Binding DoneTasks}">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <Border Background="CadetBlue" Margin="5" Padding="10" Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=ItemsControl}}" CornerRadius="3">
-                                        <Border.Effect>
-                                            <DropShadowEffect BlurRadius="10" ShadowDepth="0" Color="Black" Opacity="0.3" />
-                                        </Border.Effect>
-                                        <StackPanel>
-                                            <TextBlock Text="{Binding Title}" FontSize="16" FontWeight="Bold" Foreground="White" />
-                                            <TextBlock Text="{Binding Description}" FontSize="14" Foreground="White" TextWrapping="Wrap" />
-                                        </StackPanel>
-                                        <Border.ContextMenu>
-                                            <ContextMenu>
-                                                <MenuItem Header="Mark as Done" 
-                                                  Command="{Binding PlacementTarget.Tag.MarkAsDoneCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" 
-                                                  CommandParameter="{Binding}" 
-                                                  Visibility="{Binding IsDone, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=False}"/>
-                                                <MenuItem Header="Mark as In Progress" 
-                                                  Command="{Binding PlacementTarget.Tag.MarkAsInProgressCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" 
-                                                  CommandParameter="{Binding}" 
-                                                  Visibility="{Binding IsDone, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=True}"/>
-                                                <MenuItem Header="Edit Task" 
-                                                  Command="{Binding PlacementTarget.Tag.EditTaskCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" 
-                                                  CommandParameter="{Binding}" />
-                                                <MenuItem Header="Delete Task" 
-                                                  Command="{Binding PlacementTarget.Tag.DeleteTaskCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" 
-                                                  CommandParameter="{Binding}" />
-                                            </ContextMenu>
-                                        </Border.ContextMenu>
-                                    </Border>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
+                        <ItemsControl ItemsSource="{Binding DoneTasks}" ItemTemplate="{DynamicResource TaskCardTemplate}">
                             <ItemsControl.ItemContainerStyle>
                                 <Style TargetType="ContentPresenter">
                                     <EventSetter Event="PreviewMouseLeftButtonDown" Handler="OnTaskPreviewMouseLeftButtonDown" />
@@ -148,7 +143,7 @@
                 </Border>
             </Grid>
         </Grid>
-        
-        <controls:SideBarItem Grid.Row="2" Command="{Binding NewTaskClickCommand}" Image="/Assets/Add-32.png" Margin="5" Height="40">Add Task</controls:SideBarItem>
+
+        <controls:SideBarItem Grid.Row="4" Command="{Binding NewTaskClickCommand}" Image="/Assets/Add-32.png" Margin="5" Height="40">Add Task</controls:SideBarItem>
     </Grid>
 </UserControl>

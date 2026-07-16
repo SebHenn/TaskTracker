@@ -102,6 +102,36 @@ namespace TaskTracker.ViewModels.Windows
         [ObservableProperty]
         public bool _isShowOnlyFav = false;
 
+        [ObservableProperty]
+        public bool _isShowArchived = false;
+
+        [ObservableProperty]
+        private string _searchText = "";
+
+        partial void OnSearchTextChanged(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                if (NavigationService.CurrentView is SearchViewModel)
+                {
+                    IsHomeSelected = true;
+                    NavigationService.NavigateTo<HomeViewModel>();
+                }
+                return;
+            }
+
+            var searchViewModel = _serviceProvider.GetRequiredService<SearchViewModel>();
+            searchViewModel.RunSearch(value.Trim());
+            if (NavigationService.CurrentView is not SearchViewModel)
+            {
+                IsHomeSelected = false;
+                IsSettingsSelected = false;
+                if (SelectedProject != null)
+                    SelectedProject.IsSelected = false;
+                NavigationService.NavigateTo<SearchViewModel>();
+            }
+        }
+
         [RelayCommand]
         private void OnSortClick()
         {
@@ -114,6 +144,7 @@ namespace TaskTracker.ViewModels.Windows
                 IsShowEmpty = vm.IsShowEmpty;
                 IsShowDone = vm.IsShowDone;
                 IsShowOnlyFav = vm.IsShowOnlyFav;
+                IsShowArchived = vm.IsShowArchived;
                 ResortProjects();
             }
         }
@@ -122,6 +153,9 @@ namespace TaskTracker.ViewModels.Windows
         {
             var filteredProjects = Projects.Where(p =>
             {
+                if (p.IsArchived && !IsShowArchived)
+                    return false;
+
                 if(IsShowOnlyFav && !p.IsFavourite)
                     return false;
 

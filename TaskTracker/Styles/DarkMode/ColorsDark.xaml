@@ -1,0 +1,20 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Semantic brushes for the dark theme. LightMode defines the same keys. -->
+    <SolidColorBrush x:Key="Brush.Window.Background" Color="#FF383333" />
+    <SolidColorBrush x:Key="Brush.Content.Background" Color="#FF1D1B1B" />
+    <SolidColorBrush x:Key="Brush.Card.Background" Color="#FF5F9EA0" />
+    <SolidColorBrush x:Key="Brush.Text.Primary" Color="White" />
+    <SolidColorBrush x:Key="Brush.Text.Secondary" Color="LightGray" />
+    <SolidColorBrush x:Key="Brush.Text.OnCard" Color="White" />
+    <SolidColorBrush x:Key="Brush.Border" Color="LightGray" />
+    <SolidColorBrush x:Key="Brush.Divider" Color="Black" />
+    <SolidColorBrush x:Key="Brush.Accent" Color="#FF1D45BF" />
+    <SolidColorBrush x:Key="Brush.Danger" Color="#FFBF1D1D" />
+    <SolidColorBrush x:Key="Brush.Chip.Background" Color="#33FFFFFF" />
+    <SolidColorBrush x:Key="Brush.Priority.Low" Color="#FF66BB6A" />
+    <SolidColorBrush x:Key="Brush.Priority.Medium" Color="#FFFFB74D" />
+    <SolidColorBrush x:Key="Brush.Priority.High" Color="#FFEF5350" />
+
+</ResourceDictionary>
