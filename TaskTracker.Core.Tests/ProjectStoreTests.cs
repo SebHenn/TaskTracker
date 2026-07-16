@@ -173,9 +173,9 @@ public class ProjectStoreTests : IDisposable
         project.Name = "P2";                         // project property
         var task = new TaskModel { Title = "T" };
         project.Tasks.Add(task);                     // nested collection change
-        task.IsDone = true;                          // task property (added after attach)
+        task.IsDone = true;                          // task property (added after attach); also raises the two timestamp properties
         project.IsSelected = true;                   // ignored UI-only property
 
-        Assert.Equal(4, count);
+        Assert.Equal(6, count);
     }
 }

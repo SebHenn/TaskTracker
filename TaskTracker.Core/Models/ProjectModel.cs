@@ -1,13 +1,7 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Threading.Tasks;
 
 namespace TaskTracker.Core.Models
 {
@@ -31,5 +25,25 @@ namespace TaskTracker.Core.Models
 
         [ObservableProperty]
         private Guid _id = Guid.NewGuid();
+
+        /// <summary>Owner of the linked GitHub repository, or null when not linked.</summary>
+        [ObservableProperty]
+        private string? _gitHubOwner;
+
+        /// <summary>Name of the linked GitHub repository, or null when not linked.</summary>
+        [ObservableProperty]
+        private string? _gitHubRepo;
+
+        [ObservableProperty]
+        private DateTime? _lastSyncedAtUtc;
+
+        [ObservableProperty]
+        private bool _isArchived = false;
+
+        [ObservableProperty]
+        private DateTime? _archivedAtUtc;
+
+        [JsonIgnore]
+        public bool IsGitHubLinked => !string.IsNullOrWhiteSpace(GitHubOwner) && !string.IsNullOrWhiteSpace(GitHubRepo);
     }
 }
