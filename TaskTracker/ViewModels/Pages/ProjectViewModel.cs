@@ -5,6 +5,9 @@ using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading.Tasks;
+using System.Windows;
+using TaskTracker.Core.GitHub;
 using TaskTracker.Core.Models;
 using TaskTracker.Core.Services;
 using TaskTracker.Messages;
@@ -25,6 +28,8 @@ namespace TaskTracker.ViewModels.Pages
         private IServiceProvider _serviceProvider;
         private MainViewModel _mainViewModel;
         private ILanguageService _languageService;
+        private ISettingsService _settingsService;
+        private readonly GitHubSyncService _gitHubSyncService = new();
 
         private string AllLabelsFilter => _languageService.GetString("AllLabels");
 
@@ -67,13 +72,23 @@ namespace TaskTracker.ViewModels.Pages
         [ObservableProperty]
         private string _archiveButtonText = "Archive";
 
-        public ProjectViewModel(MainViewModel mainViewModel, IProjectsService projectsService, INavigationService navigationService, IServiceProvider serviceProvider, ILanguageService languageService)
+        [ObservableProperty]
+        private bool _isSyncing = false;
+
+        [ObservableProperty]
+        private bool _isGitHubLinked = false;
+
+        [ObservableProperty]
+        private string _lastSyncedText = "";
+
+        public ProjectViewModel(MainViewModel mainViewModel, IProjectsService projectsService, INavigationService navigationService, IServiceProvider serviceProvider, ILanguageService languageService, ISettingsService settingsService)
         {
             _mainViewModel = mainViewModel;
             _projectsService = projectsService;
             _navigationService = navigationService;
             _serviceProvider = serviceProvider;
             _languageService = languageService;
+            _settingsService = settingsService;
             _selectedLabelFilter = AllLabelsFilter;
             languageService.LanguageChanged += RefreshFromProject;
 
@@ -104,6 +119,75 @@ namespace TaskTracker.ViewModels.Pages
             CategorizeTasks();
             SetImage();
             ArchiveButtonText = _languageService.GetString(CurrentProject?.IsArchived == true ? "Unarchive" : "Archive");
+            RefreshGitHubState();
+        }
+
+        private void RefreshGitHubState()
+        {
+            IsGitHubLinked = CurrentProject?.IsGitHubLinked == true;
+            LastSyncedText = !IsGitHubLinked ? ""
+                : CurrentProject!.LastSyncedAtUtc == null
+                    ? _languageService.GetString("NeverSynced")
+                    : $"{_languageService.GetString("LastSynced")}: {CurrentProject.LastSyncedAtUtc.Value.ToLocalTime():g}";
+        }
+
+        [RelayCommand]
+        private void OnLinkGitHub()
+        {
+            if (CurrentProject == null) return;
+
+            var window = _serviceProvider.GetRequiredService<LinkGitHubWindow>();
+            if (window.DataContext is LinkGitHubViewModel vm)
+            {
+                vm.Owner = CurrentProject.GitHubOwner ?? "";
+                vm.Repo = CurrentProject.GitHubRepo ?? "";
+            }
+
+            window.ShowDialog();
+
+            if (window.DataContext is LinkGitHubViewModel resultVm && resultVm.DialogResult)
+            {
+                var owner = resultVm.Owner.Trim();
+                var repo = resultVm.Repo.Trim();
+                CurrentProject.GitHubOwner = string.IsNullOrWhiteSpace(owner) ? null : owner;
+                CurrentProject.GitHubRepo = string.IsNullOrWhiteSpace(repo) ? null : repo;
+                if (!CurrentProject.IsGitHubLinked)
+                    CurrentProject.LastSyncedAtUtc = null;
+                RefreshGitHubState();
+            }
+        }
+
+        [RelayCommand]
+        private async Task OnSyncGitHub()
+        {
+            if (CurrentProject == null || !CurrentProject.IsGitHubLinked || IsSyncing)
+                return;
+
+            var settings = _settingsService.Settings;
+            var token = TokenProtector.Unprotect(settings.GitHubTokenProtected, settings.GitHubTokenIsPlaintext);
+            if (string.IsNullOrEmpty(token))
+            {
+                MessageBox.Show(_languageService.GetString("NoTokenConfigured"));
+                return;
+            }
+
+            IsSyncing = true;
+            try
+            {
+                // Await on the UI thread: model mutations happen in dispatcher
+                // continuations, HTTP calls run off-thread in between.
+                await _gitHubSyncService.SyncAsync(CurrentProject, new GitHubApi(token));
+                CategorizeTasks();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"{_languageService.GetString("SyncFailed")}: {ex.Message}");
+            }
+            finally
+            {
+                IsSyncing = false;
+                RefreshGitHubState();
+            }
         }
 
         partial void OnSelectedLabelFilterChanged(string value) => CategorizeTasks();

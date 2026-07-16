@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
+using TaskTracker.Core.GitHub;
 using TaskTracker.Services;
 
 namespace TaskTracker.ViewModels.Pages
@@ -25,6 +26,9 @@ namespace TaskTracker.ViewModels.Pages
             _selectedLanguage = AvailableLanguages.FirstOrDefault(c => c.Name == _settingsService.Settings.Language)
                                 ?? AvailableLanguages.First();
             _isDark = _settingsService.Settings.Theme != "light";
+            _autoSyncEnabled = _settingsService.Settings.AutoSyncEnabled;
+            RefreshTokenStatus();
+            _languageService.LanguageChanged += RefreshTokenStatus;
         }
 
         public List<CultureInfo> AvailableLanguages { get; }
@@ -55,6 +59,54 @@ namespace TaskTracker.ViewModels.Pages
             _themeService.ChangeTheme(value ? "dark" : "light");
             _settingsService.Settings.Theme = value ? "dark" : "light";
             _settingsService.Save();
+        }
+
+        /// <summary>Set from the view's PasswordBox (PasswordBox does not support binding).</summary>
+        public string PendingToken { private get; set; } = "";
+
+        [ObservableProperty]
+        private string _tokenStatusText = "";
+
+        [ObservableProperty]
+        private bool _showPlaintextWarning;
+
+        [ObservableProperty]
+        private bool _autoSyncEnabled;
+
+        partial void OnAutoSyncEnabledChanged(bool value)
+        {
+            _settingsService.Settings.AutoSyncEnabled = value;
+            _settingsService.Save();
+        }
+
+        [RelayCommand]
+        private void OnSaveToken()
+        {
+            var token = PendingToken.Trim();
+            if (token.Length == 0)
+                return;
+            var (protectedValue, isPlaintext) = TokenProtector.Protect(token);
+            _settingsService.Settings.GitHubTokenProtected = protectedValue;
+            _settingsService.Settings.GitHubTokenIsPlaintext = isPlaintext;
+            _settingsService.Save();
+            PendingToken = "";
+            RefreshTokenStatus();
+        }
+
+        [RelayCommand]
+        private void OnClearToken()
+        {
+            _settingsService.Settings.GitHubTokenProtected = null;
+            _settingsService.Settings.GitHubTokenIsPlaintext = false;
+            _settingsService.Save();
+            RefreshTokenStatus();
+        }
+
+        private void RefreshTokenStatus()
+        {
+            var hasToken = !string.IsNullOrEmpty(_settingsService.Settings.GitHubTokenProtected);
+            TokenStatusText = _languageService.GetString(hasToken ? "TokenSaved" : "TokenNotSaved");
+            ShowPlaintextWarning = !OperatingSystem.IsWindows() || (hasToken && _settingsService.Settings.GitHubTokenIsPlaintext);
         }
 
         [RelayCommand]

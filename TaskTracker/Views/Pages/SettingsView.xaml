@@ -53,6 +53,27 @@
                 </StackPanel>
             </Border>
 
+            <!-- GitHub -->
+            <Border Style="{StaticResource SettingsGroup}">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource GroupHeader}" Text="{DynamicResource GitHub}" />
+                    <TextBlock Style="{StaticResource SettingLabel}" Text="{DynamicResource GitHubTokenLabel}" Margin="0,0,0,5" />
+                    <StackPanel Orientation="Horizontal">
+                        <PasswordBox x:Name="TokenBox" Width="280" Height="28" VerticalContentAlignment="Center" PasswordChanged="TokenBox_PasswordChanged" />
+                        <Button Style="{DynamicResource WindowButton}" Padding="8,3" Margin="10,0,0,0" Command="{Binding SaveTokenCommand}" Content="{DynamicResource SaveToken}"></Button>
+                        <Button Style="{DynamicResource WindowButton}" Padding="8,3" Margin="10,0,0,0" Command="{Binding ClearTokenCommand}" Content="{DynamicResource ClearToken}"></Button>
+                    </StackPanel>
+                    <TextBlock Style="{StaticResource SettingLabel}" Margin="0,8,0,0" Text="{Binding TokenStatusText}" />
+                    <TextBlock Margin="0,4,0,0" FontSize="12" Foreground="{DynamicResource Brush.Danger}" TextWrapping="Wrap"
+                               Text="{DynamicResource TokenPlaintextWarning}"
+                               Visibility="{Binding ShowPlaintextWarning, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=True}" />
+                    <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                        <CheckBox IsChecked="{Binding AutoSyncEnabled, Mode=TwoWay}" VerticalAlignment="Center" />
+                        <TextBlock Style="{StaticResource SettingLabel}" Margin="8,0,0,0" Text="{DynamicResource AutoSync}" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
             <!-- Data -->
             <Border Style="{StaticResource SettingsGroup}">
                 <StackPanel>

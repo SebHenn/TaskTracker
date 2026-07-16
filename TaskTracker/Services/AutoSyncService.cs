@@ -1,0 +1,65 @@
+using System;
+using System.Linq;
+using System.Windows.Threading;
+using TaskTracker.Core.GitHub;
+
+namespace TaskTracker.Services
+{
+    /// <summary>
+    /// Optional background refresh: every 15 minutes, syncs all GitHub-linked,
+    /// non-archived projects when enabled in settings. Failures are silent —
+    /// the manual Sync button surfaces errors.
+    /// </summary>
+    public class AutoSyncService : IDisposable
+    {
+        private readonly IProjectsService _projectsService;
+        private readonly ISettingsService _settingsService;
+        private readonly GitHubSyncService _sync = new();
+        private readonly DispatcherTimer _timer;
+        private bool _running;
+
+        public AutoSyncService(IProjectsService projectsService, ISettingsService settingsService)
+        {
+            _projectsService = projectsService;
+            _settingsService = settingsService;
+            _timer = new DispatcherTimer { Interval = TimeSpan.FromMinutes(15) };
+            _timer.Tick += async (_, _) => await TickAsync();
+            _timer.Start();
+        }
+
+        private async System.Threading.Tasks.Task TickAsync()
+        {
+            if (_running || !_settingsService.Settings.AutoSyncEnabled)
+                return;
+
+            var token = TokenProtector.Unprotect(
+                _settingsService.Settings.GitHubTokenProtected,
+                _settingsService.Settings.GitHubTokenIsPlaintext);
+            if (string.IsNullOrEmpty(token))
+                return;
+
+            _running = true;
+            try
+            {
+                var api = new GitHubApi(token);
+                foreach (var project in _projectsService.projectModels.Where(p => p.IsGitHubLinked && !p.IsArchived).ToList())
+                {
+                    try
+                    {
+                        await _sync.SyncAsync(project, api);
+                    }
+                    catch (Exception)
+                    {
+                        // Silent by design; the next manual sync will surface problems.
+                    }
+                }
+            }
+            finally
+            {
+                _running = false;
+            }
+        }
+
+        public void Dispose() => _timer.Stop();
+    }
+}

@@ -38,6 +38,10 @@ namespace TaskTracker
                 provider.GetRequiredService<SortProjectViewModel>()));
             services.AddTransient<NewProjectViewModel>();
             services.AddTransient<SortProjectViewModel>();
+            services.AddTransient<LinkGitHubWindow>(provider => new LinkGitHubWindow(
+                provider.GetRequiredService<LinkGitHubViewModel>()));
+            services.AddTransient<LinkGitHubViewModel>();
+            services.AddSingleton<AutoSyncService>();
 
 
             services.AddSingleton<INavigationService, NavigationService>();
@@ -66,6 +70,8 @@ namespace TaskTracker
             base.OnStartup(e);
 
             langservice.ChangeLanguage(settings.Language);
+
+            _serviceProvider.GetRequiredService<AutoSyncService>();
         }
 
         protected override void OnExit(ExitEventArgs e)
