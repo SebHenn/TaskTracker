@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "tasktracker": {
+      "type": "stdio",
+      "command": "dotnet",
+      "args": ["run", "--project", "TaskTracker.Mcp", "-c", "Release"]
+    }
+  }
+}
