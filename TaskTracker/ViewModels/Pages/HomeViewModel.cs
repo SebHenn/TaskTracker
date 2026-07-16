@@ -8,7 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using TaskTracker.Messages;
-using TaskTracker.Models;
+using TaskTracker.Core.Models;
 using TaskTracker.Services;
 using TaskTracker.ViewModels.Windows;
 

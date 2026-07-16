@@ -34,6 +34,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\TaskTracker.Core\TaskTracker.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Resource Include="Assets\Add-32.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>

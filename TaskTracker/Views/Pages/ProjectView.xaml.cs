@@ -13,7 +13,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-using TaskTracker.Models;
+using TaskTracker.Core.Models;
 using TaskTracker.ViewModels.Pages;
 
 namespace TaskTracker.Views.Pages

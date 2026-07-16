@@ -8,7 +8,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace TaskTracker.Models
+namespace TaskTracker.Core.Models
 {
     public partial class ProjectModel : ObservableObject
     {

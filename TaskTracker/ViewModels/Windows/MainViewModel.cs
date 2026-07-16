@@ -1,4 +1,5 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
+using TaskTracker.Core.Storage;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,7 +12,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using TaskTracker.Messages;
-using TaskTracker.Models;
+using TaskTracker.Core.Models;
 using TaskTracker.Services;
 using TaskTracker.ViewModels.Pages;
 using TaskTracker.Views.Windows;

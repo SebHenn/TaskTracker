@@ -6,9 +6,9 @@ using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
-using TaskTracker.Models;
+using TaskTracker.Core.Models;
 
-namespace TaskTracker
+namespace TaskTracker.Core.Storage
 {
     public class Config
     {

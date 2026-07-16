@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace TaskTracker.Models
+namespace TaskTracker.Core.Models
 {
     public partial class TaskModel : ObservableObject
     {

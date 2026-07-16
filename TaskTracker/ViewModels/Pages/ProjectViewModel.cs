@@ -7,7 +7,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using TaskTracker.Models;
+using TaskTracker.Core.Models;
 using TaskTracker.Services;
 using TaskTracker.ViewModels.Windows;
 using TaskTracker.Views.Windows;

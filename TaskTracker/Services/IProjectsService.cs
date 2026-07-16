@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
-using TaskTracker.Models;
+using TaskTracker.Core.Models;
 
 namespace TaskTracker.Services
 {
