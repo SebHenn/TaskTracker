@@ -116,8 +116,105 @@
                       SelectedItem="{Binding SelectedLabelFilter, Mode=TwoWay}" />
         </StackPanel>
 
+        <!-- Task detail panel (right side, visible when a task is selected) -->
+        <Border Grid.Column="2" Grid.Row="3" Grid.RowSpan="2" Width="320" Margin="5,10,10,10" Padding="12"
+                BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1" CornerRadius="5"
+                Background="{DynamicResource Brush.Content.Background}" Panel.ZIndex="1"
+                Visibility="{Binding IsDetailOpen, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=True}">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="auto" />
+                        </Grid.ColumnDefinitions>
+                        <controls:CustomTextBox Height="30" FontWeight="Bold" Text="{Binding SelectedTask.Title, Mode=TwoWay}" />
+                        <Button Grid.Column="1" Style="{DynamicResource TitleButton}" Width="26" Height="26" Command="{Binding CloseTaskDetailCommand}">✖</Button>
+                    </Grid>
+
+                    <Label Margin="0,8,0,0" Foreground="{DynamicResource Brush.Text.Secondary}" Content="{DynamicResource TaskDescription}" />
+                    <TextBox MinLines="5" MaxLines="12" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"
+                             Text="{Binding SelectedTask.Description, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                    <Grid Margin="0,8,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="10" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <Label Foreground="{DynamicResource Brush.Text.Secondary}" Content="{DynamicResource DueDate}" />
+                            <DatePicker SelectedDate="{Binding SelectedTask.DueDate, Mode=TwoWay}" Height="28" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <Label Foreground="{DynamicResource Brush.Text.Secondary}" Content="{DynamicResource Priority}" />
+                            <ComboBox ItemsSource="{Binding Priorities}" SelectedItem="{Binding SelectedTask.Priority, Mode=TwoWay}" Height="28" />
+                        </StackPanel>
+                    </Grid>
+
+                    <Label Margin="0,8,0,0" Foreground="{DynamicResource Brush.Text.Secondary}" Content="{DynamicResource LabelsCommaSeparated}" />
+                    <controls:CustomTextBox Height="28" Text="{Binding SelectedTaskLabelsText, Mode=TwoWay}" />
+
+                    <!-- Checklist -->
+                    <Label Margin="0,10,0,0" Foreground="{DynamicResource Brush.Text.Secondary}" Content="{DynamicResource Checklist}" />
+                    <ItemsControl ItemsSource="{Binding SelectedTask.SubTasks}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="0,2">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <CheckBox IsChecked="{Binding IsDone, Mode=TwoWay}" VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="1" Text="{Binding Title}" Margin="6,0,0,0" VerticalAlignment="Center"
+                                               Foreground="{DynamicResource Brush.Text.Primary}" TextWrapping="Wrap">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsDone}" Value="True">
+                                                        <Setter Property="TextDecorations" Value="Strikethrough" />
+                                                        <Setter Property="Opacity" Value="0.6" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                    <Button Grid.Column="2" Style="{DynamicResource TitleButton}" Width="22" Height="22" FontSize="10"
+                                            Command="{Binding DataContext.DeleteSubTaskCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            CommandParameter="{Binding}">✖</Button>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <Grid Margin="0,4,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="auto" />
+                        </Grid.ColumnDefinitions>
+                        <controls:CustomTextBox Height="26" Text="{Binding NewSubTaskText, Mode=TwoWay}" Hint="{DynamicResource AddSubTaskHint}" />
+                        <Button Grid.Column="1" Style="{DynamicResource TitleButton}" Width="26" Height="26" Command="{Binding AddSubTaskCommand}">＋</Button>
+                    </Grid>
+
+                    <!-- Metadata -->
+                    <StackPanel Margin="0,12,0,0">
+                        <TextBlock FontSize="11" Foreground="{DynamicResource Brush.Text.Secondary}">
+                            <Run Text="{DynamicResource CreatedLabel}" />: <Run Text="{Binding SelectedTask.CreatedAtUtc, Mode=OneWay, StringFormat={}{0:g}}" />
+                        </TextBlock>
+                        <TextBlock FontSize="11" Foreground="{DynamicResource Brush.Text.Secondary}">
+                            <Run Text="{DynamicResource CompletedLabel}" />: <Run Text="{Binding SelectedTask.CompletedAtUtc, Mode=OneWay, StringFormat={}{0:g}}" />
+                        </TextBlock>
+                        <TextBlock FontSize="11" Foreground="{DynamicResource Brush.Text.Secondary}"
+                                   Visibility="{Binding IsGitHubLinked, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=True}">
+                            <Run Text="GitHub" />: <Run Text="{Binding SelectedTask.GitHubIssueNumber, Mode=OneWay, StringFormat={}#{0}}" />
+                        </TextBlock>
+                    </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
+
         <!-- Board lanes, one per column -->
-        <ItemsControl Grid.ColumnSpan="3" Grid.Row="3" Margin="10" ItemsSource="{Binding Lanes}">
+        <ItemsControl Grid.ColumnSpan="2" Grid.Row="3" Margin="10" ItemsSource="{Binding Lanes}">
             <ItemsControl.ItemsPanel>
                 <ItemsPanelTemplate>
                     <UniformGrid Rows="1" />
@@ -140,6 +237,8 @@
                                     <ItemsControl.ItemContainerStyle>
                                         <Style TargetType="ContentPresenter">
                                             <EventSetter Event="PreviewMouseLeftButtonDown" Handler="OnTaskPreviewMouseLeftButtonDown" />
+                                            <EventSetter Event="PreviewMouseMove" Handler="OnTaskPreviewMouseMove" />
+                                            <EventSetter Event="PreviewMouseLeftButtonUp" Handler="OnTaskPreviewMouseLeftButtonUp" />
                                         </Style>
                                     </ItemsControl.ItemContainerStyle>
                                 </ItemsControl>

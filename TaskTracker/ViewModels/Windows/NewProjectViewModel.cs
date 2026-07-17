@@ -45,10 +45,7 @@ namespace TaskTracker.ViewModels.Windows
 
         public int WindowHeight => IsTaskMode ? 430 : 300;
 
-        public List<string> ParseLabels() =>
-            LabelsText.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToList();
+        public List<string> ParseLabels() => Core.Services.LabelParser.Parse(LabelsText);
 
         [RelayCommand]
         private void OnConfirm()

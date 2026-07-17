@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Extensions.DependencyInjection;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
@@ -72,6 +73,31 @@ namespace TaskTracker.ViewModels.Pages
 
         [ObservableProperty]
         private bool _isSyncing = false;
+
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(IsDetailOpen))]
+        private TaskModel? _selectedTask;
+
+        public bool IsDetailOpen => SelectedTask != null;
+
+        /// <summary>Comma-separated labels of the selected task; parsed back on set.</summary>
+        public string SelectedTaskLabelsText
+        {
+            get => SelectedTask == null ? "" : string.Join(", ", SelectedTask.Labels);
+            set
+            {
+                if (SelectedTask == null) return;
+                SelectedTask.Labels.Clear();
+                foreach (var label in LabelParser.Parse(value))
+                    SelectedTask.Labels.Add(label);
+                OnPropertyChanged();
+            }
+        }
+
+        [ObservableProperty]
+        private string _newSubTaskText = "";
+
+        public IReadOnlyList<TaskPriority> Priorities { get; } = new[] { TaskPriority.Low, TaskPriority.Medium, TaskPriority.High };
 
         [ObservableProperty]
         private bool _isGitHubLinked = false;
@@ -234,6 +260,37 @@ namespace TaskTracker.ViewModels.Pages
             RefreshStats();
         }
 
+        [RelayCommand]
+        public void OnOpenTaskDetail(TaskModel task)
+        {
+            SelectedTask = task;
+            NewSubTaskText = "";
+            OnPropertyChanged(nameof(SelectedTaskLabelsText));
+        }
+
+        [RelayCommand]
+        private void OnCloseTaskDetail()
+        {
+            SelectedTask = null;
+            // Title/priority/due/label edits can affect sorting and filters.
+            CategorizeTasks();
+        }
+
+        [RelayCommand]
+        private void OnAddSubTask()
+        {
+            if (SelectedTask == null || string.IsNullOrWhiteSpace(NewSubTaskText))
+                return;
+            SelectedTask.SubTasks.Add(new SubTaskModel { Title = NewSubTaskText.Trim() });
+            NewSubTaskText = "";
+        }
+
+        [RelayCommand]
+        private void OnDeleteSubTask(SubTaskModel subTask)
+        {
+            SelectedTask?.SubTasks.Remove(subTask);
+        }
+
         /// <summary>Called from the view's drop handler.</summary>
         public void MoveTask(Guid taskId, ColumnLaneViewModel targetLane)
         {
@@ -387,40 +444,16 @@ namespace TaskTracker.ViewModels.Pages
         [RelayCommand]
         private void OnEditTask(TaskModel task)
         {
-            IsEditTask = true;
-
-            var newProjectWindow = _serviceProvider.GetRequiredService<NewProjectWindow>();
-
-            if (newProjectWindow.DataContext is NewProjectViewModel vm)
-            {
-                vm.Name = task.Title;
-                vm.Description = task.Description;
-                vm.DueDate = task.DueDate;
-                vm.SelectedPriority = task.Priority;
-                vm.LabelsText = string.Join(", ", task.Labels);
-            }
-
-            newProjectWindow.ShowDialog();
-
-            if (newProjectWindow.DataContext is NewProjectViewModel resultVm && resultVm.DialogResult == true)
-            {
-                task.Title = resultVm.Name;
-                task.Description = resultVm.Description;
-                task.DueDate = resultVm.DueDate;
-                task.Priority = resultVm.SelectedPriority;
-                task.Labels.Clear();
-                foreach (var label in resultVm.ParseLabels())
-                    task.Labels.Add(label);
-                CategorizeTasks();
-            }
-
-            IsEditTask = false;
+            // Editing happens in the detail panel now.
+            OnOpenTaskDetail(task);
         }
 
         [RelayCommand]
         private void OnDeleteTask(TaskModel task)
         {
             if (CurrentProject == null) return;
+            if (SelectedTask == task)
+                SelectedTask = null;
             CurrentProject.Tasks.Remove(task);
             CategorizeTasks();
         }

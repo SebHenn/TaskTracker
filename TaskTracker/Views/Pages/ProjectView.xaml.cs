@@ -12,6 +12,10 @@ namespace TaskTracker.Views.Pages
     /// </summary>
     public partial class ProjectView : UserControl
     {
+        private Point _dragStart;
+        private TaskModel? _pressedTask;
+        private bool _dragStarted;
+
         public ProjectView()
         {
             InitializeComponent();
@@ -32,12 +36,41 @@ namespace TaskTracker.Views.Pages
             e.Effects = e.Data.GetDataPresent(typeof(Guid)) ? DragDropEffects.Move : DragDropEffects.None;
         }
 
+        // A press arms a potential drag; actual dragging starts only after the
+        // mouse moves past the system threshold, so a plain click falls through
+        // to mouse-up and opens the detail panel instead.
         private void OnTaskPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
-            if ((sender as FrameworkElement)?.DataContext is TaskModel task)
+            _pressedTask = (sender as FrameworkElement)?.DataContext as TaskModel;
+            _dragStart = e.GetPosition(this);
+            _dragStarted = false;
+        }
+
+        private void OnTaskPreviewMouseMove(object sender, MouseEventArgs e)
+        {
+            if (_pressedTask == null || _dragStarted || e.LeftButton != MouseButtonState.Pressed)
+                return;
+
+            var delta = e.GetPosition(this) - _dragStart;
+            if (Math.Abs(delta.X) < SystemParameters.MinimumHorizontalDragDistance &&
+                Math.Abs(delta.Y) < SystemParameters.MinimumVerticalDragDistance)
+                return;
+
+            _dragStarted = true;
+            DragDrop.DoDragDrop(sender as DependencyObject, _pressedTask.Id, DragDropEffects.Move);
+            _pressedTask = null;
+        }
+
+        private void OnTaskPreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            if (_pressedTask != null && !_dragStarted &&
+                (sender as FrameworkElement)?.DataContext == _pressedTask &&
+                DataContext is ProjectViewModel viewModel)
             {
-                DragDrop.DoDragDrop(sender as DependencyObject, task.Id, DragDropEffects.Move);
+                viewModel.OnOpenTaskDetail(_pressedTask);
             }
+            _pressedTask = null;
+            _dragStarted = false;
         }
     }
 }

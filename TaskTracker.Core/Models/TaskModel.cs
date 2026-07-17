@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using System;
 using System.Collections.ObjectModel;
+using System.Linq;
 
 namespace TaskTracker.Core.Models
 {
@@ -50,6 +51,44 @@ namespace TaskTracker.Core.Models
         /// <summary>Issue state ("open"/"closed") observed at the last sync; the 3-way merge base.</summary>
         [ObservableProperty]
         private string? _lastSyncedIssueState;
+
+        [ObservableProperty]
+        private ObservableCollection<SubTaskModel> _subTasks = new();
+
+        /// <summary>Checklist progress like "2/5"; empty when there are no subtasks.</summary>
+        [System.Text.Json.Serialization.JsonIgnore]
+        public string SubTaskProgress => SubTasks.Count == 0 ? "" : $"{SubTasks.Count(s => s.IsDone)}/{SubTasks.Count}";
+
+        public TaskModel()
+        {
+            HookSubTasks(_subTasks);
+        }
+
+        partial void OnSubTasksChanged(ObservableCollection<SubTaskModel> value) => HookSubTasks(value);
+
+        private void HookSubTasks(ObservableCollection<SubTaskModel> subTasks)
+        {
+            subTasks.CollectionChanged += (_, e) =>
+            {
+                foreach (var item in e.NewItems?.OfType<SubTaskModel>() ?? Enumerable.Empty<SubTaskModel>())
+                    HookSubTask(item);
+                OnPropertyChanged(nameof(SubTaskProgress));
+            };
+            foreach (var item in subTasks)
+                HookSubTask(item);
+        }
+
+        private void HookSubTask(SubTaskModel subTask)
+        {
+            subTask.PropertyChanged -= OnSubTaskPropertyChanged;
+            subTask.PropertyChanged += OnSubTaskPropertyChanged;
+        }
+
+        private void OnSubTaskPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(SubTaskModel.IsDone))
+                OnPropertyChanged(nameof(SubTaskProgress));
+        }
 
         [System.Text.Json.Serialization.JsonIgnore]
         public bool IsOverdue => !IsDone && DueDate.HasValue && DueDate.Value.Date < DateTime.Today;

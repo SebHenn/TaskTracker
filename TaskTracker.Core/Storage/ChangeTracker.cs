@@ -17,6 +17,7 @@ namespace TaskTracker.Core.Storage
         private readonly HashSet<ProjectModel> _trackedProjects = new();
         private readonly HashSet<TaskModel> _trackedTasks = new();
         private readonly HashSet<BoardColumn> _trackedColumns = new();
+        private readonly HashSet<SubTaskModel> _trackedSubTasks = new();
 
         public event EventHandler? Changed;
 
@@ -45,13 +46,19 @@ namespace TaskTracker.Core.Storage
                 project.Columns.CollectionChanged -= OnColumnsCollectionChanged;
             }
             foreach (var task in _trackedTasks)
+            {
                 task.PropertyChanged -= OnItemPropertyChanged;
+                task.SubTasks.CollectionChanged -= OnSubTasksCollectionChanged;
+            }
             foreach (var column in _trackedColumns)
                 column.PropertyChanged -= OnItemPropertyChanged;
+            foreach (var subTask in _trackedSubTasks)
+                subTask.PropertyChanged -= OnItemPropertyChanged;
 
             _trackedProjects.Clear();
             _trackedTasks.Clear();
             _trackedColumns.Clear();
+            _trackedSubTasks.Clear();
         }
 
         private void TrackProject(ProjectModel project)
@@ -82,8 +89,25 @@ namespace TaskTracker.Core.Storage
 
         private void TrackTask(TaskModel task)
         {
-            if (_trackedTasks.Add(task))
-                task.PropertyChanged += OnItemPropertyChanged;
+            if (!_trackedTasks.Add(task))
+                return;
+            task.PropertyChanged += OnItemPropertyChanged;
+            task.SubTasks.CollectionChanged += OnSubTasksCollectionChanged;
+            foreach (var subTask in task.SubTasks)
+                TrackSubTask(subTask);
+        }
+
+        private void TrackSubTask(SubTaskModel subTask)
+        {
+            if (_trackedSubTasks.Add(subTask))
+                subTask.PropertyChanged += OnItemPropertyChanged;
+        }
+
+        private void OnSubTasksCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            foreach (var subTask in e.NewItems?.OfType<SubTaskModel>() ?? Enumerable.Empty<SubTaskModel>())
+                TrackSubTask(subTask);
+            RaiseChanged();
         }
 
         private void OnProjectsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)

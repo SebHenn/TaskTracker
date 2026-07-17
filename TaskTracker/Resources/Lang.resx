@@ -107,6 +107,12 @@
   <data name="AddColumn" xml:space="preserve"><value>Add column</value></data>
   <data name="Close" xml:space="preserve"><value>Close</value></data>
 
+  <!-- Task detail panel -->
+  <data name="Checklist" xml:space="preserve"><value>Checklist</value></data>
+  <data name="AddSubTaskHint" xml:space="preserve"><value>New checklist item...</value></data>
+  <data name="CreatedLabel" xml:space="preserve"><value>Created</value></data>
+  <data name="CompletedLabel" xml:space="preserve"><value>Completed</value></data>
+
   <!-- Messages -->
   <data name="InvalidProjectName" xml:space="preserve"><value>Invalid project name or already exists</value></data>
 </root>

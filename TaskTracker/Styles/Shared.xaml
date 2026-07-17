@@ -71,6 +71,19 @@
                         </Border.Style>
                         <TextBlock Style="{StaticResource TaskChipText}" Text="{Binding DueDate, StringFormat={}📅 {0:d}}" />
                     </Border>
+                    <!-- Checklist progress chip -->
+                    <Border>
+                        <Border.Style>
+                            <Style TargetType="Border" BasedOn="{StaticResource TaskChip}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding SubTaskProgress}" Value="">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <TextBlock Style="{StaticResource TaskChipText}" Text="{Binding SubTaskProgress, StringFormat={}☑ {0}}" />
+                    </Border>
                     <!-- Linked GitHub issue chip -->
                     <Border>
                         <Border.Style>
