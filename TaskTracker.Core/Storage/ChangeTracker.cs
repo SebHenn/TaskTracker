@@ -49,6 +49,7 @@ namespace TaskTracker.Core.Storage
             {
                 task.PropertyChanged -= OnItemPropertyChanged;
                 task.SubTasks.CollectionChanged -= OnSubTasksCollectionChanged;
+                task.Activity.CollectionChanged -= OnNestedCollectionChanged;
             }
             foreach (var column in _trackedColumns)
                 column.PropertyChanged -= OnItemPropertyChanged;
@@ -95,7 +96,11 @@ namespace TaskTracker.Core.Storage
             task.SubTasks.CollectionChanged += OnSubTasksCollectionChanged;
             foreach (var subTask in task.SubTasks)
                 TrackSubTask(subTask);
+            // Activity entries are immutable once added; the collection change suffices.
+            task.Activity.CollectionChanged += OnNestedCollectionChanged;
         }
+
+        private void OnNestedCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e) => RaiseChanged();
 
         private void TrackSubTask(SubTaskModel subTask)
         {

@@ -48,6 +48,10 @@ namespace TaskTracker.Core.Models
         [ObservableProperty]
         private DateTime? _archivedAtUtc;
 
+        /// <summary>Accent color hex (from the preset palette), or null for none.</summary>
+        [ObservableProperty]
+        private string? _color;
+
         [JsonIgnore]
         public bool IsGitHubLinked => !string.IsNullOrWhiteSpace(GitHubOwner) && !string.IsNullOrWhiteSpace(GitHubRepo);
 
@@ -59,12 +63,16 @@ namespace TaskTracker.Core.Models
 
         /// <summary>
         /// The single place task placement happens: sets the column and derives
-        /// IsDone from it, so timestamps/sync/stats stay coherent.
+        /// IsDone from it, so timestamps/sync/stats stay coherent. Completing a
+        /// recurring task spawns its next occurrence.
         /// </summary>
         public void MoveTaskToColumn(TaskModel task, BoardColumn column)
         {
+            var wasDone = task.IsDone;
             task.ColumnId = column.Id;
             task.IsDone = column.IsDoneColumn;
+            if (!wasDone && task.IsDone)
+                Services.Recurrence.SpawnNextIfRecurring(this, task);
         }
 
         /// <summary>Resolves a task's column, falling back by done-state for unassigned/stale ids.</summary>

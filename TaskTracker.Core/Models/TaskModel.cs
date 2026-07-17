@@ -55,6 +55,36 @@ namespace TaskTracker.Core.Models
         [ObservableProperty]
         private ObservableCollection<SubTaskModel> _subTasks = new();
 
+        /// <summary>Explicit position within the column; null = auto-sorted (priority/due).</summary>
+        [ObservableProperty]
+        private double? _sortOrder;
+
+        /// <summary>"none", "daily", "weekly", or "monthly". Completing a recurring task spawns the next occurrence.</summary>
+        [ObservableProperty]
+        private string _recurrence = RecurrenceRules.None;
+
+        [ObservableProperty]
+        private int _recurrenceInterval = 1;
+
+        /// <summary>Accumulated tracked time in seconds (excluding a currently running timer).</summary>
+        [ObservableProperty]
+        private double _trackedSeconds;
+
+        /// <summary>Set while a work timer is running on this task.</summary>
+        [ObservableProperty]
+        private DateTime? _timerStartedAtUtc;
+
+        /// <summary>Timestamped notes; see ActivityEntry.</summary>
+        [ObservableProperty]
+        private ObservableCollection<ActivityEntry> _activity = new();
+
+        /// <summary>Issue title observed at the last sync; 3-way base for pushing local renames.</summary>
+        [ObservableProperty]
+        private string? _lastSyncedTitle;
+
+        [System.Text.Json.Serialization.JsonIgnore]
+        public bool IsRecurring => Recurrence != RecurrenceRules.None;
+
         /// <summary>Checklist progress like "2/5"; empty when there are no subtasks.</summary>
         [System.Text.Json.Serialization.JsonIgnore]
         public string SubTaskProgress => SubTasks.Count == 0 ? "" : $"{SubTasks.Count(s => s.IsDone)}/{SubTasks.Count}";

@@ -18,5 +18,9 @@ namespace TaskTracker.Core.Models
 
         [ObservableProperty]
         private bool _isDoneColumn = false;
+
+        /// <summary>Optional work-in-progress limit; the UI highlights the column when exceeded.</summary>
+        [ObservableProperty]
+        private int? _wipLimit;
     }
 }
