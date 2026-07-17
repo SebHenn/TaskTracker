@@ -62,6 +62,12 @@ namespace TaskTracker
 
             _serviceProvider = services.BuildServiceProvider();
 
+            DispatcherUnhandledException += (_, args) =>
+            {
+                TaskTracker.Core.Storage.AppLog.Write("unhandled", args.Exception);
+                MessageBox.Show(args.Exception.Message, "TaskTracker", MessageBoxButton.OK, MessageBoxImage.Error);
+                args.Handled = true;
+            };
         }
 
         private System.Threading.Mutex? _instanceMutex;

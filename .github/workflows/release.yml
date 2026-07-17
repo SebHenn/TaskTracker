@@ -1,0 +1,56 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Publish app (self-contained single file)
+        run: >
+          dotnet publish TaskTracker -c Release -r win-x64 --self-contained
+          -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+          -o publish/app
+
+      - name: Publish MCP server
+        run: >
+          dotnet publish TaskTracker.Mcp -c Release -r win-x64 --self-contained
+          -p:PublishSingleFile=true
+          -o publish/mcp
+
+      - name: Zip artifacts
+        shell: pwsh
+        run: |
+          Compress-Archive -Path publish/app/* -DestinationPath TaskTracker-win-x64.zip
+          Compress-Archive -Path publish/mcp/* -DestinationPath TaskTracker.Mcp-win-x64.zip
+
+      - name: Create GitHub release
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >
+          gh release create "$env:GITHUB_REF_NAME"
+          TaskTracker-win-x64.zip TaskTracker.Mcp-win-x64.zip
+          --title "TaskTracker $env:GITHUB_REF_NAME"
+          --generate-notes
+
+      - name: Upload workflow artifacts (manual runs)
+        if: "!startsWith(github.ref, 'refs/tags/')"
+        uses: actions/upload-artifact@v4
+        with:
+          name: TaskTracker-win-x64
+          path: |
+            TaskTracker-win-x64.zip
+            TaskTracker.Mcp-win-x64.zip

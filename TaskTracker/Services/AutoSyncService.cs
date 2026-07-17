@@ -58,9 +58,10 @@ namespace TaskTracker.Services
                     {
                         await _sync.SyncAsync(project, api);
                     }
-                    catch (Exception)
+                    catch (Exception ex)
                     {
                         // Silent by design; the next manual sync will surface problems.
+                        Core.Storage.AppLog.Write("auto-sync", $"{project.Name}: {ex.Message}");
                     }
                 }
             }

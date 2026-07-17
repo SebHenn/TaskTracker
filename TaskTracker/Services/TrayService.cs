@@ -27,9 +27,20 @@ namespace TaskTracker.Services
 
         public void Initialize()
         {
+            Icon trayIcon;
+            try
+            {
+                // The exe carries the app icon; fall back to the generic one.
+                trayIcon = Icon.ExtractAssociatedIcon(Environment.ProcessPath!) ?? SystemIcons.Application;
+            }
+            catch (Exception)
+            {
+                trayIcon = SystemIcons.Application;
+            }
+
             _icon = new System.Windows.Forms.NotifyIcon
             {
-                Icon = SystemIcons.Application,
+                Icon = trayIcon,
                 Text = "TaskTracker",
                 Visible = true,
             };

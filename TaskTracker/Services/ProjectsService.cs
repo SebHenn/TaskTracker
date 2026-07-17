@@ -56,9 +56,10 @@ namespace TaskTracker.Services
                 _watcher.Created += OnSaveFileChanged;
                 _watcher.Renamed += OnSaveFileChanged;
             }
-            catch (IOException)
+            catch (IOException ex)
             {
                 // Watching is best-effort; without it external edits apply on next start.
+                AppLog.Write("watcher", ex.Message);
             }
         }
 
@@ -94,8 +95,9 @@ namespace TaskTracker.Services
             {
                 data = _store.Load();
             }
-            catch (IOException)
+            catch (IOException ex)
             {
+                AppLog.Write("reload", ex.Message);
                 return;
             }
 
