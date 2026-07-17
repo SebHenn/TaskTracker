@@ -84,6 +84,11 @@
                     </StackPanel>
                     <TextBlock Style="{StaticResource SettingLabel}" Margin="0,8,0,0"
                                Text="{DynamicResource DataFolderHint}" TextWrapping="Wrap" />
+                    <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                        <Button Style="{DynamicResource WindowButton}" Padding="8,3" Command="{Binding ExportJsonCommand}" Content="{DynamicResource ExportJson}" />
+                        <Button Style="{DynamicResource WindowButton}" Padding="8,3" Margin="10,0,0,0" Command="{Binding ExportCsvCommand}" Content="{DynamicResource ExportCsv}" />
+                        <Button Style="{DynamicResource WindowButton}" Padding="8,3" Margin="10,0,0,0" Command="{Binding ImportJsonCommand}" Content="{DynamicResource ImportJson}" />
+                    </StackPanel>
                 </StackPanel>
             </Border>
         </StackPanel>

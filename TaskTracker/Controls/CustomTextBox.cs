@@ -44,6 +44,12 @@ namespace TaskTracker.Controls
             Text = string.Empty;
         }
 
+        /// <summary>Puts keyboard focus into the inner text box (e.g. for Ctrl+F).</summary>
+        public void FocusText()
+        {
+            _textBox?.Focus();
+        }
+
         public CustomTextBox()
         {
 

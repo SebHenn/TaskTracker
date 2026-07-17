@@ -83,6 +83,14 @@ namespace TaskTracker.ViewModels.Windows
 
 
         [RelayCommand]
+        private void OnNewTaskShortcut()
+        {
+            // Ctrl+T: add a task when a project board is open.
+            if (NavigationService.CurrentView is ProjectViewModel projectViewModel)
+                projectViewModel.NewTaskClickCommand.Execute(null);
+        }
+
+        [RelayCommand]
         private void OnNavigateToHome()
         {
             _serviceProvider.GetRequiredService<HomeViewModel>().RefreshDueTasks();

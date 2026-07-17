@@ -14,6 +14,10 @@
         ResizeMode="CanResize"
         Title="MainWindow" Height="800" Width="1200"
         WindowStartupLocation="CenterScreen">
+    <Window.InputBindings>
+        <KeyBinding Modifiers="Ctrl" Key="N" Command="{Binding NewProjectClickCommand}" />
+        <KeyBinding Modifiers="Ctrl" Key="T" Command="{Binding NewTaskShortcutCommand}" />
+    </Window.InputBindings>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="auto" />
@@ -33,7 +37,7 @@
                 
             <Rectangle Height="1" Margin="5" Fill="{DynamicResource Brush.Divider}"></Rectangle>
 
-            <controls:CustomTextBox Height="30" Margin="5" Hint="{DynamicResource SearchHint}" Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+            <controls:CustomTextBox x:Name="SearchBox" Height="30" Margin="5" Hint="{DynamicResource SearchHint}" Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
             <Button Style="{DynamicResource TitleButton}" HorizontalAlignment="Right" Margin="5" Command="{Binding SortClickCommand}" Content="{DynamicResource Sort}"></Button>
         </StackPanel>

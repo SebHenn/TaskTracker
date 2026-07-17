@@ -123,6 +123,10 @@
   <data name="TaskDeletedUndo" xml:space="preserve"><value>"{0}" gelöscht</value></data>
   <data name="Undo" xml:space="preserve"><value>Rückgängig</value></data>
   <data name="CreateGitHubIssue" xml:space="preserve"><value>GitHub-Issue erstellen</value></data>
+  <data name="ExportJson" xml:space="preserve"><value>Exportieren (JSON)</value></data>
+  <data name="ExportCsv" xml:space="preserve"><value>Exportieren (CSV)</value></data>
+  <data name="ImportJson" xml:space="preserve"><value>Importieren (JSON)</value></data>
+  <data name="ImportedProjects" xml:space="preserve"><value>{0} Projekt(e) importiert.</value></data>
 
   <!-- Messages -->
   <data name="InvalidProjectName" xml:space="preserve"><value>Ungültiger Projektname oder bereits vorhanden</value></data>
