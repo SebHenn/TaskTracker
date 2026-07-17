@@ -102,20 +102,23 @@ namespace TaskTracker.Core.Storage
         public static void NormalizeColumns(StoreData data)
         {
             foreach (var project in data.Projects)
-            {
-                if (project.Columns.Count == 0)
-                {
-                    foreach (var column in BoardColumnDefaults.MigrationColumns())
-                        project.Columns.Add(column);
-                }
-                if (project.Columns.All(c => !c.IsDoneColumn))
-                    project.Columns.Add(new BoardColumn { Name = "Done", IsDoneColumn = true });
+                NormalizeColumns(project);
+        }
 
-                foreach (var task in project.Tasks)
-                {
-                    if (task.ColumnId == null || project.Columns.All(c => c.Id != task.ColumnId.Value))
-                        task.ColumnId = (task.IsDone ? project.FirstDoneColumn : project.FirstColumn)!.Id;
-                }
+        public static void NormalizeColumns(ProjectModel project)
+        {
+            if (project.Columns.Count == 0)
+            {
+                foreach (var column in BoardColumnDefaults.MigrationColumns())
+                    project.Columns.Add(column);
+            }
+            if (project.Columns.All(c => !c.IsDoneColumn))
+                project.Columns.Add(new BoardColumn { Name = "Done", IsDoneColumn = true });
+
+            foreach (var task in project.Tasks)
+            {
+                if (task.ColumnId == null || project.Columns.All(c => c.Id != task.ColumnId.Value))
+                    task.ColumnId = (task.IsDone ? project.FirstDoneColumn : project.FirstColumn)!.Id;
             }
         }
 

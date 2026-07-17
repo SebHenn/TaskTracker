@@ -101,6 +101,12 @@
   <data name="SyncFailed" xml:space="preserve"><value>GitHub sync failed</value></data>
   <data name="NoTokenConfigured" xml:space="preserve"><value>No GitHub token configured. Add one in Settings.</value></data>
 
+  <!-- Board columns -->
+  <data name="EditColumns" xml:space="preserve"><value>Edit Columns</value></data>
+  <data name="DoneColumnFlag" xml:space="preserve"><value>Done column</value></data>
+  <data name="AddColumn" xml:space="preserve"><value>Add column</value></data>
+  <data name="Close" xml:space="preserve"><value>Close</value></data>
+
   <!-- Messages -->
   <data name="InvalidProjectName" xml:space="preserve"><value>Invalid project name or already exists</value></data>
 </root>

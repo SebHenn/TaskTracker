@@ -101,6 +101,12 @@
   <data name="SyncFailed" xml:space="preserve"><value>GitHub-Synchronisation fehlgeschlagen</value></data>
   <data name="NoTokenConfigured" xml:space="preserve"><value>Kein GitHub-Token konfiguriert. Füge eins in den Einstellungen hinzu.</value></data>
 
+  <!-- Board columns -->
+  <data name="EditColumns" xml:space="preserve"><value>Spalten bearbeiten</value></data>
+  <data name="DoneColumnFlag" xml:space="preserve"><value>Erledigt-Spalte</value></data>
+  <data name="AddColumn" xml:space="preserve"><value>Spalte hinzufügen</value></data>
+  <data name="Close" xml:space="preserve"><value>Schließen</value></data>
+
   <!-- Messages -->
   <data name="InvalidProjectName" xml:space="preserve"><value>Ungültiger Projektname oder bereits vorhanden</value></data>
 </root>

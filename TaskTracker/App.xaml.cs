@@ -41,6 +41,9 @@ namespace TaskTracker
             services.AddTransient<LinkGitHubWindow>(provider => new LinkGitHubWindow(
                 provider.GetRequiredService<LinkGitHubViewModel>()));
             services.AddTransient<LinkGitHubViewModel>();
+            services.AddTransient<ColumnsWindow>(provider => new ColumnsWindow(
+                provider.GetRequiredService<ColumnsViewModel>()));
+            services.AddTransient<ColumnsViewModel>();
             services.AddSingleton<AutoSyncService>();
 
 

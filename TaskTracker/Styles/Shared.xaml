@@ -24,7 +24,7 @@
     <DataTemplate x:Key="TaskCardTemplate" DataType="{x:Type models:TaskModel}">
         <Border Margin="5" Padding="10" CornerRadius="3" BorderThickness="4,0,0,0"
                 Background="{DynamicResource Brush.Card.Background}"
-                Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=ItemsControl}}">
+                Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=UserControl}}">
             <Border.Style>
                 <Style TargetType="Border">
                     <Setter Property="BorderBrush" Value="{DynamicResource Brush.Priority.Medium}" />

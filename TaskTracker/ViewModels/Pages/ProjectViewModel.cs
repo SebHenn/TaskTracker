@@ -10,6 +10,7 @@ using System.Windows;
 using TaskTracker.Core.GitHub;
 using TaskTracker.Core.Models;
 using TaskTracker.Core.Services;
+using TaskTracker.Core.Storage;
 using TaskTracker.Messages;
 using TaskTracker.Services;
 using TaskTracker.ViewModels.Windows;
@@ -37,10 +38,7 @@ namespace TaskTracker.ViewModels.Pages
         private string _favImage = "/Assets/starEmpty-32.png";
 
         [ObservableProperty]
-        private ObservableCollection<TaskModel> _notDoneTasks = [];
-
-        [ObservableProperty]
-        private ObservableCollection<TaskModel> _doneTasks = [];
+        private ObservableCollection<ColumnLaneViewModel> _lanes = [];
 
         [ObservableProperty]
         private bool _isEditing = false;
@@ -196,14 +194,15 @@ namespace TaskTracker.ViewModels.Pages
         {
             if (CurrentProject == null)
             {
-                NotDoneTasks = [];
-                DoneTasks = [];
+                Lanes = [];
                 AvailableLabels = [];
                 HasLabels = false;
                 Stats = null;
                 WeekBars = [];
                 return;
             }
+
+            ProjectStore.NormalizeColumns(CurrentProject);
 
             var labels = CurrentProject.Tasks
                 .SelectMany(t => t.Labels)
@@ -228,10 +227,33 @@ namespace TaskTracker.ViewModels.Pages
                 .ThenBy(t => t.Title, StringComparer.OrdinalIgnoreCase)
                 .ToList();
 
-            NotDoneTasks = new ObservableCollection<TaskModel>(sorted.Where(task => !task.IsDone));
-            DoneTasks = new ObservableCollection<TaskModel>(sorted.Where(task => task.IsDone));
+            Lanes = new ObservableCollection<ColumnLaneViewModel>(
+                CurrentProject.Columns.Select(column =>
+                    new ColumnLaneViewModel(column, sorted.Where(t => CurrentProject.ColumnOf(t)?.Id == column.Id))));
 
             RefreshStats();
+        }
+
+        /// <summary>Called from the view's drop handler.</summary>
+        public void MoveTask(Guid taskId, ColumnLaneViewModel targetLane)
+        {
+            if (CurrentProject == null) return;
+            var task = CurrentProject.Tasks.FirstOrDefault(t => t.Id == taskId);
+            if (task == null || task.ColumnId == targetLane.Column.Id) return;
+            CurrentProject.MoveTaskToColumn(task, targetLane.Column);
+            CategorizeTasks();
+        }
+
+        [RelayCommand]
+        private void OnEditColumns()
+        {
+            if (CurrentProject == null) return;
+            var window = _serviceProvider.GetRequiredService<ColumnsWindow>();
+            if (window.DataContext is ColumnsViewModel vm)
+                vm.SetProject(CurrentProject);
+            window.ShowDialog();
+            ProjectStore.NormalizeColumns(CurrentProject);
+            CategorizeTasks();
         }
 
         private void RefreshStats()
@@ -349,14 +371,16 @@ namespace TaskTracker.ViewModels.Pages
         [RelayCommand]
         private void OnMarkAsDone(TaskModel task)
         {
-            task.IsDone = true;
+            if (CurrentProject?.FirstDoneColumn is { } column)
+                CurrentProject.MoveTaskToColumn(task, column);
             CategorizeTasks();
         }
 
         [RelayCommand]
         private void OnMarkAsInProgress(TaskModel task)
         {
-            task.IsDone = false;
+            if (CurrentProject?.FirstColumn is { } column)
+                CurrentProject.MoveTaskToColumn(task, column);
             CategorizeTasks();
         }
 
