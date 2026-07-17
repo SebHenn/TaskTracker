@@ -34,11 +34,19 @@ public class GitHubSyncTests
             Created.Add((title, body, labels));
             return Task.FromResult(NextIssueNumber++);
         }
+
+        public List<(int Number, string Title)> Renamed { get; } = new();
+
+        public Task UpdateIssueTitleAsync(string owner, string repo, int number, string title, CancellationToken ct = default)
+        {
+            Renamed.Add((number, title));
+            return Task.CompletedTask;
+        }
     }
 
     private static GitHubIssue Issue(int number, string state = "open", string title = "Issue", string? body = null,
-        DateTime? updatedAt = null, string[]? labels = null, bool isPr = false)
-        => new(number, title, body, state, updatedAt ?? DateTime.UtcNow, labels ?? Array.Empty<string>(), isPr);
+        DateTime? updatedAt = null, string[]? labels = null, bool isPr = false, DateTime? milestoneDueOn = null)
+        => new(number, title, body, state, updatedAt ?? DateTime.UtcNow, labels ?? Array.Empty<string>(), isPr, milestoneDueOn);
 
     private static ProjectModel LinkedProject()
         => new() { Name = "P", GitHubOwner = "octocat", GitHubRepo = "hello" };
@@ -233,6 +241,60 @@ public class GitHubSyncTests
         Assert.Equal(0, result.Imported);
         Assert.Single(project.Tasks);
         Assert.False(task.IsDone);
+    }
+
+    [Fact]
+    public async Task LocalRename_IsPushedToGitHub()
+    {
+        var api = new FakeGitHubApi();
+        api.Issues.Add(Issue(1, "open", "Old title"));
+        var project = LinkedProject();
+        var task = LinkedTask(1, isDone: false, lastSyncedState: "open");
+        task.LastSyncedTitle = "Old title";
+        task.Title = "Renamed locally";
+        project.Tasks.Add(task);
+
+        await _sync.SyncAsync(project, api);
+
+        Assert.Equal(new[] { (1, "Renamed locally") }, api.Renamed);
+        Assert.Equal("Renamed locally", task.Title);
+        Assert.Equal("Renamed locally", task.LastSyncedTitle);
+    }
+
+    [Fact]
+    public async Task RemoteRename_Wins_EvenWhenLocalAlsoChanged()
+    {
+        var api = new FakeGitHubApi();
+        api.Issues.Add(Issue(1, "open", "Remote new title"));
+        var project = LinkedProject();
+        var task = LinkedTask(1, isDone: false, lastSyncedState: "open");
+        task.LastSyncedTitle = "Base title";
+        task.Title = "Local new title";
+        project.Tasks.Add(task);
+
+        await _sync.SyncAsync(project, api);
+
+        Assert.Empty(api.Renamed);
+        Assert.Equal("Remote new title", task.Title);
+        Assert.Equal("Remote new title", task.LastSyncedTitle);
+    }
+
+    [Fact]
+    public async Task MilestoneDueDate_DrivesTaskDueDate()
+    {
+        var api = new FakeGitHubApi();
+        api.Issues.Add(Issue(1, "open", "with milestone", milestoneDueOn: new DateTime(2026, 9, 1, 7, 0, 0)));
+        api.Issues.Add(Issue(2, "open", "without milestone"));
+        var project = LinkedProject();
+        var linked = LinkedTask(2, isDone: false, lastSyncedState: "open");
+        linked.DueDate = new DateTime(2026, 8, 15);
+        project.Tasks.Add(linked);
+
+        await _sync.SyncAsync(project, api);
+
+        var imported = project.Tasks.First(t => t.GitHubIssueNumber == 1);
+        Assert.Equal(new DateTime(2026, 9, 1), imported.DueDate);      // milestone applied on import
+        Assert.Equal(new DateTime(2026, 8, 15), linked.DueDate);       // no milestone → untouched
     }
 
     [Fact]

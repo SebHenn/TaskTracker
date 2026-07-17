@@ -7,7 +7,8 @@ namespace TaskTracker.Core.GitHub
         string State,
         DateTime UpdatedAt,
         IReadOnlyList<string> Labels,
-        bool IsPullRequest);
+        bool IsPullRequest,
+        DateTime? MilestoneDueOn = null);
 
     public interface IGitHubApi
     {
@@ -20,5 +21,8 @@ namespace TaskTracker.Core.GitHub
 
         /// <summary>Creates an issue and returns its number.</summary>
         Task<int> CreateIssueAsync(string owner, string repo, string title, string? body, IReadOnlyList<string> labels, CancellationToken ct = default);
+
+        /// <summary>Renames an issue.</summary>
+        Task UpdateIssueTitleAsync(string owner, string repo, int number, string title, CancellationToken ct = default);
     }
 }

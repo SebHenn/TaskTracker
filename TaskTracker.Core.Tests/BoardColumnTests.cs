@@ -157,5 +157,6 @@ public class BoardColumnTests
         public Task CloseIssueAsync(string owner, string repo, int number, CancellationToken ct = default) => Task.CompletedTask;
         public Task ReopenIssueAsync(string owner, string repo, int number, CancellationToken ct = default) => Task.CompletedTask;
         public Task<int> CreateIssueAsync(string owner, string repo, string title, string? body, IReadOnlyList<string> labels, CancellationToken ct = default) => Task.FromResult(1);
+        public Task UpdateIssueTitleAsync(string owner, string repo, int number, string title, CancellationToken ct = default) => Task.CompletedTask;
     }
 }

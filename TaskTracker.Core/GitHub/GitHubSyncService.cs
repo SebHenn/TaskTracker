@@ -56,8 +56,10 @@ namespace TaskTracker.Core.GitHub
                         Description = TrimBody(issue.Body),
                         GitHubIssueNumber = issue.Number,
                         LastSyncedIssueState = issue.State,
+                        LastSyncedTitle = issue.Title,
                         CreatedAtUtc = DateTime.UtcNow,
                         ColumnId = project.FirstColumn?.Id,
+                        DueDate = issue.MilestoneDueOn?.Date,
                     };
                     foreach (var label in issue.Labels)
                         task.Labels.Add(label);
@@ -66,9 +68,21 @@ namespace TaskTracker.Core.GitHub
                     continue;
                 }
 
-                // Text always follows GitHub for linked tasks.
-                if (task.Title != issue.Title)
+                // Title merges 3-way against the snapshot from the last sync:
+                // a local-only rename is pushed to GitHub; anything else follows remote.
+                var baseTitle = task.LastSyncedTitle;
+                if (baseTitle != null && task.Title != baseTitle && issue.Title == baseTitle)
+                {
+                    await api.UpdateIssueTitleAsync(owner, repo, issue.Number, task.Title, ct);
+                }
+                else if (task.Title != issue.Title)
+                {
                     task.Title = issue.Title;
+                }
+                task.LastSyncedTitle = task.Title;
+
+                // Description and labels stay remote-wins (imported bodies are
+                // truncated, so pushing them back would corrupt the issue).
                 var trimmedBody = TrimBody(issue.Body);
                 if (task.Description != trimmedBody)
                     task.Description = trimmedBody;
@@ -78,6 +92,10 @@ namespace TaskTracker.Core.GitHub
                     foreach (var label in issue.Labels)
                         task.Labels.Add(label);
                 }
+
+                // A milestone due date on the issue drives the task's due date.
+                if (issue.MilestoneDueOn.HasValue && task.DueDate != issue.MilestoneDueOn.Value.Date)
+                    task.DueDate = issue.MilestoneDueOn.Value.Date;
 
                 var baseState = task.LastSyncedIssueState ?? (task.IsDone ? "closed" : "open");
                 var localState = task.IsDone ? "closed" : "open";
@@ -126,6 +144,7 @@ namespace TaskTracker.Core.GitHub
             var number = await api.CreateIssueAsync(project.GitHubOwner!, project.GitHubRepo!, task.Title, task.Description, task.Labels.ToList(), ct);
             task.GitHubIssueNumber = number;
             task.LastSyncedIssueState = "open";
+            task.LastSyncedTitle = task.Title;
 
             if (task.IsDone)
             {

@@ -50,7 +50,13 @@ namespace TaskTracker.Core.GitHub
                                 .Select(n => n!)
                                 .ToList()
                             : new List<string>(),
-                        IsPullRequest: element.TryGetProperty("pull_request", out _)));
+                        IsPullRequest: element.TryGetProperty("pull_request", out _),
+                        MilestoneDueOn: element.TryGetProperty("milestone", out var milestone)
+                                        && milestone.ValueKind == JsonValueKind.Object
+                                        && milestone.TryGetProperty("due_on", out var dueOn)
+                                        && dueOn.ValueKind == JsonValueKind.String
+                            ? dueOn.GetDateTime()
+                            : null));
                 }
 
                 if (pageCount < 100)
@@ -68,6 +74,15 @@ namespace TaskTracker.Core.GitHub
 
             using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync(ct));
             return doc.RootElement.GetProperty("number").GetInt32();
+        }
+
+        public async Task UpdateIssueTitleAsync(string owner, string repo, int number, string title, CancellationToken ct = default)
+        {
+            var payload = JsonSerializer.Serialize(new { title });
+            var content = new StringContent(payload, Encoding.UTF8, "application/json");
+            var response = await _http.PatchAsync(
+                $"repos/{Uri.EscapeDataString(owner)}/{Uri.EscapeDataString(repo)}/issues/{number}", content, ct);
+            await EnsureSuccess(response, ct);
         }
 
         public Task CloseIssueAsync(string owner, string repo, int number, CancellationToken ct = default)
