@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 using System.Windows;
 using TaskTracker.Core.Services;
 
@@ -13,7 +15,9 @@ namespace TaskTracker.Services
     {
         private readonly IProjectsService _projectsService;
         private readonly ILanguageService _languageService;
+        private readonly HashSet<Guid> _notifiedTaskIds = new();
         private System.Windows.Forms.NotifyIcon? _icon;
+        private System.Windows.Threading.DispatcherTimer? _dueCheckTimer;
 
         public TrayService(IProjectsService projectsService, ILanguageService languageService)
         {
@@ -36,17 +40,27 @@ namespace TaskTracker.Services
             menu.Items.Add(_languageService.GetString("TrayExit"), null, (_, _) => System.Windows.Application.Current.Shutdown());
             _icon.ContextMenuStrip = menu;
 
-            ShowDueSummaryIfAny();
+            NotifyNewlyDueTasks();
+
+            // Re-check while the app runs so tasks that *become* due get a balloon too.
+            _dueCheckTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMinutes(5) };
+            _dueCheckTimer.Tick += (_, _) => NotifyNewlyDueTasks();
+            _dueCheckTimer.Start();
         }
 
-        private void ShowDueSummaryIfAny()
+        private void NotifyNewlyDueTasks()
         {
             var overview = DueTasks.Collect(_projectsService.projectModels);
-            if (overview.Overdue.Count == 0 && overview.DueToday.Count == 0)
+            var fresh = overview.Overdue.Concat(overview.DueToday)
+                .Where(i => _notifiedTaskIds.Add(i.Task.Id))
+                .ToList();
+            if (fresh.Count == 0)
                 return;
 
-            var text = $"{overview.Overdue.Count} {_languageService.GetString("OverdueSection")}, " +
-                       $"{overview.DueToday.Count} {_languageService.GetString("DueTodaySection")}";
+            var text = fresh.Count == 1
+                ? $"{fresh[0].Project.Name} ▸ {fresh[0].Task.Title}"
+                : $"{overview.Overdue.Count} {_languageService.GetString("OverdueSection")}, " +
+                  $"{overview.DueToday.Count} {_languageService.GetString("DueTodaySection")}";
             _icon?.ShowBalloonTip(5000, "TaskTracker", text, System.Windows.Forms.ToolTipIcon.Info);
         }
 
@@ -63,6 +77,7 @@ namespace TaskTracker.Services
 
         public void Dispose()
         {
+            _dueCheckTimer?.Stop();
             if (_icon != null)
             {
                 _icon.Visible = false;

@@ -46,6 +46,10 @@ namespace TaskTracker
             services.AddTransient<ColumnsViewModel>();
             services.AddSingleton<AutoSyncService>();
             services.AddSingleton<TrayService>();
+            services.AddSingleton<HotkeyService>();
+            services.AddTransient<QuickAddWindow>(provider => new QuickAddWindow(
+                provider.GetRequiredService<QuickAddViewModel>()));
+            services.AddTransient<QuickAddViewModel>();
 
 
             services.AddSingleton<INavigationService, NavigationService>();
@@ -90,6 +94,14 @@ namespace TaskTracker
 
             _serviceProvider.GetRequiredService<AutoSyncService>();
             _serviceProvider.GetRequiredService<TrayService>().Initialize();
+
+            var hotkeys = _serviceProvider.GetRequiredService<HotkeyService>();
+            hotkeys.Initialize(window);
+            hotkeys.HotkeyPressed += (_, _) =>
+            {
+                if (_serviceProvider.GetRequiredService<ISettingsService>().Settings.QuickAddHotkeyEnabled)
+                    _serviceProvider.GetRequiredService<QuickAddWindow>().Show();
+            };
         }
 
         private static void ApplyWindowPlacement(MainWindow window, TaskTracker.Core.Storage.AppSettings settings)
@@ -116,6 +128,7 @@ namespace TaskTracker
 
         protected override void OnExit(ExitEventArgs e)
         {
+            _serviceProvider.GetRequiredService<HotkeyService>().Dispose();
             _serviceProvider.GetRequiredService<TrayService>().Dispose();
 
             if (MainWindow != null)

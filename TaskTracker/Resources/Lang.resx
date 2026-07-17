@@ -133,6 +133,9 @@
   <data name="RepeatLabel" xml:space="preserve"><value>Repeat</value></data>
   <data name="Every" xml:space="preserve"><value>every</value></data>
   <data name="ProjectColor" xml:space="preserve"><value>Color</value></data>
+  <data name="QuickAddTitle" xml:space="preserve"><value>Quick add task</value></data>
+  <data name="QuickAddHint" xml:space="preserve"><value>What needs doing?</value></data>
+  <data name="QuickAddHotkeySetting" xml:space="preserve"><value>Global quick-add hotkey (Ctrl+Alt+T)</value></data>
 
   <!-- Messages -->
   <data name="InvalidProjectName" xml:space="preserve"><value>Invalid project name or already exists</value></data>

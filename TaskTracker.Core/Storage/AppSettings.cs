@@ -18,6 +18,9 @@ namespace TaskTracker.Core.Storage
         /// <summary>Periodically sync GitHub-linked projects while the app runs.</summary>
         public bool AutoSyncEnabled { get; set; }
 
+        /// <summary>Global Ctrl+Alt+T quick-add hotkey.</summary>
+        public bool QuickAddHotkeyEnabled { get; set; } = true;
+
         // Last main-window placement; restored on startup when still on-screen.
         public double? WindowLeft { get; set; }
         public double? WindowTop { get; set; }

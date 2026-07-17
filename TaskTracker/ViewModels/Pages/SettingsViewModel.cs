@@ -30,6 +30,7 @@ namespace TaskTracker.ViewModels.Pages
                                 ?? AvailableLanguages.First();
             _isDark = _settingsService.Settings.Theme != "light";
             _autoSyncEnabled = _settingsService.Settings.AutoSyncEnabled;
+            _quickAddHotkeyEnabled = _settingsService.Settings.QuickAddHotkeyEnabled;
             RefreshTokenStatus();
             _languageService.LanguageChanged += RefreshTokenStatus;
         }
@@ -79,6 +80,15 @@ namespace TaskTracker.ViewModels.Pages
         partial void OnAutoSyncEnabledChanged(bool value)
         {
             _settingsService.Settings.AutoSyncEnabled = value;
+            _settingsService.Save();
+        }
+
+        [ObservableProperty]
+        private bool _quickAddHotkeyEnabled;
+
+        partial void OnQuickAddHotkeyEnabledChanged(bool value)
+        {
+            _settingsService.Settings.QuickAddHotkeyEnabled = value;
             _settingsService.Save();
         }
 

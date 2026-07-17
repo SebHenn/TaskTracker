@@ -39,6 +39,10 @@
                         <TextBlock Style="{StaticResource SettingLabel}" Text="{DynamicResource DarkMode}" />
                         <CheckBox IsChecked="{Binding IsDark, Mode=TwoWay}" VerticalAlignment="Center" />
                     </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                        <TextBlock Style="{StaticResource SettingLabel}" Text="{DynamicResource QuickAddHotkeySetting}" />
+                        <CheckBox IsChecked="{Binding QuickAddHotkeyEnabled, Mode=TwoWay}" VerticalAlignment="Center" />
+                    </StackPanel>
                 </StackPanel>
             </Border>
 
