@@ -97,6 +97,72 @@ namespace TaskTracker.ViewModels.Pages
         [ObservableProperty]
         private string _newSubTaskText = "";
 
+        [ObservableProperty]
+        private string _newActivityText = "";
+
+        [ObservableProperty]
+        private string _trackedTimeText = "";
+
+        [ObservableProperty]
+        private bool _isTimerRunning;
+
+        private System.Windows.Threading.DispatcherTimer? _trackedTimeRefresh;
+
+        [RelayCommand]
+        private void OnToggleTimer()
+        {
+            if (SelectedTask == null) return;
+            if (SelectedTask.TimerStartedAtUtc != null)
+            {
+                TimeTracking.Stop(SelectedTask);
+            }
+            else
+            {
+                // Single active timer across the whole store.
+                foreach (var running in _projectsService.projectModels.SelectMany(p => p.Tasks).Where(t => t.TimerStartedAtUtc != null))
+                    TimeTracking.Stop(running);
+                TimeTracking.Start(SelectedTask);
+            }
+            RefreshTimerState();
+        }
+
+        private void RefreshTimerState()
+        {
+            IsTimerRunning = SelectedTask?.TimerStartedAtUtc != null;
+            TrackedTimeText = SelectedTask == null ? "" : TimeTracking.Format(TimeTracking.TotalSeconds(SelectedTask));
+
+            if (IsTimerRunning && _trackedTimeRefresh == null)
+            {
+                _trackedTimeRefresh = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+                _trackedTimeRefresh.Tick += (_, _) =>
+                {
+                    if (SelectedTask == null || SelectedTask.TimerStartedAtUtc == null)
+                    {
+                        _trackedTimeRefresh!.Stop();
+                        _trackedTimeRefresh = null;
+                        return;
+                    }
+                    TrackedTimeText = TimeTracking.Format(TimeTracking.TotalSeconds(SelectedTask));
+                };
+                _trackedTimeRefresh.Start();
+            }
+        }
+
+        [RelayCommand]
+        private void OnAddActivity()
+        {
+            if (SelectedTask == null || string.IsNullOrWhiteSpace(NewActivityText))
+                return;
+            SelectedTask.Activity.Insert(0, new ActivityEntry { Text = NewActivityText.Trim() });
+            NewActivityText = "";
+        }
+
+        [RelayCommand]
+        private void OnDeleteActivity(ActivityEntry entry)
+        {
+            SelectedTask?.Activity.Remove(entry);
+        }
+
         public IReadOnlyList<TaskPriority> Priorities { get; } = new[] { TaskPriority.Low, TaskPriority.Medium, TaskPriority.High };
 
         public IReadOnlyList<string> RecurrenceOptions { get; } = RecurrenceRules.All;
@@ -263,7 +329,9 @@ namespace TaskTracker.ViewModels.Pages
         {
             SelectedTask = task;
             NewSubTaskText = "";
+            NewActivityText = "";
             OnPropertyChanged(nameof(SelectedTaskLabelsText));
+            RefreshTimerState();
         }
 
         [RelayCommand]

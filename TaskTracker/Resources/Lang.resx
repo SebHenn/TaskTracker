@@ -136,6 +136,11 @@
   <data name="QuickAddTitle" xml:space="preserve"><value>Quick add task</value></data>
   <data name="QuickAddHint" xml:space="preserve"><value>What needs doing?</value></data>
   <data name="QuickAddHotkeySetting" xml:space="preserve"><value>Global quick-add hotkey (Ctrl+Alt+T)</value></data>
+  <data name="TimeTracked" xml:space="preserve"><value>Time tracked</value></data>
+  <data name="StartTimer" xml:space="preserve"><value>Start timer</value></data>
+  <data name="StopTimer" xml:space="preserve"><value>Stop timer</value></data>
+  <data name="ActivityLabel" xml:space="preserve"><value>Activity</value></data>
+  <data name="AddNoteHint" xml:space="preserve"><value>Add a note...</value></data>
 
   <!-- Messages -->
   <data name="InvalidProjectName" xml:space="preserve"><value>Invalid project name or already exists</value></data>

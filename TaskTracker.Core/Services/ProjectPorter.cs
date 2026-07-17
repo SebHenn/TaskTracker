@@ -16,7 +16,7 @@ namespace TaskTracker.Core.Services
         public static void ExportCsv(IEnumerable<ProjectModel> projects, string path)
         {
             var sb = new StringBuilder();
-            sb.AppendLine("Project,Title,Description,Column,Done,Priority,DueDate,Labels,CreatedAtUtc,CompletedAtUtc");
+            sb.AppendLine("Project,Title,Description,Column,Done,Priority,DueDate,Labels,CreatedAtUtc,CompletedAtUtc,TrackedHours");
             foreach (var project in projects)
             {
                 foreach (var task in project.Tasks)
@@ -31,7 +31,8 @@ namespace TaskTracker.Core.Services
                         task.DueDate?.ToString("yyyy-MM-dd") ?? "",
                         Csv(string.Join(";", task.Labels)),
                         task.CreatedAtUtc?.ToString("O") ?? "",
-                        task.CompletedAtUtc?.ToString("O") ?? ""));
+                        task.CompletedAtUtc?.ToString("O") ?? "",
+                        (task.TrackedSeconds / 3600).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)));
                 }
             }
             File.WriteAllText(path, sb.ToString());

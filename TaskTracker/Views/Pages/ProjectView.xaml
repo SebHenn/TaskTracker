@@ -211,6 +211,58 @@
                         <Button Grid.Column="1" Style="{DynamicResource TitleButton}" Width="26" Height="26" Command="{Binding AddSubTaskCommand}">＋</Button>
                     </Grid>
 
+                    <!-- Time tracking -->
+                    <Label Margin="0,8,0,0" Foreground="{DynamicResource Brush.Text.Secondary}" Content="{DynamicResource TimeTracked}" />
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="{Binding TrackedTimeText}" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"
+                                   Foreground="{DynamicResource Brush.Text.Primary}" Margin="0,0,10,0" />
+                        <Button Padding="10,3" Command="{Binding ToggleTimerCommand}">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource WindowButton}">
+                                    <Setter Property="Content" Value="{DynamicResource StartTimer}" />
+                                    <Setter Property="Background" Value="{DynamicResource Brush.Accent}" />
+                                    <Setter Property="Foreground" Value="White" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsTimerRunning}" Value="True">
+                                            <Setter Property="Content" Value="{DynamicResource StopTimer}" />
+                                            <Setter Property="Background" Value="{DynamicResource Brush.Danger}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+                    </StackPanel>
+
+                    <!-- Activity journal -->
+                    <Label Margin="0,10,0,0" Foreground="{DynamicResource Brush.Text.Secondary}" Content="{DynamicResource ActivityLabel}" />
+                    <Grid Margin="0,2,0,4">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="auto" />
+                        </Grid.ColumnDefinitions>
+                        <controls:CustomTextBox Height="26" Text="{Binding NewActivityText, Mode=TwoWay}" Hint="{DynamicResource AddNoteHint}" />
+                        <Button Grid.Column="1" Style="{DynamicResource TitleButton}" Width="26" Height="26" Command="{Binding AddActivityCommand}">＋</Button>
+                    </Grid>
+                    <ItemsControl ItemsSource="{Binding SelectedTask.Activity}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="0,2">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding AtUtc, StringFormat={}{0:g}}" FontSize="10" Foreground="{DynamicResource Brush.Text.Secondary}" />
+                                        <TextBlock Text="{Binding Text}" TextWrapping="Wrap" Foreground="{DynamicResource Brush.Text.Primary}" FontSize="12" />
+                                    </StackPanel>
+                                    <Button Grid.Column="1" Style="{DynamicResource TitleButton}" Width="20" Height="20" FontSize="9"
+                                            Command="{Binding DataContext.DeleteActivityCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            CommandParameter="{Binding}">✖</Button>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
                     <!-- Metadata -->
                     <StackPanel Margin="0,12,0,0">
                         <TextBlock FontSize="11" Foreground="{DynamicResource Brush.Text.Secondary}">
