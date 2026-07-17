@@ -8,7 +8,14 @@ read and manage your projects.
 
 - **Projects & Kanban board with custom columns** — define any columns per
   project (default Backlog / In Progress / Done), flag which ones count as
-  "done", and drag tasks between them
+  "done", set optional WIP limits, and drag cards between columns *and* to a
+  specific position within one; projects can carry a color
+- **Recurring tasks** — daily/weekly/monthly repeats; completing one schedules
+  the next occurrence automatically
+- **Quick capture & alerts** — global Ctrl+Alt+T opens a mini add-task window
+  from anywhere; the tray icon notifies when tasks become due or overdue
+- **Activity journal & time tracking** — timestamped notes per task and a
+  start/stop work timer with accumulated time (exported to CSV)
 - **Due dates, priorities, labels** — tasks carry an optional due date
   (overdue tasks are highlighted), a Low/Medium/High priority shown as a
   colored card edge, and free-form labels with per-project filtering
@@ -46,6 +53,12 @@ read and manage your projects.
 | `TaskTracker.Core` | `net8.0` | Models, storage, search, stats, GitHub sync — cross-platform |
 | `TaskTracker.Mcp` | `net8.0` | MCP stdio server for Claude Code — cross-platform |
 | `TaskTracker.Core.Tests` | `net8.0` | xunit tests for Core |
+
+## Installing
+
+Tagged releases (`v*`) publish self-contained single-file Windows builds of
+the app and the MCP server on the GitHub Releases page — no .NET install
+required. Download `TaskTracker-win-x64.zip`, unzip, run `TaskTracker.exe`.
 
 ## Building
 
@@ -106,8 +119,9 @@ prepare the release notes, due Friday, high priority"*.
 
 Available tools: `list_projects`, `get_project`, `create_project`,
 `update_project`, `delete_project`, `project_stats`, `list_tasks`,
-`create_task`, `update_task`, `move_task`, `delete_task`, `add_subtask`,
-`update_subtask`, `search_tasks`, `due_overview`, `github_sync`.
+`create_task`, `create_tasks` (bulk), `update_task`, `move_task`,
+`delete_task`, `add_subtask`, `update_subtask`, `add_note`, `search_tasks`,
+`due_overview`, `weekly_review`, `github_sync`.
 
 For faster startup you can publish the server once
 (`dotnet publish TaskTracker.Mcp -c Release`) and point `.mcp.json` at the

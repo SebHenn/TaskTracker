@@ -25,12 +25,13 @@ public static class TaskTrackerTools
 
     private record ProjectSummary(Guid Id, string Name, string Description, int OpenTasks, int DoneTasks, bool IsArchived, bool IsFavourite, string? GitHubRepo);
     private record SubTaskDto(Guid Id, string Title, bool IsDone);
-    private record TaskDto(Guid Id, string Title, string Description, bool IsDone, string? Column, string Priority, DateTime? DueDate, IReadOnlyList<string> Labels, IReadOnlyList<SubTaskDto> SubTasks, int? GitHubIssueNumber, DateTime? CompletedAtUtc);
+    private record TaskDto(Guid Id, string Title, string Description, bool IsDone, string? Column, string Priority, DateTime? DueDate, IReadOnlyList<string> Labels, IReadOnlyList<SubTaskDto> SubTasks, int? GitHubIssueNumber, DateTime? CompletedAtUtc, string Recurrence, double TrackedSeconds, int ActivityCount);
     private record TaskWithProjectDto(Guid ProjectId, string ProjectName, TaskDto Task);
 
     private static TaskDto ToDto(ProjectModel project, TaskModel t) => new(
         t.Id, t.Title, t.Description, t.IsDone, project.ColumnOf(t)?.Name, t.Priority.ToString(), t.DueDate, t.Labels.ToList(),
-        t.SubTasks.Select(s => new SubTaskDto(s.Id, s.Title, s.IsDone)).ToList(), t.GitHubIssueNumber, t.CompletedAtUtc);
+        t.SubTasks.Select(s => new SubTaskDto(s.Id, s.Title, s.IsDone)).ToList(), t.GitHubIssueNumber, t.CompletedAtUtc,
+        t.Recurrence, t.TrackedSeconds, t.Activity.Count);
 
     private static string ToJson<T>(T value) => JsonSerializer.Serialize(value, Json);
 
@@ -247,6 +248,69 @@ public static class TaskTrackerTools
         var results = TaskSearch.Search(data.Projects, query, label, includeDone)
             .Select(r => new TaskWithProjectDto(r.Project.Id, r.Project.Name, ToDto(r.Project, r.Task)));
         return ToJson(results);
+    }
+
+    [McpServerTool(Name = "create_tasks"), Description("Create several tasks in one call. Shared column/priority/dueDate/labels apply to all of them.")]
+    public static string CreateTasks(
+        [Description("Project id (GUID from list_projects)")] string projectId,
+        [Description("One task title per entry")] string[] titles,
+        [Description("Optional board column (name or GUID) for all tasks")] string? column = null,
+        [Description("Optional priority for all tasks: low, medium, or high")] string? priority = null,
+        [Description("Optional due date for all tasks (ISO format)")] string? dueDate = null,
+        [Description("Optional labels applied to all tasks")] string[]? labels = null)
+    {
+        var cleaned = (titles ?? Array.Empty<string>()).Where(t => !string.IsNullOrWhiteSpace(t)).ToList();
+        if (cleaned.Count == 0)
+            throw new McpException("Provide at least one non-empty task title.");
+
+        var created = new List<TaskModel>();
+        ProjectModel? owner = null;
+        CreateStore().Update(data =>
+        {
+            var project = FindProject(data, projectId);
+            owner = project;
+            var targetColumn = column == null ? project.FirstColumn! : FindColumn(project, column);
+            foreach (var title in cleaned)
+            {
+                var task = new TaskModel
+                {
+                    Title = title.Trim(),
+                    DueDate = dueDate == null ? null : ParseDate(dueDate),
+                    Priority = priority == null ? TaskPriority.Medium : ParsePriority(priority),
+                    CreatedAtUtc = DateTime.UtcNow,
+                };
+                foreach (var label in labels ?? Array.Empty<string>())
+                    task.Labels.Add(label);
+                project.Tasks.Add(task);
+                project.MoveTaskToColumn(task, targetColumn);
+                created.Add(task);
+            }
+        });
+        return ToJson(created.Select(t => ToDto(owner!, t)));
+    }
+
+    [McpServerTool(Name = "add_note"), Description("Add a timestamped note to a task's activity journal.")]
+    public static string AddNote(
+        [Description("Task id (GUID)")] string taskId,
+        [Description("Note text")] string text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+            throw new McpException("Note text must not be empty.");
+        ActivityEntry? entry = null;
+        CreateStore().Update(data =>
+        {
+            var (_, task) = FindTask(data, taskId);
+            entry = new ActivityEntry { Text = text.Trim() };
+            task.Activity.Insert(0, entry);
+        });
+        return ToJson(new { entry!.Id, entry.AtUtc, entry.Text });
+    }
+
+    [McpServerTool(Name = "weekly_review"), Description("What happened in the last 7 days: completed and created tasks per project, plus open/overdue counts and tracked hours.")]
+    public static string WeeklyReview()
+    {
+        var data = CreateStore().Load();
+        return ToJson(ReviewReport.Compute(data.Projects));
     }
 
     [McpServerTool(Name = "update_project"), Description("Update a project's name, description, or archived state. Only provided fields change.")]
