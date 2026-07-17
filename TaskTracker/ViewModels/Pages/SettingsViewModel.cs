@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -157,7 +158,7 @@ namespace TaskTracker.ViewModels.Pages
                     _projectsService.projectModels.Add(project);
                     Core.Storage.ProjectStore.NormalizeColumns(project);
                 }
-                CommunityToolkit.Mvvm.Messaging.WeakReferenceMessenger.Default.Send(new Messages.StoreReloadedMessage());
+                WeakReferenceMessenger.Default.Send(new Messages.StoreReloadedMessage());
                 System.Windows.MessageBox.Show(string.Format(_languageService.GetString("ImportedProjects"), imported.Count));
             }
             catch (Exception ex)
