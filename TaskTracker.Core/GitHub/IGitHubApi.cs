@@ -17,5 +17,8 @@ namespace TaskTracker.Core.GitHub
         Task CloseIssueAsync(string owner, string repo, int number, CancellationToken ct = default);
 
         Task ReopenIssueAsync(string owner, string repo, int number, CancellationToken ct = default);
+
+        /// <summary>Creates an issue and returns its number.</summary>
+        Task<int> CreateIssueAsync(string owner, string repo, string title, string? body, IReadOnlyList<string> labels, CancellationToken ct = default);
     }
 }

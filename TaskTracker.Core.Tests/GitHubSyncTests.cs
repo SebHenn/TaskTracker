@@ -25,6 +25,15 @@ public class GitHubSyncTests
             Reopened.Add(number);
             return Task.CompletedTask;
         }
+
+        public int NextIssueNumber { get; set; } = 100;
+        public List<(string Title, string? Body, IReadOnlyList<string> Labels)> Created { get; } = new();
+
+        public Task<int> CreateIssueAsync(string owner, string repo, string title, string? body, IReadOnlyList<string> labels, CancellationToken ct = default)
+        {
+            Created.Add((title, body, labels));
+            return Task.FromResult(NextIssueNumber++);
+        }
     }
 
     private static GitHubIssue Issue(int number, string state = "open", string title = "Issue", string? body = null,
@@ -163,6 +172,67 @@ public class GitHubSyncTests
         Assert.Equal(1, result.ClosedLocally);
         Assert.True(task.IsDone);
         Assert.Empty(api.Closed);
+    }
+
+    [Fact]
+    public async Task PushTask_CreatesAndLinksIssue()
+    {
+        var api = new FakeGitHubApi();
+        var project = LinkedProject();
+        var task = new TaskModel { Title = "local", Description = "body" };
+        task.Labels.Add("bug");
+        project.Tasks.Add(task);
+
+        var number = await _sync.PushTaskAsync(project, task, api);
+
+        Assert.Equal(100, number);
+        Assert.Equal(100, task.GitHubIssueNumber);
+        Assert.Equal("open", task.LastSyncedIssueState);
+        Assert.Single(api.Created);
+        Assert.Equal("local", api.Created[0].Title);
+        Assert.Equal(new[] { "bug" }, api.Created[0].Labels);
+        Assert.Empty(api.Closed);
+    }
+
+    [Fact]
+    public async Task PushTask_DoneTask_ClosesNewIssue()
+    {
+        var api = new FakeGitHubApi();
+        var project = LinkedProject();
+        var task = new TaskModel { Title = "finished", IsDone = true };
+        project.Tasks.Add(task);
+
+        await _sync.PushTaskAsync(project, task, api);
+
+        Assert.Equal(new[] { 100 }, api.Closed);
+        Assert.Equal("closed", task.LastSyncedIssueState);
+    }
+
+    [Fact]
+    public async Task PushTask_AlreadyLinked_Throws()
+    {
+        var project = LinkedProject();
+        var task = LinkedTask(1, false, "open");
+        project.Tasks.Add(task);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _sync.PushTaskAsync(project, task, new FakeGitHubApi()));
+    }
+
+    [Fact]
+    public async Task SyncAfterPush_IsStable()
+    {
+        var api = new FakeGitHubApi();
+        var project = LinkedProject();
+        var task = new TaskModel { Title = "local" };
+        project.Tasks.Add(task);
+
+        var number = await _sync.PushTaskAsync(project, task, api);
+        // Remote now returns the created issue; a sync must not duplicate or flip it.
+        api.Issues.Add(Issue(number, "local"));
+        var result = await _sync.SyncAsync(project, api);
+
+        Assert.Equal(0, result.Imported);
+        Assert.Single(project.Tasks);
+        Assert.False(task.IsDone);
     }
 
     [Fact]

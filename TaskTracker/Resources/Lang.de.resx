@@ -122,6 +122,7 @@
   <data name="DeleteProjectConfirm" xml:space="preserve"><value>Projekt "{0}" mit allen Aufgaben löschen? Dies kann nicht rückgängig gemacht werden.</value></data>
   <data name="TaskDeletedUndo" xml:space="preserve"><value>"{0}" gelöscht</value></data>
   <data name="Undo" xml:space="preserve"><value>Rückgängig</value></data>
+  <data name="CreateGitHubIssue" xml:space="preserve"><value>GitHub-Issue erstellen</value></data>
 
   <!-- Messages -->
   <data name="InvalidProjectName" xml:space="preserve"><value>Ungültiger Projektname oder bereits vorhanden</value></data>

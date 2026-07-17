@@ -112,6 +112,30 @@ namespace TaskTracker.Core.GitHub
             return new SyncResult(imported, closedLocally, reopenedLocally, closedOnGitHub, reopenedOnGitHub, unlinked);
         }
 
+        /// <summary>
+        /// Creates a GitHub issue from a local, unlinked task and links it.
+        /// A task that is already done gets its new issue closed immediately.
+        /// </summary>
+        public async Task<int> PushTaskAsync(ProjectModel project, TaskModel task, IGitHubApi api, CancellationToken ct = default)
+        {
+            if (string.IsNullOrWhiteSpace(project.GitHubOwner) || string.IsNullOrWhiteSpace(project.GitHubRepo))
+                throw new InvalidOperationException($"Project '{project.Name}' is not linked to a GitHub repository.");
+            if (task.GitHubIssueNumber.HasValue)
+                throw new InvalidOperationException($"Task '{task.Title}' is already linked to issue #{task.GitHubIssueNumber}.");
+
+            var number = await api.CreateIssueAsync(project.GitHubOwner!, project.GitHubRepo!, task.Title, task.Description, task.Labels.ToList(), ct);
+            task.GitHubIssueNumber = number;
+            task.LastSyncedIssueState = "open";
+
+            if (task.IsDone)
+            {
+                await api.CloseIssueAsync(project.GitHubOwner!, project.GitHubRepo!, number, ct);
+                task.LastSyncedIssueState = "closed";
+            }
+
+            return number;
+        }
+
         private static void ApplyRemoteState(ProjectModel project, TaskModel task, string remoteState, ref int closedLocally, ref int reopenedLocally)
         {
             var shouldBeDone = remoteState == "closed";

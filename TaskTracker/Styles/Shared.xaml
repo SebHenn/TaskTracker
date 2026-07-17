@@ -7,6 +7,7 @@
 
     <helpers:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
     <helpers:CountToVisibilityConverter x:Key="CountToVisibilityConverter" />
+    <helpers:NullToVisibilityConverter x:Key="NullToVisibilityConverter" />
 
     <Style x:Key="TaskChip" TargetType="Border">
         <Setter Property="Background" Value="{DynamicResource Brush.Chip.Background}" />
@@ -128,6 +129,10 @@
                     <MenuItem Header="{DynamicResource EditTask}"
                               Command="{Binding PlacementTarget.Tag.EditTaskCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                               CommandParameter="{Binding}" />
+                    <MenuItem Header="{DynamicResource CreateGitHubIssue}"
+                              Command="{Binding PlacementTarget.Tag.PushTaskToGitHubCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                              CommandParameter="{Binding}"
+                              Visibility="{Binding GitHubIssueNumber, Converter={StaticResource NullToVisibilityConverter}}" />
                     <MenuItem Header="{DynamicResource DeleteTask}"
                               Command="{Binding PlacementTarget.Tag.DeleteTaskCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                               CommandParameter="{Binding}" />

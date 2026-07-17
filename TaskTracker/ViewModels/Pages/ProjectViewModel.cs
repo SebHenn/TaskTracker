@@ -453,6 +453,30 @@ namespace TaskTracker.ViewModels.Pages
             OnOpenTaskDetail(task);
         }
 
+        [RelayCommand]
+        private async Task OnPushTaskToGitHub(TaskModel task)
+        {
+            if (CurrentProject == null || !CurrentProject.IsGitHubLinked || task.GitHubIssueNumber.HasValue)
+                return;
+
+            var settings = _settingsService.Settings;
+            var token = TokenProtector.Unprotect(settings.GitHubTokenProtected, settings.GitHubTokenIsPlaintext);
+            if (string.IsNullOrEmpty(token))
+            {
+                MessageBox.Show(_languageService.GetString("NoTokenConfigured"));
+                return;
+            }
+
+            try
+            {
+                await _gitHubSyncService.PushTaskAsync(CurrentProject, task, new GitHubApi(token));
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"{_languageService.GetString("SyncFailed")}: {ex.Message}");
+            }
+        }
+
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(IsUndoVisible))]
         private TaskModel? _lastDeletedTask;

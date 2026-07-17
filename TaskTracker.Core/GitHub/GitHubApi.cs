@@ -58,6 +58,18 @@ namespace TaskTracker.Core.GitHub
             }
         }
 
+        public async Task<int> CreateIssueAsync(string owner, string repo, string title, string? body, IReadOnlyList<string> labels, CancellationToken ct = default)
+        {
+            var payload = JsonSerializer.Serialize(new { title, body = body ?? "", labels });
+            var content = new StringContent(payload, Encoding.UTF8, "application/json");
+            var response = await _http.PostAsync(
+                $"repos/{Uri.EscapeDataString(owner)}/{Uri.EscapeDataString(repo)}/issues", content, ct);
+            await EnsureSuccess(response, ct);
+
+            using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync(ct));
+            return doc.RootElement.GetProperty("number").GetInt32();
+        }
+
         public Task CloseIssueAsync(string owner, string repo, int number, CancellationToken ct = default)
             => PatchStateAsync(owner, repo, number, "closed", ct);
 

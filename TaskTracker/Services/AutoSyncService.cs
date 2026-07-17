@@ -25,6 +25,16 @@ namespace TaskTracker.Services
             _timer = new DispatcherTimer { Interval = TimeSpan.FromMinutes(15) };
             _timer.Tick += async (_, _) => await TickAsync();
             _timer.Start();
+
+            // One early sync shortly after startup (when enabled), so linked
+            // boards are fresh without waiting for the first 15-minute tick.
+            var startupTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(10) };
+            startupTimer.Tick += async (_, _) =>
+            {
+                startupTimer.Stop();
+                await TickAsync();
+            };
+            startupTimer.Start();
         }
 
         private async System.Threading.Tasks.Task TickAsync()
