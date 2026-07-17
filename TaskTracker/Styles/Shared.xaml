@@ -8,6 +8,8 @@
     <helpers:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
     <helpers:CountToVisibilityConverter x:Key="CountToVisibilityConverter" />
     <helpers:NullToVisibilityConverter x:Key="NullToVisibilityConverter" />
+    <helpers:NullableIntConverter x:Key="NullableIntConverter" />
+    <helpers:ColorStringToBrushConverter x:Key="ColorStringToBrushConverter" />
 
     <Style x:Key="TaskChip" TargetType="Border">
         <Setter Property="Background" Value="{DynamicResource Brush.Chip.Background}" />
@@ -72,6 +74,20 @@
                             </Style>
                         </Border.Style>
                         <TextBlock Style="{StaticResource TaskChipText}" Text="{Binding DueDate, StringFormat={}📅 {0:d}}" />
+                    </Border>
+                    <!-- Recurring chip -->
+                    <Border>
+                        <Border.Style>
+                            <Style TargetType="Border" BasedOn="{StaticResource TaskChip}">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsRecurring}" Value="True">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <TextBlock Style="{StaticResource TaskChipText}" Text="🔁" />
                     </Border>
                     <!-- Checklist progress chip -->
                     <Border>

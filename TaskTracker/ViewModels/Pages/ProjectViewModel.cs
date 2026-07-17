@@ -99,6 +99,8 @@ namespace TaskTracker.ViewModels.Pages
 
         public IReadOnlyList<TaskPriority> Priorities { get; } = new[] { TaskPriority.Low, TaskPriority.Medium, TaskPriority.High };
 
+        public IReadOnlyList<string> RecurrenceOptions { get; } = RecurrenceRules.All;
+
         [ObservableProperty]
         private bool _isGitHubLinked = false;
 
@@ -247,11 +249,7 @@ namespace TaskTracker.ViewModels.Pages
             if (SelectedLabelFilter != AllLabelsFilter)
                 filtered = filtered.Where(t => t.Labels.Contains(SelectedLabelFilter, StringComparer.OrdinalIgnoreCase));
 
-            var sorted = filtered
-                .OrderByDescending(t => t.Priority)
-                .ThenBy(t => t.DueDate ?? DateTime.MaxValue)
-                .ThenBy(t => t.Title, StringComparer.OrdinalIgnoreCase)
-                .ToList();
+            var sorted = LaneSort.Apply(filtered).ToList();
 
             Lanes = new ObservableCollection<ColumnLaneViewModel>(
                 CurrentProject.Columns.Select(column =>
@@ -291,12 +289,22 @@ namespace TaskTracker.ViewModels.Pages
             SelectedTask?.SubTasks.Remove(subTask);
         }
 
-        /// <summary>Called from the view's drop handler.</summary>
-        public void MoveTask(Guid taskId, ColumnLaneViewModel targetLane)
+        /// <summary>
+        /// Called from the view's drop handler. Inserts the task at the given
+        /// visual position and renumbers the target lane's explicit order.
+        /// </summary>
+        public void MoveTask(Guid taskId, ColumnLaneViewModel targetLane, int insertIndex = int.MaxValue)
         {
             if (CurrentProject == null) return;
             var task = CurrentProject.Tasks.FirstOrDefault(t => t.Id == taskId);
-            if (task == null || task.ColumnId == targetLane.Column.Id) return;
+            if (task == null) return;
+
+            var order = targetLane.Tasks.Where(t => t.Id != taskId).ToList();
+            insertIndex = Math.Clamp(insertIndex, 0, order.Count);
+            order.Insert(insertIndex, task);
+            for (var i = 0; i < order.Count; i++)
+                order[i].SortOrder = i + 1;
+
             CurrentProject.MoveTaskToColumn(task, targetLane.Column);
             CategorizeTasks();
         }
@@ -373,6 +381,7 @@ namespace TaskTracker.ViewModels.Pages
 
             ((NewProjectViewModel)newProjectWindow.DataContext).Name = CurrentProject.Name;
             ((NewProjectViewModel)newProjectWindow.DataContext).Description = CurrentProject.Description;
+            ((NewProjectViewModel)newProjectWindow.DataContext).SelectedColor = CurrentProject.Color ?? "";
 
             newProjectWindow.ShowDialog();
 
@@ -380,6 +389,7 @@ namespace TaskTracker.ViewModels.Pages
             {
                 _projectsService.ChangeProjectName(CurrentProject, vm.Name);
                 _projectsService.ChangeProjectDescription(CurrentProject, vm.Description);
+                CurrentProject.Color = string.IsNullOrEmpty(vm.SelectedColor) ? null : vm.SelectedColor;
             }
 
             IsEditing = false;

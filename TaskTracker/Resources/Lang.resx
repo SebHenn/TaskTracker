@@ -128,6 +128,12 @@
   <data name="ImportJson" xml:space="preserve"><value>Import (JSON)</value></data>
   <data name="ImportedProjects" xml:space="preserve"><value>Imported {0} project(s).</value></data>
 
+  <!-- v3: board -->
+  <data name="WipLimitLabel" xml:space="preserve"><value>WIP limit (empty = none)</value></data>
+  <data name="RepeatLabel" xml:space="preserve"><value>Repeat</value></data>
+  <data name="Every" xml:space="preserve"><value>every</value></data>
+  <data name="ProjectColor" xml:space="preserve"><value>Color</value></data>
+
   <!-- Messages -->
   <data name="InvalidProjectName" xml:space="preserve"><value>Invalid project name or already exists</value></data>
 </root>

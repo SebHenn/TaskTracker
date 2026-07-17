@@ -53,7 +53,11 @@
                                     Tag="IsProject"
                                     Image="/Assets/Project-32.png"
                                     Margin="5" Height="40">
-                            <TextBlock Text="{Binding Name}" />
+                            <StackPanel Orientation="Horizontal">
+                                <Ellipse Width="8" Height="8" Margin="0,0,5,0" VerticalAlignment="Center"
+                                         Fill="{Binding Color, Converter={StaticResource ColorStringToBrushConverter}}" />
+                                <TextBlock Text="{Binding Name}" VerticalAlignment="Center" />
+                            </StackPanel>
                         </controls:ProjectItem>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>

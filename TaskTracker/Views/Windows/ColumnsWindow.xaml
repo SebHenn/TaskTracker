@@ -42,15 +42,19 @@
                                     <ColumnDefinition Width="auto" />
                                     <ColumnDefinition Width="auto" />
                                     <ColumnDefinition Width="auto" />
+                                    <ColumnDefinition Width="auto" />
                                 </Grid.ColumnDefinitions>
                                 <controls:CustomTextBox Height="28" Text="{Binding Name, Mode=TwoWay}" />
                                 <CheckBox Grid.Column="1" IsChecked="{Binding IsDoneColumn, Mode=TwoWay}" VerticalAlignment="Center" Margin="10,0"
                                           Foreground="{DynamicResource Brush.Text.Primary}" Content="{DynamicResource DoneColumnFlag}" />
-                                <Button Grid.Column="2" Style="{DynamicResource TitleButton}" Width="26" Height="26"
-                                        Command="{Binding DataContext.MoveUpCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}">▲</Button>
+                                <TextBox Grid.Column="2" Width="42" Height="26" VerticalContentAlignment="Center" Margin="0,0,6,0"
+                                         ToolTip="{DynamicResource WipLimitLabel}"
+                                         Text="{Binding WipLimit, Mode=TwoWay, Converter={StaticResource NullableIntConverter}}" />
                                 <Button Grid.Column="3" Style="{DynamicResource TitleButton}" Width="26" Height="26"
+                                        Command="{Binding DataContext.MoveUpCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}">▲</Button>
+                                <Button Grid.Column="4" Style="{DynamicResource TitleButton}" Width="26" Height="26"
                                         Command="{Binding DataContext.MoveDownCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}">▼</Button>
-                                <Button Grid.Column="4" Style="{DynamicResource TitleButton}" Width="26" Height="26" Foreground="{DynamicResource Brush.Danger}"
+                                <Button Grid.Column="5" Style="{DynamicResource TitleButton}" Width="26" Height="26" Foreground="{DynamicResource Brush.Danger}"
                                         Command="{Binding DataContext.DeleteColumnCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}">✖</Button>
                             </Grid>
                         </DataTemplate>

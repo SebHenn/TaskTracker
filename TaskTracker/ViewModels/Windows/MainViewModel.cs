@@ -224,6 +224,7 @@ namespace TaskTracker.ViewModels.Windows
                 if (!string.IsNullOrWhiteSpace(vm.Name) && !Projects.Any(x => x.Name == vm.Name))
                 {
                     var created = _projectsService.AddProject(vm.Name, vm.Description);
+                    created.Color = string.IsNullOrEmpty(vm.SelectedColor) ? null : vm.SelectedColor;
                     OnNavigateToProject(created.Id);
                     return;
                 }

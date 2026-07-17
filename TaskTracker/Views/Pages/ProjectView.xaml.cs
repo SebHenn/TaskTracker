@@ -25,10 +25,48 @@ namespace TaskTracker.Views.Pages
         {
             if (DataContext is not ProjectViewModel viewModel)
                 return;
-            if ((sender as FrameworkElement)?.DataContext is not ColumnLaneViewModel lane)
+            if (sender is not FrameworkElement element || element.DataContext is not ColumnLaneViewModel lane)
                 return;
-            if (e.Data.GetDataPresent(typeof(Guid)))
-                viewModel.MoveTask((Guid)e.Data.GetData(typeof(Guid)), lane);
+            if (!e.Data.GetDataPresent(typeof(Guid)))
+                return;
+
+            var taskId = (Guid)e.Data.GetData(typeof(Guid));
+            viewModel.MoveTask(taskId, lane, ComputeInsertIndex(element, lane, taskId, e));
+        }
+
+        /// <summary>Visual position for the drop: before the first card whose vertical midpoint is below the pointer.</summary>
+        private static int ComputeInsertIndex(FrameworkElement laneRoot, ColumnLaneViewModel lane, Guid draggedId, DragEventArgs e)
+        {
+            var itemsControl = FindTasksItemsControl(laneRoot);
+            if (itemsControl == null)
+                return int.MaxValue;
+
+            var index = 0;
+            for (var i = 0; i < lane.Tasks.Count; i++)
+            {
+                if (lane.Tasks[i].Id == draggedId)
+                    continue; // position is relative to the list without the dragged card
+                if (itemsControl.ItemContainerGenerator.ContainerFromIndex(i) is not FrameworkElement container)
+                    break;
+                var midpoint = container.TranslatePoint(new Point(0, container.ActualHeight / 2), laneRoot).Y;
+                if (e.GetPosition(laneRoot).Y < midpoint)
+                    return index;
+                index++;
+            }
+            return index;
+        }
+
+        private static ItemsControl? FindTasksItemsControl(DependencyObject root)
+        {
+            for (var i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(root); i++)
+            {
+                var child = System.Windows.Media.VisualTreeHelper.GetChild(root, i);
+                if (child is ItemsControl items)
+                    return items;
+                if (FindTasksItemsControl(child) is { } nested)
+                    return nested;
+            }
+            return null;
         }
 
         private void OnDragOver(object sender, DragEventArgs e)

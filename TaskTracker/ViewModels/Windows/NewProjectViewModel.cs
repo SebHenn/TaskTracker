@@ -43,6 +43,15 @@ namespace TaskTracker.ViewModels.Windows
 
         public IReadOnlyList<TaskPriority> Priorities { get; } = new[] { TaskPriority.Low, TaskPriority.Medium, TaskPriority.High };
 
+        /// <summary>Preset project colors; empty string = none.</summary>
+        public IReadOnlyList<string> ColorOptions { get; } = new[]
+        {
+            "", "#E53935", "#FB8C00", "#FDD835", "#43A047", "#00ACC1", "#1E88E5", "#8E24AA", "#6D4C41",
+        };
+
+        [ObservableProperty]
+        private string _selectedColor = "";
+
         public int WindowHeight => IsTaskMode ? 430 : 300;
 
         public List<string> ParseLabels() => Core.Services.LabelParser.Parse(LabelsText);
