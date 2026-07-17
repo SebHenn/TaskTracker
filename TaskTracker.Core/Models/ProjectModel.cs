@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using System;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Text.Json.Serialization;
 
 namespace TaskTracker.Core.Models
@@ -15,6 +16,10 @@ namespace TaskTracker.Core.Models
 
         [ObservableProperty]
         private ObservableCollection<TaskModel> _tasks = new ObservableCollection<TaskModel>();
+
+        /// <summary>Board columns in display order. Normalized on load: never empty, always at least one done column.</summary>
+        [ObservableProperty]
+        private ObservableCollection<BoardColumn> _columns = new ObservableCollection<BoardColumn>();
 
         [ObservableProperty]
         [property: JsonIgnore]
@@ -45,5 +50,28 @@ namespace TaskTracker.Core.Models
 
         [JsonIgnore]
         public bool IsGitHubLinked => !string.IsNullOrWhiteSpace(GitHubOwner) && !string.IsNullOrWhiteSpace(GitHubRepo);
+
+        [JsonIgnore]
+        public BoardColumn? FirstColumn => Columns.FirstOrDefault(c => !c.IsDoneColumn) ?? Columns.FirstOrDefault();
+
+        [JsonIgnore]
+        public BoardColumn? FirstDoneColumn => Columns.FirstOrDefault(c => c.IsDoneColumn);
+
+        /// <summary>
+        /// The single place task placement happens: sets the column and derives
+        /// IsDone from it, so timestamps/sync/stats stay coherent.
+        /// </summary>
+        public void MoveTaskToColumn(TaskModel task, BoardColumn column)
+        {
+            task.ColumnId = column.Id;
+            task.IsDone = column.IsDoneColumn;
+        }
+
+        /// <summary>Resolves a task's column, falling back by done-state for unassigned/stale ids.</summary>
+        public BoardColumn? ColumnOf(TaskModel task)
+        {
+            var column = task.ColumnId.HasValue ? Columns.FirstOrDefault(c => c.Id == task.ColumnId.Value) : null;
+            return column ?? (task.IsDone ? FirstDoneColumn : FirstColumn);
+        }
     }
 }

@@ -81,12 +81,42 @@ namespace TaskTracker.Core.Storage
                 return new StoreData();
 
             if (firstChar[0] == '[')
-                return MigrateFromV1(json);
+            {
+                var migrated = MigrateFromV1(json);
+                NormalizeColumns(migrated);
+                return migrated;
+            }
 
             var data = JsonSerializer.Deserialize<StoreData>(json, CoreJson.Options) ?? new StoreData();
             // Drop recent ids that no longer resolve to a project.
             data.RecentProjectIds.RemoveAll(id => data.Projects.All(p => p.Id != id));
+            NormalizeColumns(data);
             return data;
+        }
+
+        /// <summary>
+        /// Enforces board-column invariants on every load path (pre-columns files,
+        /// hand-edited or externally written data): each project has at least one
+        /// column and one done column, and every task resolves to a real column.
+        /// </summary>
+        public static void NormalizeColumns(StoreData data)
+        {
+            foreach (var project in data.Projects)
+            {
+                if (project.Columns.Count == 0)
+                {
+                    foreach (var column in BoardColumnDefaults.MigrationColumns())
+                        project.Columns.Add(column);
+                }
+                if (project.Columns.All(c => !c.IsDoneColumn))
+                    project.Columns.Add(new BoardColumn { Name = "Done", IsDoneColumn = true });
+
+                foreach (var task in project.Tasks)
+                {
+                    if (task.ColumnId == null || project.Columns.All(c => c.Id != task.ColumnId.Value))
+                        task.ColumnId = (task.IsDone ? project.FirstDoneColumn : project.FirstColumn)!.Id;
+                }
+            }
         }
 
         private StoreData MigrateFromV1(string json)

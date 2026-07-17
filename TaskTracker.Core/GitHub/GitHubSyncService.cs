@@ -57,6 +57,7 @@ namespace TaskTracker.Core.GitHub
                         GitHubIssueNumber = issue.Number,
                         LastSyncedIssueState = issue.State,
                         CreatedAtUtc = DateTime.UtcNow,
+                        ColumnId = project.FirstColumn?.Id,
                     };
                     foreach (var label in issue.Labels)
                         task.Labels.Add(label);
@@ -86,7 +87,7 @@ namespace TaskTracker.Core.GitHub
 
                 if (remoteChanged && !localChanged)
                 {
-                    ApplyRemoteState(task, remoteState, ref closedLocally, ref reopenedLocally);
+                    ApplyRemoteState(project, task, remoteState, ref closedLocally, ref reopenedLocally);
                 }
                 else if (localChanged && !remoteChanged)
                 {
@@ -111,12 +112,16 @@ namespace TaskTracker.Core.GitHub
             return new SyncResult(imported, closedLocally, reopenedLocally, closedOnGitHub, reopenedOnGitHub, unlinked);
         }
 
-        private static void ApplyRemoteState(TaskModel task, string remoteState, ref int closedLocally, ref int reopenedLocally)
+        private static void ApplyRemoteState(ProjectModel project, TaskModel task, string remoteState, ref int closedLocally, ref int reopenedLocally)
         {
             var shouldBeDone = remoteState == "closed";
             if (task.IsDone == shouldBeDone)
                 return;
-            task.IsDone = shouldBeDone;
+            var target = shouldBeDone ? project.FirstDoneColumn : project.FirstColumn;
+            if (target != null)
+                project.MoveTaskToColumn(task, target);
+            else
+                task.IsDone = shouldBeDone;
             if (shouldBeDone) closedLocally++; else reopenedLocally++;
         }
 

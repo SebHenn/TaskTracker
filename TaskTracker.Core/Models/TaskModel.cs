@@ -19,6 +19,10 @@ namespace TaskTracker.Core.Models
         [ObservableProperty]
         private Guid _id = Guid.NewGuid();
 
+        /// <summary>Board column this task sits in; normalized on load. Move via ProjectModel.MoveTaskToColumn.</summary>
+        [ObservableProperty]
+        private Guid? _columnId;
+
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(IsOverdue))]
         private DateTime? _dueDate;

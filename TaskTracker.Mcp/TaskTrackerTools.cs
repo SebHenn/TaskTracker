@@ -111,6 +111,8 @@ public static class TaskTrackerTools
             if (data.Projects.Any(p => p.Name.Equals(name, StringComparison.OrdinalIgnoreCase)))
                 throw new McpException($"A project named '{name}' already exists.");
             created = new ProjectModel { Name = name.Trim(), Description = description?.Trim() ?? "" };
+            foreach (var column in BoardColumnDefaults.NewProjectColumns())
+                created.Columns.Add(column);
             data.Projects.Add(created);
         });
         return ToJson(new { created!.Id, created.Name });

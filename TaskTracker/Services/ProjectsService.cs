@@ -154,6 +154,8 @@ namespace TaskTracker.Services
         public ProjectModel AddProject(string project, string description)
         {
             var model = new ProjectModel { Name = project, Description = description };
+            foreach (var column in BoardColumnDefaults.NewProjectColumns())
+                model.Columns.Add(column);
             projectModels.Add(model);
             return model;
         }
