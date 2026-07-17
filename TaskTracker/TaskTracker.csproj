@@ -10,6 +10,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- UseWindowsForms adds these as implicit global usings, which makes every
+         bare WPF type (Control, UserControl, Application, Point…) ambiguous.
+         TrayService fully qualifies its WinForms types instead. -->
+    <Using Remove="System.Windows.Forms" />
+    <Using Remove="System.Drawing" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Remove="Assets\Add-32.png" />
     <None Remove="Assets\Edit-32.png" />
     <None Remove="Assets\Home-120.png" />
