@@ -6,11 +6,18 @@ read and manage your projects.
 
 ## Features
 
-- **Projects & Kanban board** — create projects, add tasks, drag them between
-  *In Progress* and *Done*
+- **Projects & Kanban board with custom columns** — define any columns per
+  project (default Backlog / In Progress / Done), flag which ones count as
+  "done", and drag tasks between them
 - **Due dates, priorities, labels** — tasks carry an optional due date
   (overdue tasks are highlighted), a Low/Medium/High priority shown as a
   colored card edge, and free-form labels with per-project filtering
+- **Subtasks & task details** — click a card for a detail panel with a
+  multi-line description, checklist (progress shown on the card), metadata,
+  and quick edits
+- **Today dashboard & reminders** — the home page lists overdue / due today /
+  due this week across all projects; a tray icon shows a reminder balloon on
+  startup
 - **Cross-project search** — search box in the sidebar finds tasks by title,
   description, or label across all projects
 - **Favourites, archive & recents** — pin favourites, archive finished
@@ -18,12 +25,17 @@ read and manage your projects.
 - **Statistics** — per-project open/done/overdue counts, completion percent,
   and a tasks-completed-per-week chart
 - **GitHub issue sync (two-way)** — link a project to a repository; open
-  issues import as tasks, completing a task closes the issue and vice versa
+  issues import as tasks, completing a task closes the issue and vice versa,
+  and local tasks can be pushed to GitHub as new issues
 - **MCP server** — `TaskTracker.Mcp` exposes the same data over the Model
-  Context Protocol so Claude Code can list, create, update, and search tasks
-- **Autosave & backups** — every change is saved automatically (atomic
-  writes, three rolling backups); external edits to the save file are picked
-  up live
+  Context Protocol so Claude Code can manage projects, tasks, columns, and
+  checklists
+- **Safety** — autosave with atomic writes and three rolling backups,
+  project-delete confirmation, task-delete undo, single-instance guard;
+  external edits to the save file are picked up live
+- **Export/import** — JSON round-trip (safe to re-import) and CSV export
+- **Shortcuts** — Ctrl+N new project, Ctrl+T new task, Ctrl+F search,
+  Esc closes the detail panel; window placement is remembered
 - **Dark & light theme, English & German UI**
 
 ## Solution layout
@@ -93,8 +105,9 @@ then ask things like *"what's still open in project X?"* or *"add a task to
 prepare the release notes, due Friday, high priority"*.
 
 Available tools: `list_projects`, `get_project`, `create_project`,
-`list_tasks`, `create_task`, `update_task`, `delete_task`, `search_tasks`,
-`github_sync`.
+`update_project`, `delete_project`, `project_stats`, `list_tasks`,
+`create_task`, `update_task`, `move_task`, `delete_task`, `add_subtask`,
+`update_subtask`, `search_tasks`, `due_overview`, `github_sync`.
 
 For faster startup you can publish the server once
 (`dotnet publish TaskTracker.Mcp -c Release`) and point `.mcp.json` at the

@@ -24,11 +24,13 @@ public static class TaskTrackerTools
     private static readonly JsonSerializerOptions Json = new() { WriteIndented = true };
 
     private record ProjectSummary(Guid Id, string Name, string Description, int OpenTasks, int DoneTasks, bool IsArchived, bool IsFavourite, string? GitHubRepo);
-    private record TaskDto(Guid Id, string Title, string Description, bool IsDone, string Priority, DateTime? DueDate, IReadOnlyList<string> Labels, int? GitHubIssueNumber, DateTime? CompletedAtUtc);
+    private record SubTaskDto(Guid Id, string Title, bool IsDone);
+    private record TaskDto(Guid Id, string Title, string Description, bool IsDone, string? Column, string Priority, DateTime? DueDate, IReadOnlyList<string> Labels, IReadOnlyList<SubTaskDto> SubTasks, int? GitHubIssueNumber, DateTime? CompletedAtUtc);
     private record TaskWithProjectDto(Guid ProjectId, string ProjectName, TaskDto Task);
 
-    private static TaskDto ToDto(TaskModel t) => new(
-        t.Id, t.Title, t.Description, t.IsDone, t.Priority.ToString(), t.DueDate, t.Labels.ToList(), t.GitHubIssueNumber, t.CompletedAtUtc);
+    private static TaskDto ToDto(ProjectModel project, TaskModel t) => new(
+        t.Id, t.Title, t.Description, t.IsDone, project.ColumnOf(t)?.Name, t.Priority.ToString(), t.DueDate, t.Labels.ToList(),
+        t.SubTasks.Select(s => new SubTaskDto(s.Id, s.Title, s.IsDone)).ToList(), t.GitHubIssueNumber, t.CompletedAtUtc);
 
     private static string ToJson<T>(T value) => JsonSerializer.Serialize(value, Json);
 
@@ -93,7 +95,8 @@ public static class TaskTrackerTools
             project.IsFavourite,
             GitHubRepo = project.IsGitHubLinked ? $"{project.GitHubOwner}/{project.GitHubRepo}" : null,
             project.LastSyncedAtUtc,
-            Tasks = project.Tasks.Select(ToDto),
+            Columns = project.Columns.Select(c => new { c.Id, c.Name, c.IsDoneColumn }),
+            Tasks = project.Tasks.Select(t => ToDto(project, t)),
         });
     }
 
@@ -132,7 +135,7 @@ public static class TaskTrackerTools
             "done" => project.Tasks.Where(t => t.IsDone),
             _ => throw new McpException($"Invalid filter '{filter}'. Use all, open, or done."),
         };
-        return ToJson(tasks.Select(ToDto));
+        return ToJson(tasks.Select(t => ToDto(project, t)));
     }
 
     [McpServerTool(Name = "create_task"), Description("Create a task in a project.")]
@@ -142,15 +145,18 @@ public static class TaskTrackerTools
         [Description("Optional task description")] string? description = null,
         [Description("Optional due date (ISO format, e.g. 2026-08-01)")] string? dueDate = null,
         [Description("Optional priority: low, medium, or high (default medium)")] string? priority = null,
-        [Description("Optional labels")] string[]? labels = null)
+        [Description("Optional labels")] string[]? labels = null,
+        [Description("Optional board column (name or GUID); defaults to the first column")] string? column = null)
     {
         if (string.IsNullOrWhiteSpace(title))
             throw new McpException("Task title must not be empty.");
 
         TaskModel? created = null;
+        ProjectModel? owner = null;
         CreateStore().Update(data =>
         {
             var project = FindProject(data, projectId);
+            owner = project;
             created = new TaskModel
             {
                 Title = title.Trim(),
@@ -162,8 +168,17 @@ public static class TaskTrackerTools
             foreach (var label in labels ?? Array.Empty<string>())
                 created.Labels.Add(label);
             project.Tasks.Add(created);
+            project.MoveTaskToColumn(created, column == null ? project.FirstColumn! : FindColumn(project, column));
         });
-        return ToJson(ToDto(created!));
+        return ToJson(ToDto(owner!, created!));
+    }
+
+    private static BoardColumn FindColumn(ProjectModel project, string column)
+    {
+        var byId = Guid.TryParse(column, out var id) ? project.Columns.FirstOrDefault(c => c.Id == id) : null;
+        var found = byId ?? project.Columns.FirstOrDefault(c => c.Name.Equals(column, StringComparison.OrdinalIgnoreCase));
+        return found ?? throw new McpException(
+            $"No column '{column}' in project '{project.Name}'. Available: {string.Join(", ", project.Columns.Select(c => c.Name))}.");
     }
 
     [McpServerTool(Name = "update_task"), Description("Update fields of a task. Only provided fields change; marking done/not-done is isDone.")]
@@ -174,15 +189,28 @@ public static class TaskTrackerTools
         [Description("Mark done (true) or reopen (false)")] bool? isDone = null,
         [Description("New due date (ISO format), or 'none' to clear")] string? dueDate = null,
         [Description("New priority: low, medium, or high")] string? priority = null,
-        [Description("Replacement label list")] string[]? labels = null)
+        [Description("Replacement label list")] string[]? labels = null,
+        [Description("Move to this board column (name or GUID)")] string? column = null)
     {
         TaskModel? updated = null;
+        ProjectModel? owner = null;
         CreateStore().Update(data =>
         {
-            var (_, task) = FindTask(data, taskId);
+            var (project, task) = FindTask(data, taskId);
+            owner = project;
             if (title != null) task.Title = title.Trim();
             if (description != null) task.Description = description;
-            if (isDone.HasValue) task.IsDone = isDone.Value;
+            if (column != null)
+                project.MoveTaskToColumn(task, FindColumn(project, column));
+            if (isDone.HasValue && task.IsDone != isDone.Value)
+            {
+                // Route through the column model so ColumnId stays coherent.
+                var target = isDone.Value ? project.FirstDoneColumn : project.FirstColumn;
+                if (target != null)
+                    project.MoveTaskToColumn(task, target);
+                else
+                    task.IsDone = isDone.Value;
+            }
             if (dueDate != null)
                 task.DueDate = dueDate.Equals("none", StringComparison.OrdinalIgnoreCase) ? null : ParseDate(dueDate);
             if (priority != null) task.Priority = ParsePriority(priority);
@@ -194,7 +222,7 @@ public static class TaskTrackerTools
             }
             updated = task;
         });
-        return ToJson(ToDto(updated!));
+        return ToJson(ToDto(owner!, updated!));
     }
 
     [McpServerTool(Name = "delete_task"), Description("Delete a task permanently.")]
@@ -217,8 +245,140 @@ public static class TaskTrackerTools
     {
         var data = CreateStore().Load();
         var results = TaskSearch.Search(data.Projects, query, label, includeDone)
-            .Select(r => new TaskWithProjectDto(r.Project.Id, r.Project.Name, ToDto(r.Task)));
+            .Select(r => new TaskWithProjectDto(r.Project.Id, r.Project.Name, ToDto(r.Project, r.Task)));
         return ToJson(results);
+    }
+
+    [McpServerTool(Name = "update_project"), Description("Update a project's name, description, or archived state. Only provided fields change.")]
+    public static string UpdateProject(
+        [Description("Project id (GUID from list_projects)")] string projectId,
+        [Description("New name")] string? name = null,
+        [Description("New description")] string? description = null,
+        [Description("Archive (true) or unarchive (false)")] bool? isArchived = null)
+    {
+        ProjectModel? updated = null;
+        CreateStore().Update(data =>
+        {
+            var project = FindProject(data, projectId);
+            if (!string.IsNullOrWhiteSpace(name))
+            {
+                if (data.Projects.Any(p => p != project && p.Name.Equals(name, StringComparison.OrdinalIgnoreCase)))
+                    throw new McpException($"A project named '{name}' already exists.");
+                project.Name = name.Trim();
+            }
+            if (description != null)
+                project.Description = description;
+            if (isArchived.HasValue && project.IsArchived != isArchived.Value)
+            {
+                project.IsArchived = isArchived.Value;
+                project.ArchivedAtUtc = isArchived.Value ? DateTime.UtcNow : null;
+            }
+            updated = project;
+        });
+        return ToJson(new { updated!.Id, updated.Name, updated.Description, updated.IsArchived });
+    }
+
+    [McpServerTool(Name = "delete_project"), Description("Delete a project and all of its tasks permanently. Requires confirm=true.")]
+    public static string DeleteProject(
+        [Description("Project id (GUID from list_projects)")] string projectId,
+        [Description("Must be true to actually delete")] bool confirm = false)
+    {
+        if (!confirm)
+            throw new McpException("Deletion is permanent. Call again with confirm=true to delete the project.");
+        string? name = null;
+        CreateStore().Update(data =>
+        {
+            var project = FindProject(data, projectId);
+            name = project.Name;
+            data.Projects.Remove(project);
+            data.RecentProjectIds.Remove(project.Id);
+        });
+        return ToJson(new { deleted = true, name });
+    }
+
+    [McpServerTool(Name = "project_stats"), Description("Get statistics for a project: open/done/overdue counts, completion percent, tasks completed per week.")]
+    public static string ProjectStatsTool(
+        [Description("Project id (GUID from list_projects)")] string projectId)
+    {
+        var data = CreateStore().Load();
+        var project = FindProject(data, projectId);
+        var stats = ProjectStats.Compute(project);
+        return ToJson(new
+        {
+            project.Name,
+            stats.OpenCount,
+            stats.DoneCount,
+            stats.OverdueCount,
+            CompletionPercent = Math.Round(stats.CompletionPercent, 1),
+            DonePerWeek = stats.DonePerWeek.Select(w => new { WeekStart = w.WeekStart.ToString("yyyy-MM-dd"), w.Count }),
+        });
+    }
+
+    [McpServerTool(Name = "move_task"), Description("Move a task to another board column of its project.")]
+    public static string MoveTask(
+        [Description("Task id (GUID)")] string taskId,
+        [Description("Target column (name, case-insensitive, or GUID)")] string column)
+    {
+        TaskModel? moved = null;
+        ProjectModel? owner = null;
+        CreateStore().Update(data =>
+        {
+            var (project, task) = FindTask(data, taskId);
+            owner = project;
+            project.MoveTaskToColumn(task, FindColumn(project, column));
+            moved = task;
+        });
+        return ToJson(ToDto(owner!, moved!));
+    }
+
+    [McpServerTool(Name = "add_subtask"), Description("Add a checklist item to a task.")]
+    public static string AddSubTask(
+        [Description("Task id (GUID)")] string taskId,
+        [Description("Checklist item text")] string title)
+    {
+        if (string.IsNullOrWhiteSpace(title))
+            throw new McpException("Subtask title must not be empty.");
+        SubTaskModel? created = null;
+        CreateStore().Update(data =>
+        {
+            var (_, task) = FindTask(data, taskId);
+            created = new SubTaskModel { Title = title.Trim() };
+            task.SubTasks.Add(created);
+        });
+        return ToJson(new { created!.Id, created.Title, created.IsDone });
+    }
+
+    [McpServerTool(Name = "update_subtask"), Description("Rename or check/uncheck a checklist item.")]
+    public static string UpdateSubTask(
+        [Description("Subtask id (GUID, from get_project/list_tasks)")] string subtaskId,
+        [Description("New text")] string? title = null,
+        [Description("Check (true) or uncheck (false)")] bool? isDone = null)
+    {
+        if (!Guid.TryParse(subtaskId, out var id))
+            throw new McpException($"'{subtaskId}' is not a valid subtask id (expected a GUID).");
+        SubTaskModel? updated = null;
+        CreateStore().Update(data =>
+        {
+            updated = data.Projects.SelectMany(p => p.Tasks).SelectMany(t => t.SubTasks).FirstOrDefault(s => s.Id == id)
+                      ?? throw new McpException($"No subtask with id {subtaskId}.");
+            if (!string.IsNullOrWhiteSpace(title)) updated.Title = title.Trim();
+            if (isDone.HasValue) updated.IsDone = isDone.Value;
+        });
+        return ToJson(new { updated!.Id, updated.Title, updated.IsDone });
+    }
+
+    [McpServerTool(Name = "due_overview"), Description("Overdue, due-today, and due-this-week tasks across all non-archived projects.")]
+    public static string DueOverviewTool()
+    {
+        var data = CreateStore().Load();
+        var overview = DueTasks.Collect(data.Projects);
+        object Row(DueTaskItem i) => new { ProjectName = i.Project.Name, i.Task.Id, i.Task.Title, i.Task.DueDate };
+        return ToJson(new
+        {
+            Overdue = overview.Overdue.Select(Row),
+            DueToday = overview.DueToday.Select(Row),
+            DueThisWeek = overview.DueThisWeek.Select(Row),
+        });
     }
 
     [McpServerTool(Name = "github_sync"), Description("Run the two-way GitHub issue sync for a linked project. Requires a token saved in the TaskTracker app settings.")]
