@@ -6,6 +6,7 @@
     <!-- Theme-independent resources; colors come from the active theme's semantic brushes. -->
 
     <helpers:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
+    <helpers:CountToVisibilityConverter x:Key="CountToVisibilityConverter" />
 
     <Style x:Key="TaskChip" TargetType="Border">
         <Setter Property="Background" Value="{DynamicResource Brush.Chip.Background}" />

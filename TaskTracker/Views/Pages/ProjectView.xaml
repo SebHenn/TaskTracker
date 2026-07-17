@@ -249,6 +249,17 @@
             </ItemsControl.ItemTemplate>
         </ItemsControl>
 
-        <controls:SideBarItem Grid.Row="4" Command="{Binding NewTaskClickCommand}" Image="/Assets/Add-32.png" Margin="5" Height="40" Content="{DynamicResource AddTask}"></controls:SideBarItem>
+        <StackPanel Grid.Row="4" Grid.ColumnSpan="3" Orientation="Horizontal">
+            <controls:SideBarItem Command="{Binding NewTaskClickCommand}" Image="/Assets/Add-32.png" Margin="5" Height="40" Content="{DynamicResource AddTask}"></controls:SideBarItem>
+            <!-- Undo bar shown briefly after a task deletion -->
+            <Border VerticalAlignment="Center" Margin="15,0" Padding="10,5" CornerRadius="4" Background="{DynamicResource Brush.Chip.Background}"
+                    Visibility="{Binding IsUndoVisible, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=True}">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="{Binding UndoText}" Foreground="{DynamicResource Brush.Text.Primary}" VerticalAlignment="Center" />
+                    <Button Style="{DynamicResource TitleButton}" Margin="10,0,0,0" Padding="6,2" FontWeight="Bold"
+                            Foreground="{DynamicResource Brush.Accent}" Command="{Binding UndoDeleteCommand}" Content="{DynamicResource Undo}" />
+                </StackPanel>
+            </Border>
+        </StackPanel>
     </Grid>
 </UserControl>

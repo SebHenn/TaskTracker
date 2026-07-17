@@ -389,6 +389,11 @@ namespace TaskTracker.ViewModels.Pages
         private void OnDeleteProject()
         {
             if (CurrentProject == null) return;
+            var confirmed = MessageBox.Show(
+                string.Format(_languageService.GetString("DeleteProjectConfirm"), CurrentProject.Name),
+                "TaskTracker", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            if (confirmed != MessageBoxResult.Yes)
+                return;
             _projectsService.RemoveProject(CurrentProject);
             _mainViewModel.IsHomeSelected = true;
             _mainViewModel.ResortProjects();
@@ -448,6 +453,18 @@ namespace TaskTracker.ViewModels.Pages
             OnOpenTaskDetail(task);
         }
 
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(IsUndoVisible))]
+        private TaskModel? _lastDeletedTask;
+
+        private ProjectModel? _lastDeletedFrom;
+        private System.Windows.Threading.DispatcherTimer? _undoTimer;
+
+        public bool IsUndoVisible => LastDeletedTask != null;
+
+        [ObservableProperty]
+        private string _undoText = "";
+
         [RelayCommand]
         private void OnDeleteTask(TaskModel task)
         {
@@ -455,7 +472,37 @@ namespace TaskTracker.ViewModels.Pages
             if (SelectedTask == task)
                 SelectedTask = null;
             CurrentProject.Tasks.Remove(task);
+
+            // Offer undo for a few seconds instead of a confirmation dialog.
+            LastDeletedTask = task;
+            _lastDeletedFrom = CurrentProject;
+            UndoText = string.Format(_languageService.GetString("TaskDeletedUndo"), task.Title);
+            _undoTimer ??= CreateUndoTimer();
+            _undoTimer.Stop();
+            _undoTimer.Start();
+
             CategorizeTasks();
+        }
+
+        private System.Windows.Threading.DispatcherTimer CreateUndoTimer()
+        {
+            var timer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(8) };
+            timer.Tick += (_, _) => { timer.Stop(); LastDeletedTask = null; _lastDeletedFrom = null; };
+            return timer;
+        }
+
+        [RelayCommand]
+        private void OnUndoDelete()
+        {
+            _undoTimer?.Stop();
+            if (LastDeletedTask != null && _lastDeletedFrom != null)
+            {
+                _lastDeletedFrom.Tasks.Add(LastDeletedTask);
+                if (_lastDeletedFrom == CurrentProject)
+                    CategorizeTasks();
+            }
+            LastDeletedTask = null;
+            _lastDeletedFrom = null;
         }
     }
 }

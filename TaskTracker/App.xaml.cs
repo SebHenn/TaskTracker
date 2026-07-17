@@ -45,6 +45,7 @@ namespace TaskTracker
                 provider.GetRequiredService<ColumnsViewModel>()));
             services.AddTransient<ColumnsViewModel>();
             services.AddSingleton<AutoSyncService>();
+            services.AddSingleton<TrayService>();
 
 
             services.AddSingleton<INavigationService, NavigationService>();
@@ -75,10 +76,12 @@ namespace TaskTracker
             langservice.ChangeLanguage(settings.Language);
 
             _serviceProvider.GetRequiredService<AutoSyncService>();
+            _serviceProvider.GetRequiredService<TrayService>().Initialize();
         }
 
         protected override void OnExit(ExitEventArgs e)
         {
+            _serviceProvider.GetRequiredService<TrayService>().Dispose();
             var projectsService = _serviceProvider.GetRequiredService<IProjectsService>();
             projectsService.SaveNow();
             (projectsService as IDisposable)?.Dispose();

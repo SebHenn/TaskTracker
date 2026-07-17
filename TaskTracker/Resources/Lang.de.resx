@@ -113,6 +113,16 @@
   <data name="CreatedLabel" xml:space="preserve"><value>Erstellt</value></data>
   <data name="CompletedLabel" xml:space="preserve"><value>Abgeschlossen am</value></data>
 
+  <!-- Dashboard / tray / delete safety -->
+  <data name="OverdueSection" xml:space="preserve"><value>Überfällig</value></data>
+  <data name="DueTodaySection" xml:space="preserve"><value>Heute fällig</value></data>
+  <data name="DueThisWeekSection" xml:space="preserve"><value>Diese Woche fällig</value></data>
+  <data name="TrayOpen" xml:space="preserve"><value>TaskTracker öffnen</value></data>
+  <data name="TrayExit" xml:space="preserve"><value>Beenden</value></data>
+  <data name="DeleteProjectConfirm" xml:space="preserve"><value>Projekt "{0}" mit allen Aufgaben löschen? Dies kann nicht rückgängig gemacht werden.</value></data>
+  <data name="TaskDeletedUndo" xml:space="preserve"><value>"{0}" gelöscht</value></data>
+  <data name="Undo" xml:space="preserve"><value>Rückgängig</value></data>
+
   <!-- Messages -->
   <data name="InvalidProjectName" xml:space="preserve"><value>Ungültiger Projektname oder bereits vorhanden</value></data>
 </root>

@@ -113,6 +113,16 @@
   <data name="CreatedLabel" xml:space="preserve"><value>Created</value></data>
   <data name="CompletedLabel" xml:space="preserve"><value>Completed</value></data>
 
+  <!-- Dashboard / tray / delete safety -->
+  <data name="OverdueSection" xml:space="preserve"><value>Overdue</value></data>
+  <data name="DueTodaySection" xml:space="preserve"><value>Due today</value></data>
+  <data name="DueThisWeekSection" xml:space="preserve"><value>Due this week</value></data>
+  <data name="TrayOpen" xml:space="preserve"><value>Open TaskTracker</value></data>
+  <data name="TrayExit" xml:space="preserve"><value>Exit</value></data>
+  <data name="DeleteProjectConfirm" xml:space="preserve"><value>Delete project "{0}" and all of its tasks? This cannot be undone.</value></data>
+  <data name="TaskDeletedUndo" xml:space="preserve"><value>Deleted "{0}"</value></data>
+  <data name="Undo" xml:space="preserve"><value>Undo</value></data>
+
   <!-- Messages -->
   <data name="InvalidProjectName" xml:space="preserve"><value>Invalid project name or already exists</value></data>
 </root>
