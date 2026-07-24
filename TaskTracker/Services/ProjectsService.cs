@@ -21,6 +21,7 @@ namespace TaskTracker.Services
         private readonly DispatcherTimer _reloadTimer;
         private readonly FileSystemWatcher? _watcher;
         private readonly List<Guid> _recentIds = new();
+        private readonly System.Threading.SemaphoreSlim _writeGate = new(1, 1);
         private bool _suppressChangeEvents;
 
         public ObservableCollection<ProjectModel> projectModels { get; }
@@ -122,14 +123,49 @@ namespace TaskTracker.Services
             WeakReferenceMessenger.Default.Send(new StoreReloadedMessage());
         }
 
-        public void SaveNow()
+        public void SaveNow() => Persist(waitForDisk: false);
+
+        public void Flush() => Persist(waitForDisk: true);
+
+        /// <summary>
+        /// Serializing reads the live model graph, so it has to happen here on the
+        /// UI thread. Everything after that is file work — waiting on the
+        /// cross-process lock (up to two seconds), rotating three backups, writing —
+        /// and used to stutter the UI on every autosave tick, so it runs off-thread.
+        /// </summary>
+        private void Persist(bool waitForDisk)
         {
             _saveTimer.Stop();
-            _store.Save(new StoreData
+
+            var prepared = _store.Prepare(new StoreData
             {
                 Projects = projectModels,
                 RecentProjectIds = _recentIds.ToList(),
             });
+
+            var write = WriteAsync(prepared);
+            if (waitForDisk)
+                write.GetAwaiter().GetResult();
+        }
+
+        private async Task WriteAsync(ProjectStore.PreparedSave prepared)
+        {
+            // One write at a time, in order: a burst of edits must not race two
+            // writes onto the same file.
+            await _writeGate.WaitAsync().ConfigureAwait(false);
+            try
+            {
+                await Task.Run(() => _store.Write(prepared)).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                // Losing a save is worth a log line; it must not take the app down.
+                AppLog.Write("save", ex);
+            }
+            finally
+            {
+                _writeGate.Release();
+            }
         }
 
         private void RebuildRecentProjection()
@@ -193,6 +229,7 @@ namespace TaskTracker.Services
         {
             _watcher?.Dispose();
             _changeTracker.Dispose();
+            _writeGate.Dispose();
         }
     }
 }

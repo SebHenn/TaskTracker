@@ -34,26 +34,52 @@ namespace TaskTracker.Views.Pages
             viewModel.MoveTask(taskId, lane, ComputeInsertIndex(element, lane, taskId, e));
         }
 
-        /// <summary>Visual position for the drop: before the first card whose vertical midpoint is below the pointer.</summary>
+        /// <summary>
+        /// Where the drop lands, as an index into the lane *without* the dragged
+        /// card — which is the frame of reference MoveTask works in.
+        ///
+        /// Hit-tests the card under the pointer instead of walking the lane by
+        /// index: once the list virtualizes, off-screen rows have no container at
+        /// all, so an index walk stops at the first unrealized row and drops the
+        /// card in the wrong place as soon as a column is scrolled.
+        /// </summary>
         private static int ComputeInsertIndex(FrameworkElement laneRoot, ColumnLaneViewModel lane, Guid draggedId, DragEventArgs e)
         {
-            var itemsControl = FindTasksItemsControl(laneRoot);
-            if (itemsControl == null)
+            var list = FindTasksItemsControl(laneRoot);
+            if (list == null)
                 return int.MaxValue;
 
-            var index = 0;
+            var point = e.GetPosition(list);
+            if (list.InputHitTest(point) is not DependencyObject hit ||
+                list.ContainerFromElement(hit) is not FrameworkElement container)
+            {
+                return int.MaxValue; // empty space past the last card: append
+            }
+
+            var index = list.ItemContainerGenerator.IndexFromContainer(container);
+            if (index < 0)
+                return int.MaxValue;
+
+            // Past the card's midpoint means "after it".
+            var midpoint = container.TranslatePoint(new Point(0, container.ActualHeight / 2), list).Y;
+            var target = point.Y < midpoint ? index : index + 1;
+
+            // Pulling the dragged card out first shifts everything below it up one.
+            var currentIndex = IndexOfTask(lane, draggedId);
+            if (currentIndex >= 0 && currentIndex < target)
+                target--;
+
+            return target;
+        }
+
+        private static int IndexOfTask(ColumnLaneViewModel lane, Guid id)
+        {
             for (var i = 0; i < lane.Tasks.Count; i++)
             {
-                if (lane.Tasks[i].Id == draggedId)
-                    continue; // position is relative to the list without the dragged card
-                if (itemsControl.ItemContainerGenerator.ContainerFromIndex(i) is not FrameworkElement container)
-                    break;
-                var midpoint = container.TranslatePoint(new Point(0, container.ActualHeight / 2), laneRoot).Y;
-                if (e.GetPosition(laneRoot).Y < midpoint)
-                    return index;
-                index++;
+                if (lane.Tasks[i].Id == id)
+                    return i;
             }
-            return index;
+            return -1;
         }
 
         private static ItemsControl? FindTasksItemsControl(DependencyObject root)

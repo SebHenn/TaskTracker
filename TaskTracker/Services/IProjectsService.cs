@@ -23,7 +23,17 @@ namespace TaskTracker.Services
 
         void RemoveTaskFromProject(ProjectModel project, TaskModel task);
 
-        /// <summary>Flush any pending changes to disk immediately.</summary>
+        /// <summary>
+        /// Snapshot the current state now and write it in the background. Returns as
+        /// soon as the snapshot is taken, so the UI thread never waits on the store
+        /// lock or on file I/O.
+        /// </summary>
         void SaveNow();
+
+        /// <summary>
+        /// Same, but blocks until the bytes are on disk. For shutdown, where
+        /// returning early would lose the write.
+        /// </summary>
+        void Flush();
     }
 }

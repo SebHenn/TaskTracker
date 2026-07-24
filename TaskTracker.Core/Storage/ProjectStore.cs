@@ -41,6 +41,39 @@ namespace TaskTracker.Core.Storage
             SaveUnlocked(data);
         }
 
+        /// <summary>An envelope already stamped and serialized, ready to hit the disk.</summary>
+        public readonly record struct PreparedSave(string Json, Guid Revision);
+
+        /// <summary>
+        /// Stamps and serializes without touching the disk.
+        ///
+        /// Split out from <see cref="Save"/> so a caller on a UI thread can do this
+        /// part — the only part that reads the live model graph — on that thread,
+        /// and hand <see cref="Write"/> to a background one. That matters because
+        /// <see cref="AcquireLock"/> can block for up to two seconds waiting on the
+        /// other process, and backup rotation copies the whole file.
+        /// </summary>
+        public PreparedSave Prepare(StoreData data)
+        {
+            data.Version = 2;
+            data.Revision = Guid.NewGuid();
+            data.SavedAtUtc = DateTime.UtcNow;
+
+            // Claim the revision up front: the file watcher compares against it to
+            // recognise our own writes, and must not see a stale value while an
+            // async write is still in flight.
+            LastWrittenRevision = data.Revision;
+
+            return new PreparedSave(JsonSerializer.Serialize(data, CoreJson.Options), data.Revision);
+        }
+
+        /// <summary>Writes a prepared envelope. Safe to call off the UI thread.</summary>
+        public void Write(PreparedSave prepared)
+        {
+            using var _ = AcquireLock();
+            WriteUnlocked(prepared);
+        }
+
         /// <summary>Load, apply <paramref name="mutate"/>, save — all under one lock. Used by out-of-process callers (MCP).</summary>
         public StoreData Update(Action<StoreData> mutate)
         {
@@ -149,21 +182,18 @@ namespace TaskTracker.Core.Storage
             return data;
         }
 
-        private void SaveUnlocked(StoreData data)
+        private void SaveUnlocked(StoreData data) => WriteUnlocked(Prepare(data));
+
+        private void WriteUnlocked(PreparedSave prepared)
         {
             Directory.CreateDirectory(BaseDirectory);
 
-            data.Version = 2;
-            data.Revision = Guid.NewGuid();
-            data.SavedAtUtc = DateTime.UtcNow;
-
-            var json = JsonSerializer.Serialize(data, CoreJson.Options);
             var tmpPath = SaveFilePath + ".tmp";
-            File.WriteAllText(tmpPath, json);
+            File.WriteAllText(tmpPath, prepared.Json);
 
             RotateBackups();
             File.Move(tmpPath, SaveFilePath, overwrite: true);
-            LastWrittenRevision = data.Revision;
+            LastWrittenRevision = prepared.Revision;
 
             // The legacy recents file is superseded by recentProjectIds in the envelope.
             if (File.Exists(LegacyRecentFilePath))

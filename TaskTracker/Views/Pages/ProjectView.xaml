@@ -311,17 +311,39 @@
                             </TextBlock>
                         </StackPanel>
                         <Border Grid.Row="1" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1" CornerRadius="5" AllowDrop="True" Background="Transparent">
-                            <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Hidden">
-                                <ItemsControl ItemsSource="{Binding Tasks}" ItemTemplate="{DynamicResource TaskCardTemplate}">
-                                    <ItemsControl.ItemContainerStyle>
-                                        <Style TargetType="ContentPresenter">
-                                            <EventSetter Event="PreviewMouseLeftButtonDown" Handler="OnTaskPreviewMouseLeftButtonDown" />
-                                            <EventSetter Event="PreviewMouseMove" Handler="OnTaskPreviewMouseMove" />
-                                            <EventSetter Event="PreviewMouseLeftButtonUp" Handler="OnTaskPreviewMouseLeftButtonUp" />
-                                        </Style>
-                                    </ItemsControl.ItemContainerStyle>
-                                </ItemsControl>
-                            </ScrollViewer>
+                            <!-- ListBox rather than ItemsControl: it virtualizes, and it brings
+                                 the focus and selection model that keyboard moves and bulk
+                                 actions build on. Its own ScrollViewer replaces the wrapper that
+                                 used to be here — an ItemsControl nested in a ScrollViewer is
+                                 given infinite height, which silently defeats virtualization. -->
+                            <ListBox ItemsSource="{Binding Tasks}"
+                                     ItemTemplate="{DynamicResource TaskCardTemplate}"
+                                     Background="Transparent" BorderThickness="0"
+                                     HorizontalContentAlignment="Stretch"
+                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                     ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                     VirtualizingPanel.IsVirtualizing="True"
+                                     VirtualizingPanel.VirtualizationMode="Recycling">
+                                <ListBox.ItemContainerStyle>
+                                    <Style TargetType="ListBoxItem">
+                                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                        <Setter Property="Padding" Value="0" />
+                                        <!-- Bare ContentPresenter: the card template already
+                                             draws everything, and the stock ListBoxItem chrome
+                                             would paint a selection block behind it. -->
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="ListBoxItem">
+                                                    <ContentPresenter HorizontalAlignment="Stretch" />
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                        <EventSetter Event="PreviewMouseLeftButtonDown" Handler="OnTaskPreviewMouseLeftButtonDown" />
+                                        <EventSetter Event="PreviewMouseMove" Handler="OnTaskPreviewMouseMove" />
+                                        <EventSetter Event="PreviewMouseLeftButtonUp" Handler="OnTaskPreviewMouseLeftButtonUp" />
+                                    </Style>
+                                </ListBox.ItemContainerStyle>
+                            </ListBox>
                         </Border>
                     </Grid>
                 </DataTemplate>

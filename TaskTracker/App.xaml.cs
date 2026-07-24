@@ -165,7 +165,9 @@ namespace TaskTracker
             }
 
             var projectsService = _serviceProvider.GetRequiredService<IProjectsService>();
-            projectsService.SaveNow();
+            // Blocking: saving in the background is fine while running, but exiting
+            // before the write completes would drop it.
+            projectsService.Flush();
             (projectsService as IDisposable)?.Dispose();
             _instanceMutex?.Dispose();
 

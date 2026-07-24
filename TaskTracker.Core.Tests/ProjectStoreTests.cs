@@ -30,6 +30,63 @@ public class ProjectStoreTests : IDisposable
     }
 
     [Fact]
+    public void PrepareThenWrite_RoundTripsTheSameAsSave()
+    {
+        // The UI thread prepares, a background thread writes.
+        var store = NewStore();
+        var prepared = store.Prepare(SampleData());
+
+        Assert.False(File.Exists(store.SaveFilePath)); // Prepare must not touch disk
+        store.Write(prepared);
+
+        var loaded = NewStore().Load();
+        Assert.Single(loaded.Projects);
+        Assert.Equal("Alpha", loaded.Projects[0].Name);
+        Assert.Equal("Do it", loaded.Projects[0].Tasks[0].Title);
+    }
+
+    [Fact]
+    public void Prepare_ClaimsTheRevisionBeforeTheWriteLands()
+    {
+        // The file watcher uses LastWrittenRevision to recognise the app's own
+        // writes. If it only updated after an async write finished, a watcher event
+        // arriving mid-write would look external and trigger a spurious reload.
+        var store = NewStore();
+
+        var prepared = store.Prepare(SampleData());
+
+        Assert.Equal(prepared.Revision, store.LastWrittenRevision);
+        store.Write(prepared);
+        Assert.Equal(prepared.Revision, store.LastWrittenRevision);
+        Assert.Equal(prepared.Revision, NewStore().PeekRevision());
+    }
+
+    [Fact]
+    public async Task Write_FromABackgroundThread_Persists()
+    {
+        var store = NewStore();
+        var prepared = store.Prepare(SampleData());
+
+        await Task.Run(() => store.Write(prepared));
+
+        Assert.Equal("Alpha", NewStore().Load().Projects[0].Name);
+    }
+
+    [Fact]
+    public void SequentialPreparedWrites_KeepBackupsAndLatestState()
+    {
+        var store = NewStore();
+        var data = SampleData();
+
+        store.Write(store.Prepare(data));
+        data.Projects[0].Name = "Beta";
+        store.Write(store.Prepare(data));
+
+        Assert.Equal("Beta", NewStore().Load().Projects[0].Name);
+        Assert.True(File.Exists(store.SaveFilePath + ".bak1"));
+    }
+
+    [Fact]
     public void SaveThenLoad_RoundTripsProjectsAndRecents()
     {
         var store = NewStore();

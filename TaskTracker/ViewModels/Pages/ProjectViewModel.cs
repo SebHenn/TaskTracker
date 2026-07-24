@@ -293,7 +293,7 @@ namespace TaskTracker.ViewModels.Pages
         {
             if (CurrentProject == null)
             {
-                Lanes = [];
+                Lanes.Clear();
                 AvailableLabels = [];
                 HasLabels = false;
                 Stats = null;
@@ -316,10 +316,52 @@ namespace TaskTracker.ViewModels.Pages
                 return;
             }
 
-            Lanes = new ObservableCollection<ColumnLaneViewModel>(
-                board.Lanes.Select(lane => new ColumnLaneViewModel(lane.Column, lane.Tasks)));
+            SyncLanes(board.Lanes);
 
             RefreshStats();
+        }
+
+        /// <summary>
+        /// Reconciles the existing lane view models against a fresh projection,
+        /// keyed by column, instead of replacing the collection.
+        ///
+        /// The old code rebuilt every lane on every edit, filter change, sync and
+        /// drop, which tore down and recreated the entire board visual tree — and
+        /// threw away each column's scroll position with it.
+        /// </summary>
+        private void SyncLanes(IReadOnlyList<BoardLane> projected)
+        {
+            // Retire lanes whose column no longer exists.
+            var live = projected.Select(lane => lane.Column.Id).ToHashSet();
+            for (var i = Lanes.Count - 1; i >= 0; i--)
+            {
+                if (!live.Contains(Lanes[i].Column.Id))
+                    Lanes.RemoveAt(i);
+            }
+
+            for (var i = 0; i < projected.Count; i++)
+            {
+                var lane = projected[i];
+                var existing = IndexOfLane(lane.Column.Id);
+                if (existing < 0)
+                {
+                    Lanes.Insert(i, new ColumnLaneViewModel(lane.Column, lane.Tasks));
+                    continue;
+                }
+                if (existing != i)
+                    Lanes.Move(existing, i);
+                Lanes[i].Sync(lane.Tasks);
+            }
+        }
+
+        private int IndexOfLane(Guid columnId)
+        {
+            for (var i = 0; i < Lanes.Count; i++)
+            {
+                if (Lanes[i].Column.Id == columnId)
+                    return i;
+            }
+            return -1;
         }
 
         [RelayCommand]

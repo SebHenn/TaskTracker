@@ -78,7 +78,7 @@ namespace TaskTracker.ViewModels.Windows
         [RelayCommand]
         public void OnClose()
         {
-            _projectsService.SaveNow();
+            _projectsService.Flush();
             Application.Current.Shutdown();
         }
 
@@ -119,10 +119,22 @@ namespace TaskTracker.ViewModels.Windows
         [ObservableProperty]
         private string _searchText = "";
 
+        /// <summary>
+        /// Typing fires this per keystroke, and each search walks every task in every
+        /// project. Debouncing collapses a burst of typing into one scan once the
+        /// user pauses.
+        /// </summary>
+        private readonly System.Windows.Threading.DispatcherTimer _searchDebounce =
+            new() { Interval = TimeSpan.FromMilliseconds(200) };
+
         partial void OnSearchTextChanged(string value)
         {
+            _searchDebounce.Stop();
+
             if (string.IsNullOrWhiteSpace(value))
             {
+                // Clearing the box has nothing to compute, so leave immediately
+                // rather than making the user wait out the debounce.
                 if (NavigationService.CurrentView is SearchViewModel)
                 {
                     IsHomeSelected = true;
@@ -131,8 +143,19 @@ namespace TaskTracker.ViewModels.Windows
                 return;
             }
 
+            _searchDebounce.Start();
+        }
+
+        private void RunPendingSearch()
+        {
+            _searchDebounce.Stop();
+
+            var query = SearchText.Trim();
+            if (query.Length == 0)
+                return;
+
             var searchViewModel = _serviceProvider.GetRequiredService<SearchViewModel>();
-            searchViewModel.RunSearch(value.Trim());
+            searchViewModel.RunSearch(query);
             if (NavigationService.CurrentView is not SearchViewModel)
             {
                 IsHomeSelected = false;
@@ -263,6 +286,8 @@ namespace TaskTracker.ViewModels.Windows
             _projectsService = projectsService;
             _languageService = languageService;
             _dialogService = dialogService;
+
+            _searchDebounce.Tick += (_, _) => RunPendingSearch();
 
             WeakReferenceMessenger.Default.Register<ProjectSelectClickMessage>(this);
             WeakReferenceMessenger.Default.Register<StoreReloadedMessage>(this, (r, m) => ((MainViewModel)r).Receive(m));

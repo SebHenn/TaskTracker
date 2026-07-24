@@ -18,7 +18,8 @@ namespace TaskTracker.ViewModels.Pages
         [ObservableProperty]
         private int _resultCount;
 
-        public ObservableCollection<SearchResult> Results { get; } = new();
+        [ObservableProperty]
+        private ObservableCollection<SearchResult> _results = new();
 
         public SearchViewModel(IProjectsService projectsService)
         {
@@ -28,9 +29,11 @@ namespace TaskTracker.ViewModels.Pages
         public void RunSearch(string query)
         {
             Query = query;
-            Results.Clear();
-            foreach (var result in TaskSearch.Search(_projectsService.projectModels, query))
-                Results.Add(result);
+            // Build the list first and assign once. Clearing then adding one by one
+            // raised a collection-changed event per hit, so the results list
+            // re-laid-out as many times as there were matches.
+            Results = new ObservableCollection<SearchResult>(
+                TaskSearch.Search(_projectsService.projectModels, query));
             ResultCount = Results.Count;
         }
 
