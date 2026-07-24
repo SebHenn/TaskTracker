@@ -17,14 +17,16 @@ namespace TaskTracker.ViewModels.Pages
         private readonly IThemeService _themeService;
         private readonly ISettingsService _settingsService;
         private readonly IProjectsService _projectsService;
+        private readonly IDialogService _dialogService;
         private CultureInfo _selectedLanguage;
 
-        public SettingsViewModel(ILanguageService languageService, IThemeService themeService, ISettingsService settingsService, IProjectsService projectsService)
+        public SettingsViewModel(ILanguageService languageService, IThemeService themeService, ISettingsService settingsService, IProjectsService projectsService, IDialogService dialogService)
         {
             _languageService = languageService;
             _themeService = themeService;
             _settingsService = settingsService;
             _projectsService = projectsService;
+            _dialogService = dialogService;
             AvailableLanguages = _languageService.AvailableLanguages;
             _selectedLanguage = AvailableLanguages.FirstOrDefault(c => c.Name == _settingsService.Settings.Language)
                                 ?? AvailableLanguages.First();
@@ -134,7 +136,7 @@ namespace TaskTracker.ViewModels.Pages
             }
             catch (Exception ex)
             {
-                System.Windows.MessageBox.Show(ex.Message);
+                _dialogService.Error(ex.Message);
             }
         }
 
@@ -150,7 +152,7 @@ namespace TaskTracker.ViewModels.Pages
             }
             catch (Exception ex)
             {
-                System.Windows.MessageBox.Show(ex.Message);
+                _dialogService.Error(ex.Message);
             }
         }
 
@@ -169,11 +171,11 @@ namespace TaskTracker.ViewModels.Pages
                     Core.Storage.ProjectStore.NormalizeColumns(project);
                 }
                 WeakReferenceMessenger.Default.Send(new Messages.StoreReloadedMessage());
-                System.Windows.MessageBox.Show(string.Format(_languageService.GetString("ImportedProjects"), imported.Count));
+                _dialogService.Info(string.Format(_languageService.GetString("ImportedProjects"), imported.Count));
             }
             catch (Exception ex)
             {
-                System.Windows.MessageBox.Show(ex.Message);
+                _dialogService.Error(ex.Message);
             }
         }
 

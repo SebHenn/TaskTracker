@@ -31,7 +31,9 @@ namespace TaskTracker.ViewModels.Pages
         private MainViewModel _mainViewModel;
         private ILanguageService _languageService;
         private ISettingsService _settingsService;
-        private readonly GitHubSyncService _gitHubSyncService = new();
+        private readonly GitHubSyncService _gitHubSyncService;
+        private readonly IGitHubApiFactory _gitHubApiFactory;
+        private readonly IDialogService _dialogService;
 
         private string AllLabelsFilter => _languageService.GetString("AllLabels");
 
@@ -173,7 +175,7 @@ namespace TaskTracker.ViewModels.Pages
         [ObservableProperty]
         private string _lastSyncedText = "";
 
-        public ProjectViewModel(MainViewModel mainViewModel, IProjectsService projectsService, INavigationService navigationService, IServiceProvider serviceProvider, ILanguageService languageService, ISettingsService settingsService)
+        public ProjectViewModel(MainViewModel mainViewModel, IProjectsService projectsService, INavigationService navigationService, IServiceProvider serviceProvider, ILanguageService languageService, ISettingsService settingsService, GitHubSyncService gitHubSyncService, IGitHubApiFactory gitHubApiFactory, IDialogService dialogService)
         {
             _mainViewModel = mainViewModel;
             _projectsService = projectsService;
@@ -181,6 +183,9 @@ namespace TaskTracker.ViewModels.Pages
             _serviceProvider = serviceProvider;
             _languageService = languageService;
             _settingsService = settingsService;
+            _gitHubSyncService = gitHubSyncService;
+            _gitHubApiFactory = gitHubApiFactory;
+            _dialogService = dialogService;
             _selectedLabelFilter = AllLabelsFilter;
             languageService.LanguageChanged += RefreshFromProject;
 
@@ -259,7 +264,7 @@ namespace TaskTracker.ViewModels.Pages
             var token = TokenProtector.Unprotect(settings.GitHubTokenProtected, settings.GitHubTokenIsPlaintext);
             if (string.IsNullOrEmpty(token))
             {
-                MessageBox.Show(_languageService.GetString("NoTokenConfigured"));
+                _dialogService.Error(_languageService.GetString("NoTokenConfigured"));
                 return;
             }
 
@@ -268,12 +273,12 @@ namespace TaskTracker.ViewModels.Pages
             {
                 // Await on the UI thread: model mutations happen in dispatcher
                 // continuations, HTTP calls run off-thread in between.
-                await _gitHubSyncService.SyncAsync(CurrentProject, new GitHubApi(token));
+                await _gitHubSyncService.SyncAsync(CurrentProject, _gitHubApiFactory.Create(token));
                 CategorizeTasks();
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"{_languageService.GetString("SyncFailed")}: {ex.Message}");
+                _dialogService.Error($"{_languageService.GetString("SyncFailed")}: {ex.Message}");
             }
             finally
             {
@@ -296,30 +301,23 @@ namespace TaskTracker.ViewModels.Pages
                 return;
             }
 
+            // Enforce the column invariants (mutating) before projecting (pure).
             ProjectStore.NormalizeColumns(CurrentProject);
 
-            var labels = CurrentProject.Tasks
-                .SelectMany(t => t.Labels)
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .OrderBy(l => l, StringComparer.OrdinalIgnoreCase)
-                .ToList();
-            HasLabels = labels.Count > 0;
-            AvailableLabels = new ObservableCollection<string>(labels.Prepend(AllLabelsFilter));
+            // "All labels" is a localized display string; Core takes null for "no filter".
+            var activeFilter = SelectedLabelFilter == AllLabelsFilter ? null : SelectedLabelFilter;
+            var board = BoardProjection.Compute(CurrentProject, activeFilter);
+
+            HasLabels = board.Labels.Count > 0;
+            AvailableLabels = new ObservableCollection<string>(board.Labels.Prepend(AllLabelsFilter));
             if (!AvailableLabels.Contains(SelectedLabelFilter))
             {
                 SelectedLabelFilter = AllLabelsFilter; // triggers one clean re-categorize
                 return;
             }
 
-            var filtered = CurrentProject.Tasks.AsEnumerable();
-            if (SelectedLabelFilter != AllLabelsFilter)
-                filtered = filtered.Where(t => t.Labels.Contains(SelectedLabelFilter, StringComparer.OrdinalIgnoreCase));
-
-            var sorted = LaneSort.Apply(filtered).ToList();
-
             Lanes = new ObservableCollection<ColumnLaneViewModel>(
-                CurrentProject.Columns.Select(column =>
-                    new ColumnLaneViewModel(column, sorted.Where(t => CurrentProject.ColumnOf(t)?.Id == column.Id))));
+                board.Lanes.Select(lane => new ColumnLaneViewModel(lane.Column, lane.Tasks)));
 
             RefreshStats();
         }
@@ -467,10 +465,8 @@ namespace TaskTracker.ViewModels.Pages
         private void OnDeleteProject()
         {
             if (CurrentProject == null) return;
-            var confirmed = MessageBox.Show(
-                string.Format(_languageService.GetString("DeleteProjectConfirm"), CurrentProject.Name),
-                "TaskTracker", MessageBoxButton.YesNo, MessageBoxImage.Warning);
-            if (confirmed != MessageBoxResult.Yes)
+            if (!_dialogService.Confirm(
+                    string.Format(_languageService.GetString("DeleteProjectConfirm"), CurrentProject.Name)))
                 return;
             _projectsService.RemoveProject(CurrentProject);
             _mainViewModel.IsHomeSelected = true;
@@ -541,17 +537,17 @@ namespace TaskTracker.ViewModels.Pages
             var token = TokenProtector.Unprotect(settings.GitHubTokenProtected, settings.GitHubTokenIsPlaintext);
             if (string.IsNullOrEmpty(token))
             {
-                MessageBox.Show(_languageService.GetString("NoTokenConfigured"));
+                _dialogService.Error(_languageService.GetString("NoTokenConfigured"));
                 return;
             }
 
             try
             {
-                await _gitHubSyncService.PushTaskAsync(CurrentProject, task, new GitHubApi(token));
+                await _gitHubSyncService.PushTaskAsync(CurrentProject, task, _gitHubApiFactory.Create(token));
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"{_languageService.GetString("SyncFailed")}: {ex.Message}");
+                _dialogService.Error($"{_languageService.GetString("SyncFailed")}: {ex.Message}");
             }
         }
 

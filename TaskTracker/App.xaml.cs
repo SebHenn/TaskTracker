@@ -57,10 +57,22 @@ namespace TaskTracker
             services.AddSingleton<ILanguageService, LanguageService>();
             services.AddSingleton<IThemeService, ThemeService>();
             services.AddSingleton<ISettingsService, SettingsService>();
+            services.AddSingleton<IDialogService, DialogService>();
+            // Singletons on purpose: the factory owns the one shared HttpClient,
+            // and the sync service is stateless.
+            services.AddSingleton<TaskTracker.Core.GitHub.IGitHubApiFactory, TaskTracker.Core.GitHub.GitHubApiFactory>();
+            services.AddSingleton<TaskTracker.Core.GitHub.GitHubSyncService>();
 
             services.AddSingleton<Func<Type, ObservableObject>>(serviceProvider => viewModelType => (ObservableObject)serviceProvider.GetRequiredService(viewModelType));
 
-            _serviceProvider = services.BuildServiceProvider();
+            // ValidateOnBuild constructs every registration up front, so a missing
+            // dependency fails loudly at startup instead of the first time someone
+            // navigates to the page that needed it.
+            _serviceProvider = services.BuildServiceProvider(new ServiceProviderOptions
+            {
+                ValidateOnBuild = true,
+                ValidateScopes = true,
+            });
 
             DispatcherUnhandledException += (_, args) =>
             {

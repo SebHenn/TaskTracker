@@ -14,14 +14,18 @@ namespace TaskTracker.Services
     {
         private readonly IProjectsService _projectsService;
         private readonly ISettingsService _settingsService;
-        private readonly GitHubSyncService _sync = new();
+        private readonly GitHubSyncService _sync;
+        private readonly IGitHubApiFactory _apiFactory;
         private readonly DispatcherTimer _timer;
         private bool _running;
 
-        public AutoSyncService(IProjectsService projectsService, ISettingsService settingsService)
+        public AutoSyncService(IProjectsService projectsService, ISettingsService settingsService,
+                               GitHubSyncService sync, IGitHubApiFactory apiFactory)
         {
             _projectsService = projectsService;
             _settingsService = settingsService;
+            _sync = sync;
+            _apiFactory = apiFactory;
             _timer = new DispatcherTimer { Interval = TimeSpan.FromMinutes(15) };
             _timer.Tick += async (_, _) => await TickAsync();
             _timer.Start();
@@ -51,7 +55,7 @@ namespace TaskTracker.Services
             _running = true;
             try
             {
-                var api = new GitHubApi(token);
+                var api = _apiFactory.Create(token);
                 foreach (var project in _projectsService.projectModels.Where(p => p.IsGitHubLinked && !p.IsArchived).ToList())
                 {
                     try

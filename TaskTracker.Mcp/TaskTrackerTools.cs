@@ -21,6 +21,10 @@ public static class TaskTrackerTools
     internal static Func<ProjectStore> CreateStore { get; set; } = () => new ProjectStore();
     internal static Func<SettingsStore> CreateSettingsStore { get; set; } = () => new SettingsStore();
 
+    // Long-lived: the factory owns one shared HttpClient, and sync is stateless.
+    private static readonly GitHubSyncService Sync = new();
+    internal static IGitHubApiFactory ApiFactory { get; set; } = new GitHubApiFactory();
+
     private static readonly JsonSerializerOptions Json = new() { WriteIndented = true };
 
     private record ProjectSummary(Guid Id, string Name, string Description, int OpenTasks, int DoneTasks, bool IsArchived, bool IsFavourite, string? GitHubRepo);
@@ -463,7 +467,7 @@ public static class TaskTrackerTools
         SyncResult result;
         try
         {
-            result = await new GitHubSyncService().SyncAsync(project, new GitHubApi(token));
+            result = await Sync.SyncAsync(project, ApiFactory.Create(token));
         }
         catch (HttpRequestException ex)
         {

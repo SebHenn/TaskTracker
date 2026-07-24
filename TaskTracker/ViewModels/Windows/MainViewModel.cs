@@ -36,6 +36,7 @@ namespace TaskTracker.ViewModels.Windows
 
         private IProjectsService _projectsService;
         private ILanguageService _languageService;
+        private IDialogService _dialogService;
 
         [ObservableProperty]
         private bool _isHomeSelected = true;
@@ -228,7 +229,7 @@ namespace TaskTracker.ViewModels.Windows
                     OnNavigateToProject(created.Id);
                     return;
                 }
-                MessageBox.Show(_languageService.GetString("InvalidProjectName"));
+                _dialogService.Error(_languageService.GetString("InvalidProjectName"));
             }
 
             ResortProjects();
@@ -257,10 +258,11 @@ namespace TaskTracker.ViewModels.Windows
             ResortProjects();
         }
 
-        public MainViewModel(INavigationService navigationService, IServiceProvider serviceProvider, IProjectsService projectsService, ILanguageService languageService)
+        public MainViewModel(INavigationService navigationService, IServiceProvider serviceProvider, IProjectsService projectsService, ILanguageService languageService, IDialogService dialogService)
         {
             _projectsService = projectsService;
             _languageService = languageService;
+            _dialogService = dialogService;
 
             WeakReferenceMessenger.Default.Register<ProjectSelectClickMessage>(this);
             WeakReferenceMessenger.Default.Register<StoreReloadedMessage>(this, (r, m) => ((MainViewModel)r).Receive(m));
