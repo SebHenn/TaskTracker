@@ -142,6 +142,11 @@
   <data name="ActivityLabel" xml:space="preserve"><value>Activity</value></data>
   <data name="AddNoteHint" xml:space="preserve"><value>Add a note...</value></data>
 
+  <!-- Window chrome (screen-reader names for the title bar buttons) -->
+  <data name="WindowMinimize" xml:space="preserve"><value>Minimize</value></data>
+  <data name="WindowMaximize" xml:space="preserve"><value>Maximize</value></data>
+  <data name="WindowClose" xml:space="preserve"><value>Close</value></data>
+
   <!-- Messages -->
   <data name="InvalidProjectName" xml:space="preserve"><value>Invalid project name or already exists</value></data>
 </root>

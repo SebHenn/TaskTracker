@@ -8,6 +8,13 @@
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
     <ApplicationIcon>Assets\app.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <!-- WFAC010 tells WinForms apps to declare DPI awareness via
+         ApplicationHighDpiMode instead of the manifest. That property only takes
+         effect through ApplicationConfiguration.Initialize(), which a WPF host
+         never calls — WPF reads DPI awareness from the manifest. UseWindowsForms
+         is on solely for the tray icon, so the analyzer's premise doesn't hold. -->
+    <NoWarn>$(NoWarn);WFAC010</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

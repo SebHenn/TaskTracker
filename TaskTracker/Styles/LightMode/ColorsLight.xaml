@@ -22,6 +22,9 @@
     <SolidColorBrush x:Key="Brush.Button.Flat.Background" Color="Transparent" />
     <SolidColorBrush x:Key="Brush.Button.Flat.Hover" Color="#FFD0D0D0" />
     <SolidColorBrush x:Key="Brush.Button.Flat.Pressed" Color="#FFC0C0C0" />
+    <!-- Destructive hover for the title bar close button -->
+    <SolidColorBrush x:Key="Brush.Button.Close.Hover" Color="#FFC42B1C" />
+    <SolidColorBrush x:Key="Brush.Button.Close.Pressed" Color="#FFA82419" />
     <SolidColorBrush x:Key="Brush.Button.Solid.Background" Color="#FFDDDDDD" />
     <SolidColorBrush x:Key="Brush.Button.Solid.Hover" Color="#FFD0D0D0" />
     <SolidColorBrush x:Key="Brush.Button.Solid.Pressed" Color="#FFC2C2C2" />

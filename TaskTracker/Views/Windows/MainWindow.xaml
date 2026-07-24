@@ -8,12 +8,21 @@
         mc:Ignorable="d"
         Style="{DynamicResource WindowStyle}"
         WindowState="{Binding WindowState}"
-        WindowStyle="None" 
-        AllowsTransparency="True" 
-        Background="Transparent"
+        WindowStyle="None"
         ResizeMode="CanResize"
-        Title="MainWindow" Height="800" Width="1200"
+        Title="TaskTracker" Height="800" Width="1200"
+        MinHeight="520" MinWidth="880"
         WindowStartupLocation="CenterScreen">
+    <!-- WindowChrome keeps the native window behaviour (Aero Snap, Win+Arrow,
+         double-click to maximize, real resize borders) while letting the caption
+         be templated. Maximized bounds are corrected by WindowMaximizeFix. -->
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="30"
+                      ResizeBorderThickness="6"
+                      CornerRadius="0"
+                      GlassFrameThickness="0"
+                      UseAeroCaptionButtons="False" />
+    </WindowChrome.WindowChrome>
     <Window.InputBindings>
         <KeyBinding Modifiers="Ctrl" Key="N" Command="{Binding NewProjectClickCommand}" />
         <KeyBinding Modifiers="Ctrl" Key="T" Command="{Binding NewTaskShortcutCommand}" />

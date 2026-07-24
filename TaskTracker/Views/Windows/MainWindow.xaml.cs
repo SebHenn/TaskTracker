@@ -12,6 +12,7 @@ namespace TaskTracker
         {
             InitializeComponent();
             PreviewKeyDown += OnPreviewKeyDown;
+            Helpers.WindowMaximizeFix.Attach(this);
         }
 
         private void OnPreviewKeyDown(object sender, KeyEventArgs e)

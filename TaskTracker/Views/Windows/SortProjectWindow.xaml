@@ -4,12 +4,15 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:TaskTracker.Views.Windows"
-        mc:Ignorable="d" Background="Transparent" WindowStyle="None"
+        mc:Ignorable="d" WindowStyle="None"
         Title="SortProjectWindow" Height="230" Width="360"
         WindowStartupLocation="CenterScreen"
-        AllowsTransparency="True"
         ResizeMode="CanResize">
-    <Border Background="{DynamicResource Brush.Window.Background}" CornerRadius="10">
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="30" ResizeBorderThickness="6" CornerRadius="0"
+                      GlassFrameThickness="0" UseAeroCaptionButtons="False" />
+    </WindowChrome.WindowChrome>
+    <Border Background="{DynamicResource Brush.Window.Background}" CornerRadius="0">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="auto" />
@@ -28,9 +31,12 @@
 
                     <Label Content="{DynamicResource SortProjects}" Foreground="{DynamicResource Brush.Text.Primary}" Margin="5,2,0,0" />
 
-                    <Rectangle Fill="Transparent" MouseLeftButtonDown="Rectangle_MouseLeftButtonDown" />
-
-                    <Button Style="{DynamicResource TitleButton}" Height="30" Width="30" Click="CloseButton_Click" Grid.Column="1" HorizontalAlignment="Right">✖</Button>
+                    <Button Style="{DynamicResource TitleCloseButton}" Height="30" Width="46"
+                            Click="CloseButton_Click" Grid.Column="1" HorizontalAlignment="Right"
+                            WindowChrome.IsHitTestVisibleInChrome="True"
+                            AutomationProperties.Name="{DynamicResource WindowClose}">
+                        <Path Style="{DynamicResource TitleBarGlyph}" Data="{DynamicResource Glyph.Close}" />
+                    </Button>
                 </Grid>
             </Border>
 
