@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(dotnet build)",
+      "Bash(dotnet build *)",
+      "Bash(dotnet test)",
+      "Bash(dotnet test *)",
+      "Bash(dotnet format --verify-no-changes *)",
+      "Bash(dotnet run --project TaskTracker/TaskTracker.csproj)",
+      "Bash(dotnet publish TaskTracker.Mcp -c Release)",
+      "PowerShell(dotnet build)",
+      "PowerShell(dotnet build *)",
+      "PowerShell(dotnet test)",
+      "PowerShell(dotnet test *)",
+      "PowerShell(dotnet format --verify-no-changes *)",
+      "PowerShell(dotnet run --project TaskTracker\\TaskTracker.csproj)",
+      "PowerShell(dotnet publish TaskTracker.Mcp -c Release)"
+    ],
+    "ask": [
+      "Bash(git push --force *)",
+      "PowerShell(git push --force *)"
+    ]
+  }
+}

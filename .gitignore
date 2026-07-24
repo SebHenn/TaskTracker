@@ -10,6 +10,9 @@
 *.userosscache
 *.sln.docstates
 
+# Claude Code (shared settings.json is committed; local overrides are not)
+.claude/settings.local.json
+
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 
