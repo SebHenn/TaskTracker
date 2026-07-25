@@ -68,8 +68,13 @@
             <Setter.Value>
                 <ControlTemplate TargetType="controls:CustomTextBox">
                     <Grid>
+                        <!-- The inner TextBox is what appears in the accessibility tree,
+                             so the name has to land here — set on the outer control it is
+                             announced as nothing at all. The hint already is the field's
+                             label, so it doubles as the accessible name. -->
                         <TextBox x:Name="PART_TextBox"
                                  Text="{Binding Text, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+                                 AutomationProperties.Name="{Binding Hint, RelativeSource={RelativeSource TemplatedParent}}"
                                  Padding="5,0,25,0"
                                  VerticalContentAlignment="Center"/>
                         <Label Content="{TemplateBinding Hint}"
@@ -85,8 +90,9 @@
                                 VerticalAlignment="Center"
                                 Background="Transparent"
                                 BorderBrush="Transparent"
+                                AutomationProperties.Name="{DynamicResource Clear}"
                                 Command="{Binding ClearCommand, RelativeSource={RelativeSource TemplatedParent}}">
-                            <TextBlock Text="✖" Foreground="{DynamicResource Brush.Button.Foreground}" FontWeight="Bold" />
+                            <Path Style="{DynamicResource GlyphPath}" Data="{DynamicResource Icon.Close}" />
                         </Button>
                     </Grid>
                 </ControlTemplate>

@@ -161,4 +161,12 @@
   <data name="RecurringChip" xml:space="preserve"><value>Wiederholt</value></data>
   <data name="DoneColumnLabel" xml:space="preserve"><value>Erledigt-Spalte</value></data>
   <data name="WipLimitReached" xml:space="preserve"><value>Über dem Spaltenlimit</value></data>
+
+  <!-- Accessible names for icon-only buttons -->
+  <data name="Clear" xml:space="preserve"><value>Leeren</value></data>
+  <data name="Remove" xml:space="preserve"><value>Entfernen</value></data>
+  <data name="Add" xml:space="preserve"><value>Hinzufügen</value></data>
+  <data name="CloseDetails" xml:space="preserve"><value>Details schließen</value></data>
+  <data name="MoveUp" xml:space="preserve"><value>Nach oben</value></data>
+  <data name="MoveDown" xml:space="preserve"><value>Nach unten</value></data>
 </root>

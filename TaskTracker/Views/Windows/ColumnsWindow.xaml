@@ -1,4 +1,4 @@
-<Window x:Class="TaskTracker.Views.Windows.ColumnsWindow"
+﻿<Window x:Class="TaskTracker.Views.Windows.ColumnsWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -58,11 +58,17 @@
                                          ToolTip="{DynamicResource WipLimitLabel}"
                                          Text="{Binding WipLimit, Mode=TwoWay, Converter={StaticResource NullableIntConverter}}" />
                                 <Button Grid.Column="3" Style="{DynamicResource TitleButton}" Width="26" Height="26"
-                                        Command="{Binding DataContext.MoveUpCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}">▲</Button>
+                                        Command="{Binding DataContext.MoveUpCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}"
+                                        AutomationProperties.Name="{DynamicResource MoveUp}" ToolTip="{DynamicResource MoveUp}">▲</Button>
                                 <Button Grid.Column="4" Style="{DynamicResource TitleButton}" Width="26" Height="26"
-                                        Command="{Binding DataContext.MoveDownCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}">▼</Button>
+                                        Command="{Binding DataContext.MoveDownCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}"
+                                        AutomationProperties.Name="{DynamicResource MoveDown}" ToolTip="{DynamicResource MoveDown}">▼</Button>
                                 <Button Grid.Column="5" Style="{DynamicResource TitleButton}" Width="26" Height="26" Foreground="{DynamicResource Brush.Danger}"
-                                        Command="{Binding DataContext.DeleteColumnCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}">✖</Button>
+                                        Command="{Binding DataContext.DeleteColumnCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}"
+                                        AutomationProperties.Name="{DynamicResource Remove}" ToolTip="{DynamicResource Remove}">
+                                    <Path Style="{DynamicResource GlyphPath}" Data="{DynamicResource Icon.Close}"
+                                          Fill="{DynamicResource Brush.Danger.Text}" />
+                                </Button>
                             </Grid>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>

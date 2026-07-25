@@ -84,6 +84,7 @@
 
             <Button Style="{DynamicResource SubtleButton}" Width="34" Height="32" Padding="0"
                     Command="{Binding FavProjectCommand}" ToolTip="{DynamicResource TooltipFavourite}"
+                    AutomationProperties.Name="{DynamicResource TooltipFavourite}"
                     Margin="{DynamicResource Gap.ColumnTight}">
                 <!-- One geometry, two states: filled when favourite, outlined when not. -->
                 <Path Data="{StaticResource Icon.Star}" Width="17" Height="17" Stretch="Uniform" StrokeThickness="1.5">
@@ -103,13 +104,15 @@
             </Button>
             <Button Style="{DynamicResource SubtleButton}" Width="34" Height="32" Padding="0"
                     Command="{Binding ChangeProjectCommand}" ToolTip="{DynamicResource TooltipEditProject}"
+                    AutomationProperties.Name="{DynamicResource TooltipEditProject}"
                     Margin="{DynamicResource Gap.ColumnTight}">
                 <Path Data="{StaticResource Icon.Edit}" Width="17" Height="17" Stretch="Uniform"
                       Fill="{DynamicResource Brush.Text.Secondary}" />
             </Button>
             <!-- Destructive, and the only red on the page. -->
             <Button Style="{DynamicResource SubtleButton}" Width="34" Height="32" Padding="0"
-                    Command="{Binding DeleteProjectCommand}" ToolTip="{DynamicResource TooltipDeleteProject}">
+                    Command="{Binding DeleteProjectCommand}" ToolTip="{DynamicResource TooltipDeleteProject}"
+                    AutomationProperties.Name="{DynamicResource TooltipDeleteProject}">
                 <Path Data="{StaticResource Icon.Trash}" Width="17" Height="17" Stretch="Uniform"
                       Fill="{DynamicResource Brush.Danger.Text}" />
             </Button>
@@ -196,7 +199,12 @@
                             <ColumnDefinition Width="auto" />
                         </Grid.ColumnDefinitions>
                         <controls:CustomTextBox Height="30" FontWeight="Bold" Text="{Binding SelectedTask.Title, Mode=TwoWay}" />
-                        <Button Grid.Column="1" Style="{DynamicResource TitleButton}" Width="26" Height="26" Command="{Binding CloseTaskDetailCommand}">✖</Button>
+                        <Button Grid.Column="1" Style="{DynamicResource TitleButton}" Width="26" Height="26"
+                                Command="{Binding CloseTaskDetailCommand}"
+                                ToolTip="{DynamicResource CloseDetails}"
+                                AutomationProperties.Name="{DynamicResource CloseDetails}">
+                            <Path Style="{DynamicResource GlyphPath}" Data="{DynamicResource Icon.Close}" />
+                        </Button>
                     </Grid>
 
                     <Label Margin="0,8,0,0" Foreground="{DynamicResource Brush.Text.Secondary}" Content="{DynamicResource TaskDescription}" />
@@ -259,7 +267,10 @@
                                     </TextBlock>
                                     <Button Grid.Column="2" Style="{DynamicResource TitleButton}" Width="22" Height="22" FontSize="10"
                                             Command="{Binding DataContext.DeleteSubTaskCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                            CommandParameter="{Binding}">✖</Button>
+                                            CommandParameter="{Binding}"
+                                            AutomationProperties.Name="{DynamicResource Remove}">
+                                        <Path Style="{DynamicResource GlyphPath}" Width="8" Height="8" Data="{DynamicResource Icon.Close}" />
+                                    </Button>
                                 </Grid>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
@@ -270,7 +281,11 @@
                             <ColumnDefinition Width="auto" />
                         </Grid.ColumnDefinitions>
                         <controls:CustomTextBox Height="26" Text="{Binding NewSubTaskText, Mode=TwoWay}" Hint="{DynamicResource AddSubTaskHint}" />
-                        <Button Grid.Column="1" Style="{DynamicResource TitleButton}" Width="26" Height="26" Command="{Binding AddSubTaskCommand}">＋</Button>
+                        <Button Grid.Column="1" Style="{DynamicResource TitleButton}" Width="26" Height="26"
+                                Command="{Binding AddSubTaskCommand}"
+                                AutomationProperties.Name="{DynamicResource Add}">
+                            <Path Style="{DynamicResource GlyphPath}" Data="{DynamicResource Icon.Add}" />
+                        </Button>
                     </Grid>
 
                     <!-- Time tracking -->
@@ -302,7 +317,11 @@
                             <ColumnDefinition Width="auto" />
                         </Grid.ColumnDefinitions>
                         <controls:CustomTextBox Height="26" Text="{Binding NewActivityText, Mode=TwoWay}" Hint="{DynamicResource AddNoteHint}" />
-                        <Button Grid.Column="1" Style="{DynamicResource TitleButton}" Width="26" Height="26" Command="{Binding AddActivityCommand}">＋</Button>
+                        <Button Grid.Column="1" Style="{DynamicResource TitleButton}" Width="26" Height="26"
+                                Command="{Binding AddActivityCommand}"
+                                AutomationProperties.Name="{DynamicResource Add}">
+                            <Path Style="{DynamicResource GlyphPath}" Data="{DynamicResource Icon.Add}" />
+                        </Button>
                     </Grid>
                     <ItemsControl ItemsSource="{Binding SelectedTask.Activity}">
                         <ItemsControl.ItemTemplate>
@@ -316,9 +335,12 @@
                                         <TextBlock Style="{StaticResource Text.Caption}" Text="{Binding AtUtc, StringFormat={}{0:g}}" />
                                         <TextBlock Style="{StaticResource Text.Body}" Text="{Binding Text}" TextWrapping="Wrap" />
                                     </StackPanel>
-                                    <Button Grid.Column="1" Style="{DynamicResource TitleButton}" Width="20" Height="20" FontSize="9"
+                                    <Button Grid.Column="1" Style="{DynamicResource TitleButton}" Width="20" Height="20"
                                             Command="{Binding DataContext.DeleteActivityCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                            CommandParameter="{Binding}">✖</Button>
+                                            CommandParameter="{Binding}"
+                                            AutomationProperties.Name="{DynamicResource Remove}">
+                                        <Path Style="{DynamicResource GlyphPath}" Width="8" Height="8" Data="{DynamicResource Icon.Close}" />
+                                    </Button>
                                 </Grid>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
@@ -346,13 +368,23 @@
              layer, and its own DragOver — reached only through the gutters between
              lanes, since a lane handles its own — is how "dropped outside a column"
              is detected. Transparent rather than unpainted so it hit-tests at all. -->
-        <ItemsControl x:Name="BoardRoot" Grid.ColumnSpan="2" Grid.Row="3" Margin="10" ItemsSource="{Binding Lanes}"
+        <ItemsControl x:Name="BoardRoot" Grid.ColumnSpan="2" Grid.Row="3" Margin="0,8,0,0" ItemsSource="{Binding Lanes}"
+                      AutomationProperties.Name="{Binding CurrentProject.Name}"
+                      AutomationProperties.AutomationId="Board"
                       Background="Transparent" AllowDrop="True" DragOver="OnDragOverBoard">
             <ItemsControl.ItemsPanel>
                 <ItemsPanelTemplate>
                     <UniformGrid Rows="1" />
                 </ItemsPanelTemplate>
             </ItemsControl.ItemsPanel>
+            <!-- Without this the generated container falls back to the item's ToString,
+                 so a screen reader announces each column as
+                 "TaskTracker.ViewModels.Pages.ColumnLaneViewModel". -->
+            <ItemsControl.ItemContainerStyle>
+                <Style TargetType="ContentPresenter">
+                    <Setter Property="AutomationProperties.Name" Value="{Binding Column.Name}" />
+                </Style>
+            </ItemsControl.ItemContainerStyle>
             <ItemsControl.ItemTemplate>
                 <DataTemplate>
                     <!-- The whole lane accepts drops, header included, so a drop near the
@@ -424,24 +456,51 @@
                                      ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                                      ScrollViewer.VerticalScrollBarVisibility="Auto"
                                      VirtualizingPanel.IsVirtualizing="True"
-                                     VirtualizingPanel.VirtualizationMode="Recycling">
+                                     VirtualizingPanel.VirtualizationMode="Recycling"
+                                     AutomationProperties.Name="{Binding Column.Name}"
+                                     AutomationProperties.ItemStatus="{Binding CountText}"
+                                     AutomationProperties.AutomationId="BoardLane"
+                                     KeyboardNavigation.TabNavigation="Once">
                                 <ListBox.ItemContainerStyle>
                                     <Style TargetType="ListBoxItem">
                                         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
                                         <Setter Property="Padding" Value="0" />
-                                        <!-- Bare ContentPresenter: the card template already
-                                             draws everything, and the stock ListBoxItem chrome
-                                             would paint a selection block behind it. -->
+                                        <Setter Property="AutomationProperties.Name" Value="{Binding Title}" />
+                                        <!-- The card template draws the card; the container adds
+                                             only the ring, because which card is current is a
+                                             property of the selection, not of the task. The stock
+                                             ListBoxItem chrome would paint a block behind it. -->
                                         <Setter Property="Template">
                                             <Setter.Value>
                                                 <ControlTemplate TargetType="ListBoxItem">
-                                                    <ContentPresenter HorizontalAlignment="Stretch" />
+                                                    <Grid>
+                                                        <ContentPresenter HorizontalAlignment="Stretch" />
+                                                        <!-- Bottom margin matches the card's, so the
+                                                             ring lands on the card and not the gap
+                                                             below it. -->
+                                                        <Border x:Name="Ring" Margin="0,0,0,6" BorderThickness="2"
+                                                                CornerRadius="{DynamicResource Radius.Card}"
+                                                                BorderBrush="{DynamicResource Brush.Focus.Visual}"
+                                                                IsHitTestVisible="False" Visibility="Collapsed" />
+                                                    </Grid>
+                                                    <ControlTemplate.Triggers>
+                                                        <!-- Selection, not focus: arrow keys move the
+                                                             ListBox's selection, and without something
+                                                             marking it there is no way to tell which
+                                                             card the next keystroke will act on. It
+                                                             doubles as showing which card the detail
+                                                             drawer is currently displaying. -->
+                                                        <Trigger Property="IsSelected" Value="True">
+                                                            <Setter TargetName="Ring" Property="Visibility" Value="Visible" />
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
                                                 </ControlTemplate>
                                             </Setter.Value>
                                         </Setter>
                                         <EventSetter Event="PreviewMouseLeftButtonDown" Handler="OnTaskPreviewMouseLeftButtonDown" />
                                         <EventSetter Event="PreviewMouseMove" Handler="OnTaskPreviewMouseMove" />
                                         <EventSetter Event="PreviewMouseLeftButtonUp" Handler="OnTaskPreviewMouseLeftButtonUp" />
+                                        <EventSetter Event="PreviewKeyDown" Handler="OnTaskPreviewKeyDown" />
                                     </Style>
                                 </ListBox.ItemContainerStyle>
                             </ListBox>

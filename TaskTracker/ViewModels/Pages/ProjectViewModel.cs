@@ -436,6 +436,35 @@ namespace TaskTracker.ViewModels.Pages
             CategorizeTasks();
         }
 
+        /// <summary>
+        /// Moves a task one column left or right — the keyboard equivalent of dragging
+        /// it. Returns false at the ends of the board so the caller can leave focus
+        /// alone rather than pretending something happened.
+        /// </summary>
+        public bool MoveTaskByColumn(TaskModel task, int direction)
+        {
+            if (CurrentProject == null)
+                return false;
+
+            // Column order in the model is lane order on screen, so the model is the
+            // source of truth here rather than the view's lane collection.
+            var columns = CurrentProject.Columns;
+            var current = CurrentProject.ColumnOf(task);
+            var target = (current == null ? -1 : columns.IndexOf(current)) + direction;
+            if (target < 0 || target >= columns.Count)
+                return false;
+
+            var lane = Lanes.FirstOrDefault(l => l.Column.Id == columns[target].Id);
+            if (lane == null)
+                return false;
+
+            // Routed through MoveTask so it lands via MoveTaskToColumn: IsDone is derived
+            // from the target column and a recurring task spawns its next occurrence.
+            // Assigning ColumnId directly would skip both.
+            MoveTask(task.Id, lane, int.MaxValue);
+            return true;
+        }
+
         [RelayCommand]
         private void OnEditColumns()
         {

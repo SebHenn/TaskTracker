@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
@@ -98,6 +99,71 @@ namespace TaskTracker.Views.Pages
             }
 
             EndDrag(result);
+        }
+
+        // ---- Keyboard ---------------------------------------------------------------
+
+        /// <summary>
+        /// The keyboard path across the board: Tab reaches a lane, Up/Down pick a card
+        /// (the ListBox's own behaviour), and these do the rest. Preview so the handling
+        /// happens before the ListBox turns arrow keys into its own navigation.
+        /// </summary>
+        private void OnTaskPreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (DataContext is not ProjectViewModel viewModel)
+                return;
+            if (sender is not FrameworkElement container || container.DataContext is not TaskModel task)
+                return;
+
+            if (Keyboard.Modifiers == ModifierKeys.Control && e.Key is Key.Left or Key.Right)
+            {
+                if (viewModel.MoveTaskByColumn(task, e.Key == Key.Left ? -1 : 1))
+                    FocusTaskWhenLaidOut(task);
+                // Handled even when it did not move, so Ctrl+Left in the first column
+                // does not fall through and scroll the board sideways instead.
+                e.Handled = true;
+                return;
+            }
+
+            switch (e.Key)
+            {
+                case Key.Enter:
+                    viewModel.OnOpenTaskDetail(task);
+                    e.Handled = true;
+                    break;
+                case Key.Delete:
+                    // Deletion is undoable for a few seconds, so this needs no prompt.
+                    viewModel.DeleteTaskCommand.Execute(task);
+                    e.Handled = true;
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// Follows a moved card with the focus, so Ctrl+Right can be pressed repeatedly.
+        /// The lanes re-project during the move and the old container is gone, so this
+        /// has to wait for the new one to exist.
+        /// </summary>
+        private void FocusTaskWhenLaidOut(TaskModel task)
+        {
+            Dispatcher.BeginInvoke(DispatcherPriority.Loaded, () =>
+            {
+                foreach (var list in Descendants<ListBox>(BoardRoot))
+                {
+                    var index = list.Items.IndexOf(task);
+                    if (index < 0)
+                        continue;
+
+                    list.SelectedIndex = index;
+                    // Scroll first: a row that is virtualized away has no container to
+                    // hand focus to.
+                    list.ScrollIntoView(task);
+                    list.UpdateLayout();
+                    if (list.ItemContainerGenerator.ContainerFromIndex(index) is ListBoxItem item)
+                        item.Focus();
+                    return;
+                }
+            });
         }
 
         private void OnTaskPreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
@@ -462,6 +528,18 @@ namespace TaskTracker.Views.Pages
                     return nested;
             }
             return null;
+        }
+
+        private static IEnumerable<T> Descendants<T>(DependencyObject root) where T : DependencyObject
+        {
+            for (var i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++)
+            {
+                var child = VisualTreeHelper.GetChild(root, i);
+                if (child is T match)
+                    yield return match;
+                foreach (var nested in Descendants<T>(child))
+                    yield return nested;
+            }
         }
     }
 }
