@@ -15,8 +15,9 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
         <StackPanel>
-            <Label Content="{Binding Name}" FontSize="30" Foreground="{DynamicResource Brush.Text.Primary}"/>
-            <TextBlock Text="{Binding Description}" FontSize="16" Foreground="{DynamicResource Brush.Text.Secondary}" Margin="0,10,0,0"/>
+            <TextBlock Style="{StaticResource Text.Title}" Text="{Binding Name}" />
+            <TextBlock Style="{StaticResource Text.Secondary}" Text="{Binding Description}"
+                       TextWrapping="Wrap" Margin="0,4,0,0" />
         </StackPanel>
 
         <ScrollViewer Grid.Row="1" Grid.RowSpan="3" VerticalScrollBarVisibility="Auto">
@@ -25,40 +26,82 @@
                 <StackPanel Visibility="{Binding HasDueTasks, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=True}">
                     <StackPanel.Resources>
                         <DataTemplate x:Key="DueTaskRow">
-                            <Border Margin="3,2" Padding="8,5" CornerRadius="3" Background="{DynamicResource Brush.Card.Background}" Cursor="Hand" MaxWidth="500">
+                            <Border Padding="10,6" Margin="0,0,0,4" MinWidth="360" MaxWidth="560" Cursor="Hand"
+                                    CornerRadius="{DynamicResource Radius.Card}"
+                                    Background="{DynamicResource Brush.Card.Background}"
+                                    BorderThickness="1"
+                                    AutomationProperties.Name="{Binding Task.Title}">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="BorderBrush" Value="{DynamicResource Brush.Card.Border}" />
+                                        <Style.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="BorderBrush" Value="{DynamicResource Brush.Accent.Strong}" />
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
                                 <Border.InputBindings>
                                     <MouseBinding Gesture="LeftClick"
                                                   Command="{Binding DataContext.DueTaskClickCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                   CommandParameter="{Binding}" />
                                 </Border.InputBindings>
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="{Binding Project.Name}" FontSize="12" Foreground="{DynamicResource Brush.Text.OnCard}" Opacity="0.8" VerticalAlignment="Center" />
-                                    <TextBlock Text=" ▸ " FontSize="12" Foreground="{DynamicResource Brush.Text.OnCard}" Opacity="0.8" VerticalAlignment="Center" />
-                                    <TextBlock Text="{Binding Task.Title}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource Brush.Text.OnCard}" VerticalAlignment="Center" />
-                                    <TextBlock Text="{Binding Task.DueDate, StringFormat={}  📅 {0:d}}" FontSize="11" Foreground="{DynamicResource Brush.Text.OnCard}" VerticalAlignment="Center" />
-                                </StackPanel>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel>
+                                        <TextBlock Style="{StaticResource Text.BodyStrong}" Text="{Binding Task.Title}"
+                                                   TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Style="{StaticResource Text.Caption}" Text="{Binding Project.Name}"
+                                                   TextTrimming="CharacterEllipsis" />
+                                    </StackPanel>
+                                    <!-- The date sits right-aligned in its own column so a long
+                                         title can never push it out of view. -->
+                                    <TextBlock Grid.Column="1" Style="{StaticResource Text.Caption}"
+                                               Text="{Binding Task.DueDate, StringFormat={}{0:d}}"
+                                               VerticalAlignment="Center" Margin="12,0,0,0" />
+                                </Grid>
                             </Border>
                         </DataTemplate>
                     </StackPanel.Resources>
 
-                    <Label Content="{DynamicResource OverdueSection}" FontSize="18" Foreground="{DynamicResource Brush.Danger}" Margin="0,15,0,0"
-                           Visibility="{Binding OverdueTasks.Count, Converter={StaticResource CountToVisibilityConverter}}" />
-                    <ItemsControl ItemsSource="{Binding OverdueTasks}" ItemTemplate="{StaticResource DueTaskRow}" HorizontalAlignment="Left" Margin="10,0" />
+                    <TextBlock Style="{StaticResource Text.Subtitle}" Text="{DynamicResource OverdueSection}"
+                               Foreground="{DynamicResource Brush.Danger.Text}" Margin="0,20,0,8"
+                               Visibility="{Binding OverdueTasks.Count, Converter={StaticResource CountToVisibilityConverter}}" />
+                    <ItemsControl ItemsSource="{Binding OverdueTasks}" ItemTemplate="{StaticResource DueTaskRow}" HorizontalAlignment="Left" />
 
-                    <Label Content="{DynamicResource DueTodaySection}" FontSize="18" Foreground="{DynamicResource Brush.Text.Primary}" Margin="0,10,0,0"
-                           Visibility="{Binding DueTodayTasks.Count, Converter={StaticResource CountToVisibilityConverter}}" />
-                    <ItemsControl ItemsSource="{Binding DueTodayTasks}" ItemTemplate="{StaticResource DueTaskRow}" HorizontalAlignment="Left" Margin="10,0" />
+                    <TextBlock Style="{StaticResource Text.Subtitle}" Text="{DynamicResource DueTodaySection}" Margin="0,16,0,8"
+                               Visibility="{Binding DueTodayTasks.Count, Converter={StaticResource CountToVisibilityConverter}}" />
+                    <ItemsControl ItemsSource="{Binding DueTodayTasks}" ItemTemplate="{StaticResource DueTaskRow}" HorizontalAlignment="Left" />
 
-                    <Label Content="{DynamicResource DueThisWeekSection}" FontSize="18" Foreground="{DynamicResource Brush.Text.Primary}" Margin="0,10,0,0"
-                           Visibility="{Binding DueThisWeekTasks.Count, Converter={StaticResource CountToVisibilityConverter}}" />
-                    <ItemsControl ItemsSource="{Binding DueThisWeekTasks}" ItemTemplate="{StaticResource DueTaskRow}" HorizontalAlignment="Left" Margin="10,0" />
+                    <TextBlock Style="{StaticResource Text.Subtitle}" Text="{DynamicResource DueThisWeekSection}" Margin="0,16,0,8"
+                               Visibility="{Binding DueThisWeekTasks.Count, Converter={StaticResource CountToVisibilityConverter}}" />
+                    <ItemsControl ItemsSource="{Binding DueThisWeekTasks}" ItemTemplate="{StaticResource DueTaskRow}" HorizontalAlignment="Left" />
                 </StackPanel>
 
-                <Label HorizontalAlignment="Center" Content="{DynamicResource RecentProjects}" FontSize="24" Foreground="{DynamicResource Brush.Text.Primary}" Margin="0,20,0,10"/>
-                <ItemsControl ItemsSource="{Binding RecentProjects}" HorizontalAlignment="Center">
+                <!-- Nothing due is worth saying out loud; silence reads as a page that
+                     failed to load. -->
+                <TextBlock Style="{StaticResource Text.Subtitle}" Text="{DynamicResource NothingDue}"
+                           Foreground="{DynamicResource Brush.Text.Hint}" Margin="0,24,0,0"
+                           Visibility="{Binding HasDueTasks, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=False}" />
+
+                <TextBlock Style="{StaticResource Text.Subtitle}" Text="{DynamicResource RecentProjects}" Margin="0,28,0,8"
+                           Visibility="{Binding RecentProjects.Count, Converter={StaticResource CountToVisibilityConverter}}" />
+                <ItemsControl ItemsSource="{Binding RecentProjects}" HorizontalAlignment="Left">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <!-- Wraps instead of running off the page once there are a few. -->
+                            <WrapPanel />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <controls:SideBarItem Image="/Assets/Project-32.png" Margin="10" Height="35" Content="{Binding Name}" Command="{Binding DataContext.ProjectClickCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" CommandParameter="{Binding}"></controls:SideBarItem>
+                            <controls:SideBarItem Icon="{StaticResource Icon.Project}" Margin="0,0,8,8" MinWidth="170"
+                                                  Content="{Binding Name}"
+                                                  Command="{Binding DataContext.ProjectClickCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                  CommandParameter="{Binding}" />
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>

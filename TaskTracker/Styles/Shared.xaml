@@ -3,6 +3,17 @@
                     xmlns:helpers="clr-namespace:TaskTracker.Helpers"
                     xmlns:models="clr-namespace:TaskTracker.Core.Models;assembly=TaskTracker.Core">
 
+    <!-- Typography is merged here as well as in App.xaml, and it has to be: the chip
+         and card styles below derive from Text.Caption and Text.BodyStrong via BasedOn,
+         and BasedOn is resolved at parse time. A StaticResource inside a merged
+         dictionary can only see keys from its own file or from dictionaries merged into
+         it — being siblings under App.xaml is not enough — and BasedOn cannot fall back
+         to DynamicResource. Without this the first card to render throws.
+         Merging by the same URI is cheap: WPF caches the dictionary instance. -->
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="Typography.xaml" />
+    </ResourceDictionary.MergedDictionaries>
+
     <!-- Theme-independent resources; colors come from the active theme's semantic brushes. -->
 
     <helpers:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
@@ -10,128 +21,214 @@
     <helpers:NullToVisibilityConverter x:Key="NullToVisibilityConverter" />
     <helpers:NullableIntConverter x:Key="NullableIntConverter" />
     <helpers:ColorStringToBrushConverter x:Key="ColorStringToBrushConverter" />
+    <helpers:SidebarWidthConverter x:Key="SidebarWidthConverter" />
 
+    <!-- A chip is a token, not a button: bordered rather than filled, so a row of them
+         does not read as a row of things to click. -->
     <Style x:Key="TaskChip" TargetType="Border">
         <Setter Property="Background" Value="{DynamicResource Brush.Chip.Background}" />
-        <Setter Property="CornerRadius" Value="8" />
-        <Setter Property="Padding" Value="6,1" />
-        <Setter Property="Margin" Value="0,4,4,0" />
+        <Setter Property="BorderBrush" Value="{DynamicResource Brush.Chip.Border}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{DynamicResource Radius.Chip}" />
+        <Setter Property="Padding" Value="{DynamicResource Pad.Chip}" />
+        <Setter Property="Margin" Value="0,6,4,0" />
         <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
 
-    <Style x:Key="TaskChipText" TargetType="TextBlock">
-        <Setter Property="FontSize" Value="11" />
-        <Setter Property="Foreground" Value="{DynamicResource Brush.Text.OnCard}" />
+    <Style x:Key="TaskChipText" TargetType="TextBlock" BasedOn="{StaticResource Text.Caption}">
+        <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Tertiary}" />
     </Style>
 
-    <!-- The task card used by both board columns (and any future task list). -->
+    <!-- The task card used by the board columns.
+
+         Rebuilt around one question: what has to be legible from across the board?
+         Title, how urgent, and how far along. Everything else — description, notes,
+         timestamps, the full checklist — lives in the detail drawer, which is a click
+         away and does not cost every other card vertical space. The description is the
+         card's tooltip so it stays reachable without being on screen permanently. -->
     <DataTemplate x:Key="TaskCardTemplate" DataType="{x:Type models:TaskModel}">
-        <Border Margin="5" Padding="10" CornerRadius="3" BorderThickness="4,0,0,0"
+        <Border x:Name="Card" Margin="0,0,0,6"
+                CornerRadius="{DynamicResource Radius.Card}"
                 Background="{DynamicResource Brush.Card.Background}"
+                BorderBrush="{DynamicResource Brush.Card.Border}"
+                BorderThickness="1"
+                AutomationProperties.Name="{Binding Title}"
                 Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=UserControl}}">
             <Border.Style>
                 <Style TargetType="Border">
-                    <Setter Property="BorderBrush" Value="{DynamicResource Brush.Priority.Medium}" />
+                    <Setter Property="ToolTip" Value="{Binding Description}" />
                     <Style.Triggers>
-                        <DataTrigger Binding="{Binding Priority}" Value="Low">
-                            <Setter Property="BorderBrush" Value="{DynamicResource Brush.Priority.Low}" />
+                        <!-- An empty tooltip would still pop an empty box. -->
+                        <DataTrigger Binding="{Binding Description}" Value="">
+                            <Setter Property="ToolTip" Value="{x:Null}" />
                         </DataTrigger>
-                        <DataTrigger Binding="{Binding Priority}" Value="High">
-                            <Setter Property="BorderBrush" Value="{DynamicResource Brush.Priority.High}" />
+                        <!-- Hover lifts the card rather than tinting it: the priority edge
+                             and label chips already own colour on this surface. -->
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="BorderBrush" Value="{DynamicResource Brush.Border}" />
+                            <Setter Property="Effect">
+                                <Setter.Value>
+                                    <DropShadowEffect BlurRadius="12" ShadowDepth="2" Opacity="0.28" Color="Black" />
+                                </Setter.Value>
+                            </Setter>
+                        </Trigger>
+                        <!-- Completed work recedes without disappearing. -->
+                        <DataTrigger Binding="{Binding IsDone}" Value="True">
+                            <Setter Property="Opacity" Value="0.65" />
                         </DataTrigger>
                     </Style.Triggers>
                 </Style>
             </Border.Style>
-            <Border.Effect>
-                <DropShadowEffect BlurRadius="10" ShadowDepth="0" Color="Black" Opacity="0.3" />
-            </Border.Effect>
-            <StackPanel>
-                <TextBlock Text="{Binding Title}" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource Brush.Text.OnCard}" TextWrapping="Wrap" />
-                <TextBlock Text="{Binding Description}" FontSize="14" Foreground="{DynamicResource Brush.Text.OnCard}" TextWrapping="Wrap">
-                    <TextBlock.Style>
-                        <Style TargetType="TextBlock">
+
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="3" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Priority as an edge, not a fill. Every card used to be CadetBlue,
+                     which meant colour carried no information at all. -->
+                <Border Grid.Column="0" CornerRadius="2,0,0,2">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Setter Property="Background" Value="{DynamicResource Brush.Priority.Medium}" />
                             <Style.Triggers>
-                                <DataTrigger Binding="{Binding Description}" Value="">
-                                    <Setter Property="Visibility" Value="Collapsed" />
+                                <DataTrigger Binding="{Binding Priority}" Value="Low">
+                                    <Setter Property="Background" Value="{DynamicResource Brush.Priority.Low}" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Priority}" Value="High">
+                                    <Setter Property="Background" Value="{DynamicResource Brush.Priority.High}" />
                                 </DataTrigger>
                             </Style.Triggers>
                         </Style>
-                    </TextBlock.Style>
-                </TextBlock>
-                <WrapPanel>
-                    <!-- Due date chip; highlighted when overdue -->
-                    <Border>
-                        <Border.Style>
-                            <Style TargetType="Border" BasedOn="{StaticResource TaskChip}">
+                    </Border.Style>
+                </Border>
+
+                <StackPanel Grid.Column="1">
+                    <!-- Density comes from the board's view model, reached through the
+                         hosting page the same way the context menu commands are. -->
+                    <StackPanel.Style>
+                        <Style TargetType="StackPanel">
+                            <Setter Property="Margin" Value="10,8,10,10" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding DataContext.IsCompact, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True">
+                                    <Setter Property="Margin" Value="8,5,8,6" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </StackPanel.Style>
+
+                    <!-- Clamped to two lines: a long title stays scannable and cannot
+                         push the rest of the column off screen. MaxHeight plus trimming
+                         is how WPF ellipsizes wrapped text — there is no MaxLines.
+                         Compact gives it one line. -->
+                    <TextBlock Text="{Binding Title}" TextWrapping="Wrap" TextTrimming="CharacterEllipsis">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock" BasedOn="{StaticResource Text.BodyStrong}">
+                                <Setter Property="MaxHeight" Value="40" />
                                 <Style.Triggers>
-                                    <DataTrigger Binding="{Binding DueDate}" Value="{x:Null}">
-                                        <Setter Property="Visibility" Value="Collapsed" />
-                                    </DataTrigger>
-                                    <DataTrigger Binding="{Binding IsOverdue}" Value="True">
-                                        <Setter Property="Background" Value="{DynamicResource Brush.Danger}" />
+                                    <DataTrigger Binding="{Binding DataContext.IsCompact, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True">
+                                        <Setter Property="MaxHeight" Value="20" />
                                     </DataTrigger>
                                 </Style.Triggers>
                             </Style>
-                        </Border.Style>
-                        <TextBlock Style="{StaticResource TaskChipText}" Text="{Binding DueDate, StringFormat={}📅 {0:d}}" />
-                    </Border>
-                    <!-- Recurring chip -->
-                    <Border>
-                        <Border.Style>
-                            <Style TargetType="Border" BasedOn="{StaticResource TaskChip}">
-                                <Setter Property="Visibility" Value="Collapsed" />
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsRecurring}" Value="True">
-                                        <Setter Property="Visibility" Value="Visible" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Border.Style>
-                        <TextBlock Style="{StaticResource TaskChipText}" Text="🔁" />
-                    </Border>
-                    <!-- Checklist progress chip -->
-                    <Border>
-                        <Border.Style>
-                            <Style TargetType="Border" BasedOn="{StaticResource TaskChip}">
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding SubTaskProgress}" Value="">
-                                        <Setter Property="Visibility" Value="Collapsed" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Border.Style>
-                        <TextBlock Style="{StaticResource TaskChipText}" Text="{Binding SubTaskProgress, StringFormat={}☑ {0}}" />
-                    </Border>
-                    <!-- Linked GitHub issue chip -->
-                    <Border>
-                        <Border.Style>
-                            <Style TargetType="Border" BasedOn="{StaticResource TaskChip}">
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding GitHubIssueNumber}" Value="{x:Null}">
-                                        <Setter Property="Visibility" Value="Collapsed" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Border.Style>
-                        <TextBlock Style="{StaticResource TaskChipText}" Text="{Binding GitHubIssueNumber, StringFormat={}#{0}}" />
-                    </Border>
-                    <!-- Label chips -->
-                    <ItemsControl ItemsSource="{Binding Labels}">
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <WrapPanel />
-                            </ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <Border Style="{StaticResource TaskChip}">
-                                    <TextBlock Style="{StaticResource TaskChipText}" Text="{Binding}" />
-                                </Border>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </WrapPanel>
-            </StackPanel>
+                        </TextBlock.Style>
+                    </TextBlock>
+
+                    <WrapPanel>
+                        <!-- Due date. Overdue turns the whole chip, so it reads before
+                             the date itself does. -->
+                        <Border>
+                            <Border.Style>
+                                <Style TargetType="Border" BasedOn="{StaticResource TaskChip}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding DueDate}" Value="{x:Null}">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding IsOverdue}" Value="True">
+                                            <Setter Property="Background" Value="{DynamicResource Brush.Danger}" />
+                                            <Setter Property="BorderBrush" Value="{DynamicResource Brush.Danger}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <TextBlock Text="{Binding DueDate, StringFormat={}{0:d}}">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock" BasedOn="{StaticResource TaskChipText}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsOverdue}" Value="True">
+                                                <Setter Property="Foreground" Value="#FFFFFFFF" />
+                                                <Setter Property="FontWeight" Value="SemiBold" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </Border>
+
+                        <!-- Checklist progress, the one number that says "in flight". -->
+                        <Border>
+                            <Border.Style>
+                                <Style TargetType="Border" BasedOn="{StaticResource TaskChip}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding SubTaskProgress}" Value="">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <TextBlock Style="{StaticResource TaskChipText}" Text="{Binding SubTaskProgress}" />
+                        </Border>
+
+                        <!-- Recurring. Spelled out and localized rather than an emoji
+                             glyph, which picks up a colour font and ignores the theme. -->
+                        <Border>
+                            <Border.Style>
+                                <Style TargetType="Border" BasedOn="{StaticResource TaskChip}">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsRecurring}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <TextBlock Style="{StaticResource TaskChipText}" Text="{DynamicResource RecurringChip}" />
+                        </Border>
+
+                        <!-- Linked GitHub issue -->
+                        <Border>
+                            <Border.Style>
+                                <Style TargetType="Border" BasedOn="{StaticResource TaskChip}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding GitHubIssueNumber}" Value="{x:Null}">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <TextBlock Style="{StaticResource TaskChipText}" Text="{Binding GitHubIssueNumber, StringFormat={}#{0}}" />
+                        </Border>
+
+                        <!-- Labels last: user vocabulary, so it varies most in width. -->
+                        <ItemsControl ItemsSource="{Binding Labels}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Style="{StaticResource TaskChip}">
+                                        <TextBlock Style="{StaticResource TaskChipText}" Text="{Binding}" />
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </WrapPanel>
+                </StackPanel>
+            </Grid>
+
             <Border.ContextMenu>
                 <ContextMenu>
                     <MenuItem Header="{DynamicResource MarkAsDone}"

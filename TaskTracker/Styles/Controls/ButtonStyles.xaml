@@ -1,43 +1,101 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
+    <!-- A visible focus ring, in the accent colour rather than the dashed
+         SystemColors.ControlText outline that was here before — that one is black,
+         which on a dark surface is invisible, so keyboard focus could not be followed
+         at all. Drawn outside the control's own bounds so it never overlaps content. -->
     <Style x:Key="FocusVisual">
         <Setter Property="Control.Template">
             <Setter.Value>
                 <ControlTemplate>
-                    <Rectangle Margin="2" StrokeDashArray="1 2" Stroke="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}" SnapsToDevicePixels="true" StrokeThickness="1"/>
+                    <Border Margin="-2" BorderThickness="2" CornerRadius="6"
+                            BorderBrush="{DynamicResource Brush.Focus.Visual}"
+                            SnapsToDevicePixels="True" />
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
     </Style>
 
-    <!-- Flat square button used in title bars and dialogs -->
+    <!-- Shared chrome for the templated buttons below: one Border, one state layer
+         faded in on hover, one focus ring. -->
+    <ControlTemplate x:Key="LayeredButtonTemplate" TargetType="{x:Type ButtonBase}">
+        <Grid Background="Transparent" SnapsToDevicePixels="True">
+            <Border x:Name="Root" Background="{TemplateBinding Background}"
+                    BorderBrush="{TemplateBinding BorderBrush}"
+                    BorderThickness="{TemplateBinding BorderThickness}"
+                    CornerRadius="{DynamicResource Radius.Control}" />
+            <Border x:Name="StateLayer" Background="{DynamicResource Brush.State.Hover}"
+                    CornerRadius="{DynamicResource Radius.Control}" Opacity="0" />
+            <ContentPresenter x:Name="contentPresenter" Focusable="False"
+                              Margin="{TemplateBinding Padding}"
+                              HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                              RecognizesAccessKey="True"
+                              SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+        </Grid>
+        <ControlTemplate.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Trigger.EnterActions>
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <DoubleAnimation Storyboard.TargetName="StateLayer" Storyboard.TargetProperty="Opacity"
+                                             To="1" Duration="0:0:0.12" />
+                        </Storyboard>
+                    </BeginStoryboard>
+                </Trigger.EnterActions>
+                <Trigger.ExitActions>
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <DoubleAnimation Storyboard.TargetName="StateLayer" Storyboard.TargetProperty="Opacity"
+                                             To="0" Duration="0:0:0.12" />
+                        </Storyboard>
+                    </BeginStoryboard>
+                </Trigger.ExitActions>
+            </Trigger>
+            <Trigger Property="IsPressed" Value="True">
+                <Setter TargetName="StateLayer" Property="Background" Value="{DynamicResource Brush.State.Pressed}" />
+                <Setter TargetName="StateLayer" Property="Opacity" Value="1" />
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Opacity" Value="0.4" />
+            </Trigger>
+        </ControlTemplate.Triggers>
+    </ControlTemplate>
+
+    <!-- Flat square button for the title bar. Square on purpose: the hover fill runs
+         the full height of the caption, the way Windows draws its own. -->
     <Style x:Key="TitleButton" TargetType="{x:Type Button}">
-        <Setter Property="FocusVisualStyle" Value="{StaticResource FocusVisual}"/>
-        <Setter Property="Background" Value="{DynamicResource Brush.Button.Flat.Background}"/>
-        <Setter Property="BorderBrush" Value="{DynamicResource Brush.Button.Flat.Background}"/>
-        <Setter Property="Foreground" Value="{DynamicResource Brush.Button.Foreground}"/>
-        <Setter Property="BorderThickness" Value="1"/>
-        <Setter Property="HorizontalContentAlignment" Value="Center"/>
-        <Setter Property="VerticalContentAlignment" Value="Center"/>
-        <Setter Property="Padding" Value="1"/>
+        <Setter Property="FocusVisualStyle" Value="{StaticResource FocusVisual}" />
+        <Setter Property="Background" Value="{DynamicResource Brush.Button.Flat.Background}" />
+        <Setter Property="Foreground" Value="{DynamicResource Brush.Button.Foreground}" />
+        <Setter Property="FontFamily" Value="{DynamicResource Font.UI}" />
+        <Setter Property="FontSize" Value="{DynamicResource Size.Body}" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="Padding" Value="2" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type ButtonBase}">
-                    <Border x:Name="border" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" SnapsToDevicePixels="true">
-                        <ContentPresenter x:Name="contentPresenter" Focusable="False" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" Margin="{TemplateBinding Padding}" RecognizesAccessKey="True" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
-                    </Border>
+                    <Grid Background="Transparent" SnapsToDevicePixels="True">
+                        <Border x:Name="Root" Background="{TemplateBinding Background}" />
+                        <Border x:Name="StateLayer" Background="{DynamicResource Brush.State.Hover}" Opacity="0" />
+                        <ContentPresenter Focusable="False" Margin="{TemplateBinding Padding}"
+                                          HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                          RecognizesAccessKey="True" />
+                    </Grid>
                     <ControlTemplate.Triggers>
-                        <Trigger Property="Button.IsDefaulted" Value="true">
-                            <Setter Property="BorderBrush" TargetName="border" Value="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}"/>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="StateLayer" Property="Opacity" Value="1" />
                         </Trigger>
-                        <Trigger Property="IsMouseOver" Value="true">
-                            <Setter Property="Background" TargetName="border" Value="{DynamicResource Brush.Button.Flat.Hover}"/>
-                            <Setter Property="BorderBrush" TargetName="border" Value="{DynamicResource Brush.Button.Flat.Hover}"/>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="StateLayer" Property="Background" Value="{DynamicResource Brush.State.Pressed}" />
+                            <Setter TargetName="StateLayer" Property="Opacity" Value="1" />
                         </Trigger>
-                        <Trigger Property="IsPressed" Value="true">
-                            <Setter Property="Background" TargetName="border" Value="{DynamicResource Brush.Button.Flat.Pressed}"/>
-                            <Setter Property="BorderBrush" TargetName="border" Value="{DynamicResource Brush.Button.Flat.Pressed}"/>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.4" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -45,60 +103,65 @@
         </Setter>
     </Style>
 
-    <!-- Rounded solid button used for project actions -->
+    <!-- Neutral button: the default for anything that isn't the one primary action. -->
     <Style x:Key="WindowButton" TargetType="{x:Type Button}">
-        <Setter Property="FocusVisualStyle" Value="{StaticResource FocusVisual}"/>
-        <Setter Property="Background" Value="{DynamicResource Brush.Button.Solid.Background}"/>
-        <Setter Property="BorderBrush" Value="{DynamicResource Brush.Button.Solid.Background}"/>
-        <Setter Property="Foreground" Value="{DynamicResource Brush.Button.Foreground}"/>
-        <Setter Property="BorderThickness" Value="1"/>
-        <Setter Property="HorizontalContentAlignment" Value="Center"/>
-        <Setter Property="VerticalContentAlignment" Value="Center"/>
-        <Setter Property="Padding" Value="1"/>
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="{x:Type ButtonBase}">
-                    <Border x:Name="border" BorderBrush="{TemplateBinding BorderBrush}" Background="{TemplateBinding Background}" CornerRadius="10" BorderThickness="{TemplateBinding BorderThickness}" SnapsToDevicePixels="true">
-                        <ContentPresenter Margin="{TemplateBinding Padding}" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" x:Name="contentPresenter" Focusable="False" RecognizesAccessKey="True" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
-                    </Border>
-                    <ControlTemplate.Triggers>
-                        <Trigger Property="Button.IsDefaulted" Value="true">
-                            <Setter Property="BorderBrush" TargetName="border" Value="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}"/>
-                        </Trigger>
-                        <Trigger Property="IsMouseOver" Value="true">
-                            <Setter Property="Background" TargetName="border" Value="{DynamicResource Brush.Button.Solid.Hover}"/>
-                            <Setter Property="BorderBrush" TargetName="border" Value="{DynamicResource Brush.Button.Solid.Hover}"/>
-                        </Trigger>
-                        <Trigger Property="IsPressed" Value="true">
-                            <Setter Property="Background" TargetName="border" Value="{DynamicResource Brush.Button.Solid.Pressed}"/>
-                            <Setter Property="BorderBrush" TargetName="border" Value="{DynamicResource Brush.Button.Solid.Pressed}"/>
-                        </Trigger>
-                    </ControlTemplate.Triggers>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
+        <Setter Property="FocusVisualStyle" Value="{StaticResource FocusVisual}" />
+        <Setter Property="Background" Value="{DynamicResource Brush.Button.Solid.Background}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource Brush.Border}" />
+        <Setter Property="Foreground" Value="{DynamicResource Brush.Button.Foreground}" />
+        <Setter Property="FontFamily" Value="{DynamicResource Font.UI}" />
+        <Setter Property="FontSize" Value="{DynamicResource Size.Body}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Padding" Value="{DynamicResource Pad.Control}" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Template" Value="{StaticResource LayeredButtonTemplate}" />
     </Style>
 
-    <!-- Close button: same shape as TitleButton, but the destructive hover colour
+    <!-- The one primary action on a surface. Accent fill carries white text above
+         4.5:1 in both themes; the brighter accent used for hairlines does not, which
+         is why they are separate tokens. -->
+    <Style x:Key="AccentButton" TargetType="{x:Type Button}" BasedOn="{StaticResource WindowButton}">
+        <Setter Property="Background" Value="{DynamicResource Brush.Accent}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource Brush.Accent}" />
+        <Setter Property="Foreground" Value="{DynamicResource Brush.Text.OnAccent}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+
+    <!-- Borderless: for secondary actions that would otherwise crowd a toolbar with
+         competing boxes. -->
+    <Style x:Key="SubtleButton" TargetType="{x:Type Button}" BasedOn="{StaticResource WindowButton}">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Secondary}" />
+    </Style>
+
+    <!-- Destructive action. -->
+    <Style x:Key="DangerButton" TargetType="{x:Type Button}" BasedOn="{StaticResource WindowButton}">
+        <Setter Property="Background" Value="{DynamicResource Brush.Danger}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource Brush.Danger}" />
+        <Setter Property="Foreground" Value="#FFFFFFFF" />
+    </Style>
+
+    <!-- Close button: same square shape as TitleButton, with the destructive hover
          Windows users expect in the top-right corner. -->
     <Style x:Key="TitleCloseButton" TargetType="{x:Type Button}" BasedOn="{StaticResource TitleButton}">
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type ButtonBase}">
-                    <Border x:Name="border" Background="{TemplateBinding Background}" SnapsToDevicePixels="true">
-                        <ContentPresenter x:Name="contentPresenter" Focusable="False"
+                    <Border x:Name="border" Background="{TemplateBinding Background}" SnapsToDevicePixels="True">
+                        <ContentPresenter Focusable="False" Margin="{TemplateBinding Padding}"
                                           HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                                          Margin="{TemplateBinding Padding}"
-                                          SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
                     </Border>
                     <ControlTemplate.Triggers>
-                        <Trigger Property="IsMouseOver" Value="true">
-                            <Setter Property="Background" TargetName="border" Value="{DynamicResource Brush.Button.Close.Hover}" />
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="border" Property="Background" Value="{DynamicResource Brush.Button.Close.Hover}" />
                             <Setter Property="Foreground" Value="White" />
                         </Trigger>
-                        <Trigger Property="IsPressed" Value="true">
-                            <Setter Property="Background" TargetName="border" Value="{DynamicResource Brush.Button.Close.Pressed}" />
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="border" Property="Background" Value="{DynamicResource Brush.Button.Close.Pressed}" />
                             <Setter Property="Foreground" Value="White" />
                         </Trigger>
                     </ControlTemplate.Triggers>

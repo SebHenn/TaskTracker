@@ -84,6 +84,13 @@ namespace TaskTracker
 
         private System.Threading.Mutex? _instanceMutex;
 
+        /// <summary>
+        /// False when this process lost the single-instance race and shut down before
+        /// building any UI. OnExit still runs in that case, and must not resolve — and
+        /// so construct — the main window purely to read settings off it.
+        /// </summary>
+        private bool _isPrimaryInstance;
+
         protected override void OnStartup(StartupEventArgs e)
         {
             _instanceMutex = new System.Threading.Mutex(true, "TaskTracker.SingleInstance", out var isFirstInstance);
@@ -95,6 +102,8 @@ namespace TaskTracker
                 Shutdown();
                 return;
             }
+
+            _isPrimaryInstance = true;
 
             var settings = _serviceProvider.GetRequiredService<ISettingsService>().Settings;
             var langservice = _serviceProvider.GetRequiredService<ILanguageService>();
@@ -139,30 +148,51 @@ namespace TaskTracker
                 window.Left = settings.WindowLeft.Value;
                 window.Top = settings.WindowTop.Value;
             }
-            // Go through the view model — the window's WindowState is bound to it.
-            if (settings.WindowMaximized && window.DataContext is MainViewModel mainViewModel)
-                mainViewModel.WindowState = WindowState.Maximized;
+            if (window.DataContext is MainViewModel mainViewModel)
+            {
+                // Go through the view model — the window's WindowState is bound to it.
+                if (settings.WindowMaximized)
+                    mainViewModel.WindowState = WindowState.Maximized;
+                if (settings.SidebarWidth is > 120 and < 600)
+                    mainViewModel.SidebarWidth = settings.SidebarWidth.Value;
+            }
         }
 
         protected override void OnExit(ExitEventArgs e)
         {
+            if (!_isPrimaryInstance)
+            {
+                // Nothing was started, so there is nothing to tear down — and the other
+                // instance owns the files.
+                _instanceMutex?.Dispose();
+                base.OnExit(e);
+                return;
+            }
+
             _serviceProvider.GetRequiredService<HotkeyService>().Dispose();
             _serviceProvider.GetRequiredService<TrayService>().Dispose();
 
-            if (MainWindow != null)
+            var settingsService = _serviceProvider.GetRequiredService<ISettingsService>();
+            var settings = settingsService.Settings;
+
+            // Resolved from the container, not Application.MainWindow: by the time OnExit
+            // runs the window has already closed and that property is null, so the whole
+            // block used to be skipped and no setting was ever written — placement,
+            // theme, language and sidebar width all silently failed to persist. The
+            // window is a DI singleton, so this is the same instance either way.
+            var window = _serviceProvider.GetRequiredService<MainWindow>();
+            settings.WindowMaximized = window.WindowState == WindowState.Maximized;
+            if (window.WindowState == WindowState.Normal)
             {
-                var settingsService = _serviceProvider.GetRequiredService<ISettingsService>();
-                var settings = settingsService.Settings;
-                settings.WindowMaximized = MainWindow.WindowState == WindowState.Maximized;
-                if (MainWindow.WindowState == WindowState.Normal)
-                {
-                    settings.WindowLeft = MainWindow.Left;
-                    settings.WindowTop = MainWindow.Top;
-                    settings.WindowWidth = MainWindow.Width;
-                    settings.WindowHeight = MainWindow.Height;
-                }
-                settingsService.Save();
+                settings.WindowLeft = window.Left;
+                settings.WindowTop = window.Top;
+                settings.WindowWidth = window.Width;
+                settings.WindowHeight = window.Height;
             }
+            if (window.DataContext is MainViewModel mainViewModel)
+                settings.SidebarWidth = mainViewModel.SidebarWidth;
+
+            settingsService.Save();
 
             var projectsService = _serviceProvider.GetRequiredService<IProjectsService>();
             // Blocking: saving in the background is fine while running, but exiting

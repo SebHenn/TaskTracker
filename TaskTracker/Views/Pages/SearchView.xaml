@@ -13,8 +13,8 @@
         </Grid.RowDefinitions>
 
         <StackPanel>
-            <Label Content="{DynamicResource SearchResults}" FontSize="30" Foreground="{DynamicResource Brush.Text.Primary}" />
-            <TextBlock FontSize="14" Foreground="{DynamicResource Brush.Text.Secondary}" Margin="5,0,0,10">
+            <TextBlock Style="{StaticResource Text.Title}" Text="{DynamicResource SearchResults}" />
+            <TextBlock Style="{StaticResource Text.Secondary}" Margin="0,4,0,12">
                 <Run Text="{Binding ResultCount, Mode=OneWay}" /> <Run Text="{DynamicResource ResultsFor}" /> "<Run Text="{Binding Query, Mode=OneWay}" />"
             </TextBlock>
         </StackPanel>
@@ -23,7 +23,22 @@
             <ItemsControl ItemsSource="{Binding Results}">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <Border Margin="5" Padding="10" CornerRadius="3" Background="{DynamicResource Brush.Card.Background}" Cursor="Hand">
+                        <Border Padding="12" Margin="0,0,0,6" Cursor="Hand" MaxWidth="720"
+                                HorizontalAlignment="Left"
+                                CornerRadius="{DynamicResource Radius.Card}"
+                                Background="{DynamicResource Brush.Card.Background}"
+                                BorderThickness="1"
+                                AutomationProperties.Name="{Binding Task.Title}">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Setter Property="BorderBrush" Value="{DynamicResource Brush.Card.Border}" />
+                                    <Style.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="BorderBrush" Value="{DynamicResource Brush.Accent.Strong}" />
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
                             <Border.InputBindings>
                                 <MouseBinding Gesture="LeftClick"
                                               Command="{Binding DataContext.ResultClickCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
@@ -31,20 +46,31 @@
                             </Border.InputBindings>
                             <StackPanel>
                                 <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="{Binding Project.Name}" FontSize="12" Foreground="{DynamicResource Brush.Text.OnCard}" Opacity="0.8" />
-                                    <TextBlock Text="  ▸  " FontSize="12" Foreground="{DynamicResource Brush.Text.OnCard}" Opacity="0.8" />
-                                    <TextBlock Text="{Binding Task.Title}" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource Brush.Text.OnCard}" />
+                                    <TextBlock Style="{StaticResource Text.BodyStrong}" Text="{Binding Task.Title}"
+                                               TextTrimming="CharacterEllipsis" />
                                     <Border Style="{StaticResource TaskChip}" Margin="8,0,0,0"
                                             Visibility="{Binding Task.IsDone, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=True}">
                                         <TextBlock Style="{StaticResource TaskChipText}" Text="{DynamicResource Done}" />
                                     </Border>
                                 </StackPanel>
-                                <TextBlock Text="{Binding Task.Description}" FontSize="13" Foreground="{DynamicResource Brush.Text.OnCard}" TextWrapping="Wrap" />
+                                <!-- Which project a hit came from is the point of a global
+                                     search, so it is stated plainly rather than run into the
+                                     title behind a separator glyph. -->
+                                <TextBlock Style="{StaticResource Text.Caption}" Text="{Binding Project.Name}" Margin="0,2,0,0" />
+                                <TextBlock Style="{StaticResource Text.Secondary}" Text="{Binding Task.Description}"
+                                           TextWrapping="Wrap" MaxHeight="40" TextTrimming="CharacterEllipsis"
+                                           Margin="0,6,0,0" />
                             </StackPanel>
                         </Border>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
         </ScrollViewer>
+
+        <TextBlock Grid.Row="1" Style="{StaticResource Text.Subtitle}" Text="{DynamicResource NoSearchResults}"
+                   Foreground="{DynamicResource Brush.Text.Hint}"
+                   HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center"
+                   TextWrapping="Wrap" MaxWidth="420"
+                   Visibility="{Binding ResultCount, Converter={StaticResource CountToVisibilityConverter}, ConverterParameter=Empty}" />
     </Grid>
 </UserControl>

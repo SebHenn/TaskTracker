@@ -56,6 +56,14 @@ namespace TaskTracker.ViewModels.Windows
         [ObservableProperty]
         private WindowState _windowState = WindowState.Normal;
 
+        /// <summary>
+        /// Sidebar width, two-way bound to the splitter's column. Read back in
+        /// App.OnExit alongside the window placement rather than saved on every drag,
+        /// which would write the settings file continuously while resizing.
+        /// </summary>
+        [ObservableProperty]
+        private double _sidebarWidth = 220;
+
         [RelayCommand]
         public void OnMinimize()
         {

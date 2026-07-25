@@ -38,10 +38,29 @@ namespace TaskTracker.ViewModels.Pages
         private string AllLabelsFilter => _languageService.GetString("AllLabels");
 
         [ObservableProperty]
-        private string _favImage = "/Assets/starEmpty-32.png";
-
-        [ObservableProperty]
         private ObservableCollection<ColumnLaneViewModel> _lanes = [];
+
+        /// <summary>
+        /// False only when the project has no tasks at all — which is a different thing
+        /// from a column being empty, and wants different wording.
+        /// </summary>
+        [ObservableProperty]
+        private bool _hasAnyTasks;
+
+        /// <summary>
+        /// Compact cards: same information, less height each. A view preference, so it
+        /// is toggled on the board and remembered in settings.
+        /// </summary>
+        [ObservableProperty]
+        private bool _isCompact;
+
+        [RelayCommand]
+        private void OnToggleDensity()
+        {
+            IsCompact = !IsCompact;
+            _settingsService.Settings.CompactCards = IsCompact;
+            _settingsService.Save();
+        }
 
         [ObservableProperty]
         private bool _isEditing = false;
@@ -187,6 +206,7 @@ namespace TaskTracker.ViewModels.Pages
             _gitHubApiFactory = gitHubApiFactory;
             _dialogService = dialogService;
             _selectedLabelFilter = AllLabelsFilter;
+            _isCompact = settingsService.Settings.CompactCards;
             languageService.LanguageChanged += RefreshFromProject;
 
             CurrentProject = mainViewModel.SelectedProject;
@@ -214,7 +234,6 @@ namespace TaskTracker.ViewModels.Pages
         {
             SelectedLabelFilter = AllLabelsFilter;
             CategorizeTasks();
-            SetImage();
             ArchiveButtonText = _languageService.GetString(CurrentProject?.IsArchived == true ? "Unarchive" : "Archive");
             RefreshGitHubState();
         }
@@ -296,10 +315,15 @@ namespace TaskTracker.ViewModels.Pages
                 Lanes.Clear();
                 AvailableLabels = [];
                 HasLabels = false;
+                HasAnyTasks = false;
                 Stats = null;
                 WeekBars = [];
                 return;
             }
+
+            // Counted before filtering: a label filter that matches nothing is not the
+            // same as a project with nothing in it.
+            HasAnyTasks = CurrentProject.Tasks.Count > 0;
 
             // Enforce the column invariants (mutating) before projecting (pure).
             ProjectStore.NormalizeColumns(CurrentProject);
@@ -440,17 +464,10 @@ namespace TaskTracker.ViewModels.Pages
         public void OnFavProject()
         {
             if (CurrentProject == null) return;
+            // The view binds the star straight to IsFavourite, so there is no image
+            // path to keep in step here any more.
             CurrentProject.IsFavourite = !CurrentProject.IsFavourite;
-            SetImage();
             _mainViewModel.ResortProjects();
-        }
-
-        private void SetImage()
-        {
-            if (CurrentProject != null && CurrentProject.IsFavourite)
-                FavImage = "/Assets/starFull-32.png";
-            else
-                FavImage = "/Assets/starEmpty-32.png";
         }
 
         [RelayCommand]

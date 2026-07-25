@@ -2,42 +2,99 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:controls="clr-namespace:TaskTracker.Controls">
 
+    <!-- Sidebar navigation row. Cross-file tokens are referenced with DynamicResource
+         throughout: a StaticResource in a merged dictionary can only see keys from its
+         own file, so it would resolve to nothing here. -->
     <Style TargetType="controls:ProjectItem">
-        <Setter Property="FocusVisualStyle" Value="{DynamicResource FocusVisual}"/>
-        <Setter Property="Background" Value="{DynamicResource Brush.Button.Solid.Background}"/>
-        <Setter Property="BorderBrush" Value="{DynamicResource Brush.Button.Solid.Background}"/>
-        <Setter Property="Foreground" Value="{DynamicResource Brush.Button.Foreground}"/>
-        <Setter Property="BorderThickness" Value="1"/>
-        <Setter Property="HorizontalContentAlignment" Value="Center"/>
-        <Setter Property="VerticalContentAlignment" Value="Center"/>
-        <Setter Property="Padding" Value="1"/>
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Secondary}" />
+        <Setter Property="FontFamily" Value="{DynamicResource Font.UI}" />
+        <Setter Property="FontSize" Value="{DynamicResource Size.Body}" />
+        <Setter Property="Height" Value="36" />
+        <Setter Property="HorizontalContentAlignment" Value="Left" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <!-- The template draws its own ring; the dashed system default would sit on top. -->
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type controls:ProjectItem}">
-                    <Border x:Name="border" BorderBrush="{TemplateBinding BorderBrush}" Background="{TemplateBinding Background}" CornerRadius="5" BorderThickness="{TemplateBinding BorderThickness}" SnapsToDevicePixels="true">
-                        <Grid>
-                            <Border x:Name="Indicator" Width="2" Margin="2,5" Height="{TemplateBinding Height}" HorizontalAlignment="Left" VerticalAlignment="Center" Background="{DynamicResource Brush.Indicator}" Visibility="Collapsed" CornerRadius="4" />
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="auto" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <Image Source="{Binding Image, RelativeSource={RelativeSource TemplatedParent}}" Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="15,7,0,7"/>
-                                <ContentPresenter HorizontalAlignment="Center" Grid.Column="1" x:Name="contentPresenter" Focusable="False" RecognizesAccessKey="True" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
-                            </Grid>
+                    <Grid Background="Transparent" SnapsToDevicePixels="True">
+                        <Border x:Name="Root" Background="{TemplateBinding Background}"
+                                CornerRadius="{DynamicResource Radius.Control}" />
+
+                        <!-- Hover and selection as translucent layers faded in, rather than
+                             swapped opaque greys. One pair of colours then works on every
+                             surface in the ramp, and the transition can be animated without
+                             fighting the DynamicResource brushes. -->
+                        <Border x:Name="HoverLayer" Background="{DynamicResource Brush.State.Hover}"
+                                CornerRadius="{DynamicResource Radius.Control}" Opacity="0" />
+                        <Border x:Name="SelectedLayer" Background="{DynamicResource Brush.State.Selected}"
+                                CornerRadius="{DynamicResource Radius.Control}" Opacity="0" />
+
+                        <!-- Selection marker: a bar at the leading edge, which survives
+                             theme changes and colour-blindness in a way a tint alone does not. -->
+                        <Border x:Name="Indicator" Width="3" Height="18" Margin="0,0,0,0"
+                                HorizontalAlignment="Left" VerticalAlignment="Center"
+                                Background="{DynamicResource Brush.Indicator}"
+                                CornerRadius="0,2,2,0" Opacity="0" />
+
+                        <Grid Margin="12,0,10,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Path Style="{DynamicResource IconPath}"
+                                  Data="{Binding Icon, RelativeSource={RelativeSource TemplatedParent}}"
+                                  Fill="{TemplateBinding Foreground}" />
+                            <ContentPresenter Grid.Column="1" Margin="10,0,0,0"
+                                              HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                              Focusable="False" RecognizesAccessKey="True"
+                                              TextBlock.Foreground="{TemplateBinding Foreground}" />
                         </Grid>
-                    </Border>
+
+                        <Border x:Name="FocusRing" BorderThickness="2" Visibility="Collapsed"
+                                BorderBrush="{DynamicResource Brush.Focus.Visual}"
+                                CornerRadius="{DynamicResource Radius.Control}" />
+                    </Grid>
 
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter Property="Visibility" TargetName="Indicator" Value="Visible" />
-                            <Setter Property="Background" TargetName="border" Value="{DynamicResource Brush.Button.Solid.Hover}"/>
-                            <Setter Property="BorderBrush" TargetName="border" Value="{DynamicResource Brush.Button.Solid.Hover}"/>
+                            <!-- 120ms: fast enough to feel like a direct response, slow
+                                 enough to read as a transition rather than a flicker. -->
+                            <Trigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="HoverLayer" Storyboard.TargetProperty="Opacity"
+                                                         To="1" Duration="0:0:0.12" />
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="HoverLayer" Storyboard.TargetProperty="Opacity"
+                                                         To="0" Duration="0:0:0.12" />
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.ExitActions>
                         </Trigger>
+
                         <Trigger Property="IsChecked" Value="True">
-                            <Setter Property="Background" TargetName="border" Value="{DynamicResource Brush.Button.Solid.Pressed}"/>
-                            <Setter Property="BorderBrush" TargetName="border" Value="{DynamicResource Brush.Button.Solid.Pressed}"/>
-                            <Setter Property="Visibility" TargetName="Indicator" Value="Visible" />
+                            <Setter TargetName="SelectedLayer" Property="Opacity" Value="1" />
+                            <Setter TargetName="Indicator" Property="Opacity" Value="1" />
+                            <!-- The current destination is the one row in full-strength text. -->
+                            <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}" />
+                            <Setter Property="FontWeight" Value="SemiBold" />
+                        </Trigger>
+
+                        <!-- Keyboard focus only: a mouse click should not leave a ring behind. -->
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="FocusRing" Property="Visibility" Value="Visible" />
+                        </Trigger>
+
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.4" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

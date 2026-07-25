@@ -21,6 +21,11 @@
                 <pagesViews:SearchView/>
             </DataTemplate>
             <ResourceDictionary.MergedDictionaries>
+                <!-- Design tokens first: type ramp, 4px spacing grid, radii, icon
+                     geometry. Theme-independent, and everything below refers to them. -->
+                <ResourceDictionary Source="Styles/Typography.xaml"/>
+                <ResourceDictionary Source="Styles/Spacing.xaml"/>
+                <ResourceDictionary Source="Styles/Icons.xaml"/>
                 <!-- Theme-independent control templates; colors resolve via DynamicResource -->
                 <ResourceDictionary Source="Styles/Controls/ButtonStyles.xaml"/>
                 <ResourceDictionary Source="Styles/Controls/TextBoxStyle.xaml"/>

@@ -1,27 +1,23 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls.Primitives;
+using System.Windows.Media;
 
 namespace TaskTracker.Controls
 {
+    /// <summary>
+    /// A command entry with an icon (Add Project, Add Task, a recent project).
+    /// Unlike <see cref="ProjectItem"/> it does not stay selected — it acts and returns.
+    /// </summary>
     public class SideBarItem : ButtonBase
     {
-        public SideBarItem() 
-        {
-            
-        }
+        /// <inheritdoc cref="ProjectItem.IconProperty" />
+        public static readonly DependencyProperty IconProperty =
+            DependencyProperty.Register(nameof(Icon), typeof(Geometry), typeof(SideBarItem), new PropertyMetadata(null));
 
-        public static readonly DependencyProperty ImageProperty =
-            DependencyProperty.Register("Image", typeof(string), typeof(SideBarItem), new PropertyMetadata(string.Empty));
-
-        public string Image
+        public Geometry? Icon
         {
-            get { return (string)GetValue(ImageProperty); }
-            set { SetValue(ImageProperty, value); }
+            get => (Geometry?)GetValue(IconProperty);
+            set => SetValue(IconProperty, value);
         }
     }
 }

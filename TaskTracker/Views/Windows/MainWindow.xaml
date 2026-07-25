@@ -1,4 +1,4 @@
-﻿<Window x:Class="TaskTracker.MainWindow"
+<Window x:Class="TaskTracker.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -12,6 +12,7 @@
         ResizeMode="CanResize"
         Title="TaskTracker" Height="800" Width="1200"
         MinHeight="520" MinWidth="880"
+        FontFamily="{DynamicResource Font.UI}"
         WindowStartupLocation="CenterScreen">
     <!-- WindowChrome keeps the native window behaviour (Aero Snap, Win+Arrow,
          double-click to maximize, real resize borders) while letting the caption
@@ -27,62 +28,112 @@
         <KeyBinding Modifiers="Ctrl" Key="N" Command="{Binding NewProjectClickCommand}" />
         <KeyBinding Modifiers="Ctrl" Key="T" Command="{Binding NewTaskShortcutCommand}" />
     </Window.InputBindings>
+
     <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="auto" />
-            <RowDefinition Height="auto" />
-            <RowDefinition Height="*" />
-            <RowDefinition Height="auto" />
-        </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
+            <!-- Two-way: the GridSplitter assigns this Width, which the binding turns
+                 into a stored preference. -->
+            <ColumnDefinition x:Name="SidebarColumn"
+                              Width="{Binding SidebarWidth, Mode=TwoWay, Converter={StaticResource SidebarWidthConverter}}"
+                              MinWidth="180" MaxWidth="420" />
             <ColumnDefinition Width="auto" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
-        <StackPanel MinWidth="150" Grid.Row="1">
-            <Label Content="{DynamicResource Projects}" FontSize="30" Foreground="{DynamicResource Brush.Text.Primary}" Margin="10,0,0,10"></Label>
+        <!-- ==== Sidebar ====
+             Three rows: a fixed header, a list that takes the slack, and a footer
+             pinned to the bottom. It used to be a StackPanel, a ScrollViewer with
+             Margin="0,0,0,120" to reserve room, and a DockPanel overlaid in the same
+             grid cell — so the footer silently sat on top of the list whenever the
+             list grew past the space guessed for it. -->
+        <Grid Margin="8,0,4,8">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="auto" />
+            </Grid.RowDefinitions>
 
-            <controls:ProjectItem IsChecked="{Binding IsHomeSelected}" Command="{Binding NavigateToHomeCommand}" GroupName="checkboxes" Image="/Assets/Home-32.png" Margin="5" Height="40" Content="{DynamicResource Home}"></controls:ProjectItem>
-                
-            <Rectangle Height="1" Margin="5" Fill="{DynamicResource Brush.Divider}"></Rectangle>
+            <StackPanel>
+                <TextBlock Style="{StaticResource Text.Title}" Text="{DynamicResource Projects}"
+                           Margin="8,0,0,12" />
 
-            <controls:CustomTextBox x:Name="SearchBox" Height="30" Margin="5" Hint="{DynamicResource SearchHint}" Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                <controls:ProjectItem IsChecked="{Binding IsHomeSelected}"
+                                      Command="{Binding NavigateToHomeCommand}"
+                                      GroupName="checkboxes"
+                                      Icon="{StaticResource Icon.Home}"
+                                      Content="{DynamicResource Home}" />
 
-            <Button Style="{DynamicResource TitleButton}" HorizontalAlignment="Right" Margin="5" Command="{Binding SortClickCommand}" Content="{DynamicResource Sort}"></Button>
-        </StackPanel>
-            
-        <ScrollViewer VerticalScrollBarVisibility="Auto" MinWidth="150" Grid.Row="2" Margin="0,0,0,120">
-            <ItemsControl ItemsSource="{Binding ShownProjects}">
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <controls:ProjectItem Command="{Binding DataContext.NavigateToProjectCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                    CommandParameter="{Binding Id}"
-                                    GroupName="checkboxes"
-                                    IsChecked="{Binding IsSelected, Mode=TwoWay}"
-                                    Tag="IsProject"
-                                    Image="/Assets/Project-32.png"
-                                    Margin="5" Height="40">
-                            <StackPanel Orientation="Horizontal">
-                                <Ellipse Width="8" Height="8" Margin="0,0,5,0" VerticalAlignment="Center"
-                                         Fill="{Binding Color, Converter={StaticResource ColorStringToBrushConverter}}" />
-                                <TextBlock Text="{Binding Name}" VerticalAlignment="Center" />
-                            </StackPanel>
-                        </controls:ProjectItem>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
-        </ScrollViewer>
-           
-        <DockPanel LastChildFill="False" Grid.Row="2">
-            <controls:ProjectItem Content="{DynamicResource Settings}" IsChecked="{Binding IsSettingsSelected}" Command="{Binding NavigateToSettingsCommand}" GroupName="checkboxes" Image="/Assets/Settings-32.png" DockPanel.Dock="Bottom" Margin="5" Height="40"></controls:ProjectItem>
+                <Rectangle Height="1" Margin="4,8" Fill="{DynamicResource Brush.Divider}" />
 
-            <Rectangle Height="1" Margin="5" Fill="{DynamicResource Brush.Divider}" DockPanel.Dock="Bottom"></Rectangle>
+                <controls:CustomTextBox x:Name="SearchBox" Height="32" Margin="0,0,0,4"
+                                        Hint="{DynamicResource SearchHint}"
+                                        Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
-            <controls:SideBarItem Command="{Binding NewProjectClickCommand}" Image="/Assets/Add-32.png" DockPanel.Dock="Bottom" Margin="5" Height="40" Content="{DynamicResource AddProject}"></controls:SideBarItem>
-        </DockPanel>
+                <Button Style="{DynamicResource SubtleButton}" HorizontalAlignment="Right"
+                        Padding="8,2" Margin="0,0,0,4"
+                        Command="{Binding SortClickCommand}" Content="{DynamicResource Sort}" />
+            </StackPanel>
 
-        <Border Grid.Column="1" Grid.Row="1" CornerRadius="10" Background="{DynamicResource Brush.Content.Background}" Grid.RowSpan="3">
-            <ContentControl Margin="20" Content="{Binding NavigationService.CurrentView}"></ContentControl>
+            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled">
+                <ItemsControl ItemsSource="{Binding ShownProjects}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <controls:ProjectItem Command="{Binding DataContext.NavigateToProjectCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                        CommandParameter="{Binding Id}"
+                                        GroupName="checkboxes"
+                                        IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                        Tag="IsProject"
+                                        Icon="{StaticResource Icon.Project}"
+                                        AutomationProperties.Name="{Binding Name}"
+                                        Margin="0,1">
+                                <StackPanel Orientation="Horizontal">
+                                    <!-- The project's own colour, when it has one: the only
+                                         colour in the row, so it identifies rather than decorates. -->
+                                    <Ellipse Width="8" Height="8" Margin="0,0,6,0" VerticalAlignment="Center"
+                                             Fill="{Binding Color, Converter={StaticResource ColorStringToBrushConverter}}" />
+                                    <TextBlock Text="{Binding Name}" VerticalAlignment="Center"
+                                               TextTrimming="CharacterEllipsis" />
+                                </StackPanel>
+                            </controls:ProjectItem>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+
+            <!-- Nothing to show yet: the sidebar is otherwise a blank column on a
+                 first run, with no hint that a project is what starts things off. -->
+            <TextBlock Grid.Row="1" Style="{StaticResource Text.Caption}"
+                       Text="{DynamicResource NoProjectsYet}"
+                       TextWrapping="Wrap" TextAlignment="Center" Margin="12,24"
+                       VerticalAlignment="Top" IsHitTestVisible="False"
+                       Visibility="{Binding ShownProjects.Count, Converter={StaticResource CountToVisibilityConverter}, ConverterParameter=Empty}" />
+
+            <StackPanel Grid.Row="2">
+                <Rectangle Height="1" Margin="4,8" Fill="{DynamicResource Brush.Divider}" />
+                <controls:SideBarItem Command="{Binding NewProjectClickCommand}"
+                                      Icon="{StaticResource Icon.Add}"
+                                      Content="{DynamicResource AddProject}" />
+                <controls:ProjectItem Content="{DynamicResource Settings}"
+                                      IsChecked="{Binding IsSettingsSelected}"
+                                      Command="{Binding NavigateToSettingsCommand}"
+                                      GroupName="checkboxes"
+                                      Icon="{StaticResource Icon.Settings}"
+                                      Margin="0,1,0,0" />
+            </StackPanel>
+        </Grid>
+
+        <!-- Resizable so long project names are reachable without truncation. -->
+        <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch"
+                      Background="Transparent" Cursor="SizeWE"
+                      AutomationProperties.Name="{DynamicResource ResizeSidebar}" />
+
+        <Border Grid.Column="2" Margin="0,0,8,8"
+                CornerRadius="{DynamicResource Radius.Panel}"
+                Background="{DynamicResource Brush.Content.Background}"
+                BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1">
+            <ContentControl Margin="{DynamicResource Pad.Page}"
+                            Content="{Binding NavigationService.CurrentView}" />
         </Border>
     </Grid>
 </Window>

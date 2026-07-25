@@ -26,25 +26,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Remove="Assets\Add-32.png" />
-    <None Remove="Assets\Edit-32.png" />
-    <None Remove="Assets\Home-120.png" />
-    <None Remove="Assets\Home-144.png" />
-    <None Remove="Assets\Home-150.png" />
-    <None Remove="Assets\Home-16.png" />
-    <None Remove="Assets\Home-310.png" />
-    <None Remove="Assets\Home-32.png" />
-    <None Remove="Assets\Home-70.png" />
-    <None Remove="Assets\Home-96.png" />
-    <None Remove="Assets\Project-32.png" />
-    <None Remove="Assets\Settings-32.png" />
-    <None Remove="Assets\starEmpty-32.png" />
-    <None Remove="Assets\starFull-32.png" />
-    <None Remove="Assets\Task-32.png" />
-    <None Remove="Assets\Trash-32.png" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.3.2" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
@@ -54,34 +35,9 @@
     <ProjectReference Include="..\TaskTracker.Core\TaskTracker.Core.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Resource Include="Assets\Add-32.png">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Resource>
-    <Resource Include="Assets\Edit-32.png">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Resource>
-    <Resource Include="Assets\Home-32.png">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Resource>
-    <Resource Include="Assets\Project-32.png">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Resource>
-    <Resource Include="Assets\Settings-32.png">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Resource>
-    <Resource Include="Assets\starEmpty-32.png">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Resource>
-    <Resource Include="Assets\starFull-32.png">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Resource>
-    <Resource Include="Assets\Task-32.png">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Resource>
-    <Resource Include="Assets\Trash-32.png">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Resource>
-  </ItemGroup>
+  <!-- The nine 32px icon PNGs that used to be listed here are gone: Styles/Icons.xaml
+       carries them as geometry instead, which stays sharp at every scale factor and
+       takes its colour from the control. app.ico stays — a window icon has to be a
+       real icon file. -->
 
 </Project>

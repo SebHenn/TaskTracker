@@ -149,4 +149,16 @@
 
   <!-- Messages -->
   <data name="InvalidProjectName" xml:space="preserve"><value>Ungültiger Projektname oder bereits vorhanden</value></data>
+
+  <!-- Empty states and layout affordances -->
+  <data name="NoProjectsYet" xml:space="preserve"><value>Noch keine Projekte. Füge unten eines hinzu.</value></data>
+  <data name="ResizeSidebar" xml:space="preserve"><value>Seitenleiste anpassen</value></data>
+  <data name="EmptyColumn" xml:space="preserve"><value>Nichts vorhanden</value></data>
+  <data name="EmptyBoard" xml:space="preserve"><value>Noch keine Aufgaben in diesem Projekt. Füge unten die erste hinzu.</value></data>
+  <data name="NoSearchResults" xml:space="preserve"><value>Keine Aufgaben zu dieser Suche gefunden.</value></data>
+  <data name="NothingDue" xml:space="preserve"><value>Nichts fällig. Genieße es.</value></data>
+  <data name="CompactCardsSetting" xml:space="preserve"><value>Kompakte Karten</value></data>
+  <data name="RecurringChip" xml:space="preserve"><value>Wiederholt</value></data>
+  <data name="DoneColumnLabel" xml:space="preserve"><value>Erledigt-Spalte</value></data>
+  <data name="WipLimitReached" xml:space="preserve"><value>Über dem Spaltenlimit</value></data>
 </root>

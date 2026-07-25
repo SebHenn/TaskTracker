@@ -21,6 +21,12 @@ namespace TaskTracker.Core.Storage
         /// <summary>Global Ctrl+Alt+T quick-add hotkey.</summary>
         public bool QuickAddHotkeyEnabled { get; set; } = true;
 
+        /// <summary>Sidebar width in pixels, as left by the GridSplitter.</summary>
+        public double? SidebarWidth { get; set; }
+
+        /// <summary>Compact board cards: same information, less vertical space per card.</summary>
+        public bool CompactCards { get; set; }
+
         // Last main-window placement; restored on startup when still on-screen.
         public double? WindowLeft { get; set; }
         public double? WindowTop { get; set; }

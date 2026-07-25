@@ -1,0 +1,42 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=System.Runtime">
+
+    <!-- A 4px grid, replacing margins picked per element. Named for the job rather
+         than the number, so "the gap between stacked cards" is one decision made once
+         instead of a 5 here and a 3 there.
+
+         The worst offender this replaces was Margin="0,0,0,120" on the sidebar's
+         project list, which existed purely to reserve room for a footer overlaid in
+         the same grid cell — and silently overlapped once the footer grew. -->
+
+    <sys:Double x:Key="Space.4">4</sys:Double>
+    <sys:Double x:Key="Space.8">8</sys:Double>
+    <sys:Double x:Key="Space.12">12</sys:Double>
+    <sys:Double x:Key="Space.16">16</sys:Double>
+    <sys:Double x:Key="Space.20">20</sys:Double>
+    <sys:Double x:Key="Space.24">24</sys:Double>
+
+    <!-- Padding inside a container -->
+    <Thickness x:Key="Pad.Card">12</Thickness>
+    <Thickness x:Key="Pad.Group">16</Thickness>
+    <Thickness x:Key="Pad.Page">20,16,20,16</Thickness>
+    <Thickness x:Key="Pad.Chip">8,2,8,2</Thickness>
+    <Thickness x:Key="Pad.Control">12,6,12,6</Thickness>
+
+    <!-- Gaps between siblings. Applied on one side only so adjacent margins never
+         collapse into an unpredictable double gap. -->
+    <Thickness x:Key="Gap.RowTight">0,0,0,4</Thickness>
+    <Thickness x:Key="Gap.Row">0,0,0,8</Thickness>
+    <Thickness x:Key="Gap.Section">0,0,0,20</Thickness>
+    <Thickness x:Key="Gap.Column">0,0,8,0</Thickness>
+    <Thickness x:Key="Gap.ColumnTight">0,0,4,0</Thickness>
+
+    <!-- Corner radii, coarse on purpose: panels read as containers, controls as
+         interactive, chips as tokens. -->
+    <CornerRadius x:Key="Radius.Panel">8</CornerRadius>
+    <CornerRadius x:Key="Radius.Card">6</CornerRadius>
+    <CornerRadius x:Key="Radius.Control">4</CornerRadius>
+    <CornerRadius x:Key="Radius.Chip">10</CornerRadius>
+
+</ResourceDictionary>
