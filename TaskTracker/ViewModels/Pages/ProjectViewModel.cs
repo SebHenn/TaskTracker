@@ -407,12 +407,7 @@ namespace TaskTracker.ViewModels.Pages
             var task = CurrentProject.Tasks.FirstOrDefault(t => t.Id == taskId);
             if (task == null) return;
 
-            var order = targetLane.Tasks.Where(t => t.Id != taskId).ToList();
-            insertIndex = Math.Clamp(insertIndex, 0, order.Count);
-            order.Insert(insertIndex, task);
-            for (var i = 0; i < order.Count; i++)
-                order[i].SortOrder = i + 1;
-
+            BoardDrop.PlaceInLane(targetLane.Tasks, task, insertIndex);
             CurrentProject.MoveTaskToColumn(task, targetLane.Column);
             CategorizeTasks();
         }

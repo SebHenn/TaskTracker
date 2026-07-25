@@ -19,6 +19,19 @@ namespace TaskTracker.ViewModels.Pages
 
         public bool IsOverWip => Column.WipLimit.HasValue && Tasks.Count > Column.WipLimit.Value;
 
+        private bool _isDropTarget;
+
+        /// <summary>
+        /// True while a dragged card is over this lane. Drag state rather than board
+        /// state, so it is neither persisted nor change-tracked — this view model is
+        /// rebuilt from the projection and never written to the store.
+        /// </summary>
+        public bool IsDropTarget
+        {
+            get => _isDropTarget;
+            set => SetProperty(ref _isDropTarget, value);
+        }
+
         public ColumnLaneViewModel(BoardColumn column, IEnumerable<TaskModel> tasks)
         {
             Column = column;

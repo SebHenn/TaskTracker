@@ -280,8 +280,13 @@
             </ScrollViewer>
         </Border>
 
-        <!-- Board lanes, one per column -->
-        <ItemsControl Grid.ColumnSpan="2" Grid.Row="3" Margin="10" ItemsSource="{Binding Lanes}">
+        <!-- Board lanes, one per column.
+             Named and drop-enabled as a whole: it hosts the drag ghost in its adorner
+             layer, and its own DragOver — reached only through the gutters between
+             lanes, since a lane handles its own — is how "dropped outside a column"
+             is detected. Transparent rather than unpainted so it hit-tests at all. -->
+        <ItemsControl x:Name="BoardRoot" Grid.ColumnSpan="2" Grid.Row="3" Margin="10" ItemsSource="{Binding Lanes}"
+                      Background="Transparent" AllowDrop="True" DragOver="OnDragOverBoard">
             <ItemsControl.ItemsPanel>
                 <ItemsPanelTemplate>
                     <UniformGrid Rows="1" />
@@ -289,7 +294,10 @@
             </ItemsControl.ItemsPanel>
             <ItemsControl.ItemTemplate>
                 <DataTemplate>
-                    <Grid Drop="OnDropLane" DragOver="OnDragOver" Margin="0,0,5,0">
+                    <!-- The whole lane accepts drops, header included, so a drop near the
+                         top of a column is not silently rejected. -->
+                    <Grid Background="Transparent" AllowDrop="True"
+                          Drop="OnDropLane" DragOver="OnDragOverLane" Margin="0,0,5,0">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="auto" />
                             <RowDefinition Height="*" />
@@ -310,7 +318,21 @@
                                 </TextBlock.Style>
                             </TextBlock>
                         </StackPanel>
-                        <Border Grid.Row="1" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1" CornerRadius="5" AllowDrop="True" Background="Transparent">
+                        <Border Grid.Row="1" BorderThickness="1" CornerRadius="5">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Setter Property="BorderBrush" Value="{DynamicResource Brush.Border}" />
+                                    <Setter Property="Background" Value="Transparent" />
+                                    <Style.Triggers>
+                                        <!-- Which column a card is about to land in. The border
+                                             thickness stays put so the cards inside don't reflow. -->
+                                        <DataTrigger Binding="{Binding IsDropTarget}" Value="True">
+                                            <Setter Property="BorderBrush" Value="{DynamicResource Brush.Accent}" />
+                                            <Setter Property="Background" Value="{DynamicResource Brush.Chip.Background}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
                             <!-- ListBox rather than ItemsControl: it virtualizes, and it brings
                                  the focus and selection model that keyboard moves and bulk
                                  actions build on. Its own ScrollViewer replaces the wrapper that
