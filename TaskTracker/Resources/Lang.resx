@@ -162,6 +162,13 @@
   <data name="DoneColumnLabel" xml:space="preserve"><value>Done column</value></data>
   <data name="WipLimitReached" xml:space="preserve"><value>Over the column limit</value></data>
 
+  <!-- Bulk actions -->
+  <data name="SelectedCount" xml:space="preserve"><value>selected</value></data>
+  <data name="MoveSelectedTo" xml:space="preserve"><value>Move to</value></data>
+  <data name="DeleteSelected" xml:space="preserve"><value>Delete</value></data>
+  <data name="ClearSelection" xml:space="preserve"><value>Deselect</value></data>
+  <data name="TasksDeletedUndo" xml:space="preserve"><value>{0} tasks deleted</value></data>
+
   <!-- Trash -->
   <data name="TrashTitle" xml:space="preserve"><value>Deleted tasks</value></data>
   <data name="OpenTrash" xml:space="preserve"><value>Trash</value></data>

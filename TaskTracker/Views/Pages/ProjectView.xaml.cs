@@ -43,9 +43,78 @@ namespace TaskTracker.Views.Pages
         private ScrollViewer? _autoScroller;
         private double _autoScrollStep;
 
+        // Guards the cascade when clearing one lane's selection raises the next lane's
+        // SelectionChanged, which would clear the lane that just gained the selection.
+        private bool _syncingSelection;
+
         public ProjectView()
         {
             InitializeComponent();
+            DataContextChanged += OnDataContextChanged;
+        }
+
+        // ---- Selection across lanes --------------------------------------------------
+
+        private void OnDataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            if (e.OldValue is ProjectViewModel previous)
+                previous.SelectionCleared -= ClearAllSelections;
+            if (e.NewValue is ProjectViewModel current)
+                current.SelectionCleared += ClearAllSelections;
+        }
+
+        /// <summary>
+        /// Publishes the selection to the view model, and keeps it to one lane.
+        ///
+        /// ListBox.SelectedItems is not a bindable dependency property, so this is the
+        /// supported way to get an extended selection out of the control. Each lane is
+        /// its own ListBox and they would otherwise hold selections simultaneously,
+        /// making "3 selected" ambiguous about which three and which column they would
+        /// move out of.
+        /// </summary>
+        private void OnLaneSelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (_syncingSelection || sender is not ListBox lane || DataContext is not ProjectViewModel viewModel)
+                return;
+
+            _syncingSelection = true;
+            try
+            {
+                if (lane.SelectedItems.Count > 0)
+                {
+                    foreach (var other in Descendants<ListBox>(BoardRoot))
+                    {
+                        if (!ReferenceEquals(other, lane))
+                            other.UnselectAll();
+                    }
+                }
+
+                viewModel.SelectedTasks =
+                    new System.Collections.ObjectModel.ObservableCollection<TaskModel>(
+                        lane.SelectedItems.OfType<TaskModel>());
+            }
+            finally
+            {
+                _syncingSelection = false;
+            }
+        }
+
+        private void ClearAllSelections()
+        {
+            if (DataContext is not ProjectViewModel viewModel)
+                return;
+
+            _syncingSelection = true;
+            try
+            {
+                foreach (var lane in Descendants<ListBox>(BoardRoot))
+                    lane.UnselectAll();
+                viewModel.SelectedTasks = [];
+            }
+            finally
+            {
+                _syncingSelection = false;
+            }
         }
 
         // ---- Press, then maybe drag --------------------------------------------------

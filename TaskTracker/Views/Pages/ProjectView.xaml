@@ -501,6 +501,8 @@
                                  given infinite height, which silently defeats virtualization. -->
                             <ListBox ItemsSource="{Binding Tasks}"
                                      ItemTemplate="{DynamicResource TaskCardTemplate}"
+                                     SelectionMode="Extended"
+                                     SelectionChanged="OnLaneSelectionChanged"
                                      Background="Transparent" BorderThickness="0"
                                      HorizontalContentAlignment="Stretch"
                                      ScrollViewer.HorizontalScrollBarVisibility="Disabled"
@@ -607,9 +609,50 @@
                     Content="{DynamicResource ClearFilters}" HorizontalAlignment="Center" Margin="0,12,0,0" />
         </StackPanel>
 
-        <StackPanel Grid.Row="4" Grid.ColumnSpan="3" Orientation="Horizontal" Margin="0,12,0,0">
+        <WrapPanel Grid.Row="4" Grid.ColumnSpan="3" Orientation="Horizontal" Margin="0,12,0,0">
             <controls:SideBarItem Command="{Binding NewTaskClickCommand}" Icon="{StaticResource Icon.Add}"
                                   MinWidth="130" Content="{DynamicResource AddTask}" />
+
+            <!-- Bulk actions, from two selected cards up. One card selected is just the
+                 current card; the bar earns its space once clicking each in turn starts
+                 to cost something. The destination columns are buttons rather than a
+                 picker because a board has a handful of them and one click beats two. -->
+            <Border VerticalAlignment="Center" Margin="16,0" Padding="10,5"
+                    CornerRadius="{DynamicResource Radius.Control}"
+                    Background="{DynamicResource Brush.Chip.Background}"
+                    BorderBrush="{DynamicResource Brush.Accent.Strong}" BorderThickness="1"
+                    Visibility="{Binding HasBulkSelection, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=True}">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Style="{StaticResource Text.BodyStrong}" VerticalAlignment="Center" Margin="0,0,10,0">
+                        <Run Text="{Binding SelectionCount, Mode=OneWay}" /><Run Text=" " /><Run Text="{DynamicResource SelectedCount}" />
+                    </TextBlock>
+
+                    <TextBlock Style="{StaticResource Text.Caption}" Text="{DynamicResource MoveSelectedTo}"
+                               VerticalAlignment="Center" Margin="0,0,6,0" />
+                    <ItemsControl ItemsSource="{Binding CurrentProject.Columns}" VerticalAlignment="Center">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Style="{DynamicResource SubtleButton}" Padding="8,3" Margin="0,0,4,0"
+                                        Content="{Binding Name}"
+                                        Command="{Binding DataContext.MoveSelectedToColumnCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                        CommandParameter="{Binding}" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <Button Style="{DynamicResource SubtleButton}" Padding="8,3" Margin="10,0,0,0"
+                            Foreground="{DynamicResource Brush.Danger.Text}"
+                            Command="{Binding DeleteSelectedCommand}" Content="{DynamicResource DeleteSelected}" />
+                    <Button Style="{DynamicResource TitleButton}" Padding="6,3" Margin="6,0,0,0"
+                            Command="{Binding ClearSelectionCommand}" Content="{DynamicResource ClearSelection}" />
+                </StackPanel>
+            </Border>
+
             <!-- Undo bar shown briefly after a task deletion -->
             <Border VerticalAlignment="Center" Margin="16,0" Padding="10,5"
                     CornerRadius="{DynamicResource Radius.Control}"
@@ -622,6 +665,6 @@
                             Foreground="{DynamicResource Brush.Accent}" Command="{Binding UndoDeleteCommand}" Content="{DynamicResource Undo}" />
                 </StackPanel>
             </Border>
-        </StackPanel>
+        </WrapPanel>
     </Grid>
 </UserControl>

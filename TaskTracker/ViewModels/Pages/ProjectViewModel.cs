@@ -560,6 +560,61 @@ namespace TaskTracker.ViewModels.Pages
             return -1;
         }
 
+        /// <summary>
+        /// Cards selected together for a bulk action, in the order the lane shows them.
+        ///
+        /// Held on the board rather than per lane because only one lane can carry a
+        /// multi-selection at a time — the view clears the others — so "3 selected" is
+        /// never ambiguous about which three.
+        /// </summary>
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(HasBulkSelection))]
+        [NotifyPropertyChangedFor(nameof(SelectionCount))]
+        private ObservableCollection<TaskModel> _selectedTasks = [];
+
+        public int SelectionCount => SelectedTasks.Count;
+
+        /// <summary>
+        /// A single selected card is just the current card; the bulk bar appears from two,
+        /// where clicking each one in turn starts to cost something.
+        /// </summary>
+        public bool HasBulkSelection => SelectedTasks.Count > 1;
+
+        /// <summary>Set by the view when it clears lanes, so it can undo its own work.</summary>
+        public event Action? SelectionCleared;
+
+        [RelayCommand]
+        private void OnClearSelection() => SelectionCleared?.Invoke();
+
+        [RelayCommand]
+        private void OnMoveSelectedToColumn(BoardColumn column)
+        {
+            if (CurrentProject == null || SelectedTasks.Count == 0)
+                return;
+            BulkOperations.MoveAll(CurrentProject, SelectedTasks, column);
+            SelectionCleared?.Invoke();
+            CategorizeTasks();
+        }
+
+        [RelayCommand]
+        private void OnDeleteSelected()
+        {
+            if (CurrentProject == null || SelectedTasks.Count == 0)
+                return;
+
+            // Recoverable, like a single delete — so no prompt, and the undo bar offers
+            // the whole batch back at once.
+            var count = SelectedTasks.Count;
+            LastDeleted = new ObservableCollection<TrashedTask>(
+                BulkOperations.DeleteAll(CurrentProject, SelectedTasks));
+            _lastDeletedFrom = CurrentProject;
+            UndoText = string.Format(_languageService.GetString("TasksDeletedUndo"), count);
+            StartUndoWindow();
+
+            SelectionCleared?.Invoke();
+            CategorizeTasks();
+        }
+
         [RelayCommand]
         public void OnOpenTaskDetail(TaskModel task)
         {
@@ -815,17 +870,21 @@ namespace TaskTracker.ViewModels.Pages
         }
 
         /// <summary>
-        /// The newest trash entry, for the undo bar. The bar is only the fast path back;
-        /// the entry stays recoverable from the trash window long after the bar goes.
+        /// The most recent deletion, for the undo bar — one task or a whole bulk batch.
+        /// The bar is only the fast path back; the entries stay recoverable from the
+        /// trash window long after it goes.
+        ///
+        /// Always assigned a fresh collection, never mutated in place, because that is
+        /// what makes the dependent notifications fire.
         /// </summary>
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(IsUndoVisible))]
-        private TrashedTask? _lastDeleted;
+        private ObservableCollection<TrashedTask> _lastDeleted = [];
 
         private ProjectModel? _lastDeletedFrom;
         private System.Windows.Threading.DispatcherTimer? _undoTimer;
 
-        public bool IsUndoVisible => LastDeleted != null;
+        public bool IsUndoVisible => LastDeleted.Count > 0;
 
         [ObservableProperty]
         private string _undoText = "";
@@ -839,21 +898,26 @@ namespace TaskTracker.ViewModels.Pages
 
             // Into the trash, not out of existence: the bar below is the fast way back,
             // and the trash window is the one that still works tomorrow.
-            LastDeleted = Trash.Delete(CurrentProject, task);
+            LastDeleted = [Trash.Delete(CurrentProject, task)];
             _lastDeletedFrom = CurrentProject;
             UndoText = string.Format(_languageService.GetString("TaskDeletedUndo"), task.Title);
+            StartUndoWindow();
+
+            CategorizeTasks();
+        }
+
+        private void StartUndoWindow()
+        {
             _undoTimer ??= CreateUndoTimer();
             _undoTimer.Stop();
             _undoTimer.Start();
-
-            CategorizeTasks();
         }
 
         private System.Windows.Threading.DispatcherTimer CreateUndoTimer()
         {
             var timer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(8) };
-            // Only the bar goes away; the entry stays in the trash.
-            timer.Tick += (_, _) => { timer.Stop(); LastDeleted = null; _lastDeletedFrom = null; };
+            // Only the bar goes away; the entries stay in the trash.
+            timer.Tick += (_, _) => { timer.Stop(); LastDeleted = []; _lastDeletedFrom = null; };
             return timer;
         }
 
@@ -861,13 +925,14 @@ namespace TaskTracker.ViewModels.Pages
         private void OnUndoDelete()
         {
             _undoTimer?.Stop();
-            if (LastDeleted != null && _lastDeletedFrom != null)
+            if (_lastDeletedFrom != null)
             {
-                Trash.Restore(_lastDeletedFrom, LastDeleted);
+                foreach (var entry in LastDeleted)
+                    Trash.Restore(_lastDeletedFrom, entry);
                 if (_lastDeletedFrom == CurrentProject)
                     CategorizeTasks();
             }
-            LastDeleted = null;
+            LastDeleted = [];
             _lastDeletedFrom = null;
         }
 
@@ -881,8 +946,8 @@ namespace TaskTracker.ViewModels.Pages
             window.ShowDialog();
 
             // A restore from in there put tasks back on the board, and the undo bar may
-            // now be pointing at an entry that is no longer in the trash.
-            LastDeleted = null;
+            // now be pointing at entries that are no longer in the trash.
+            LastDeleted = [];
             _lastDeletedFrom = null;
             CategorizeTasks();
         }
