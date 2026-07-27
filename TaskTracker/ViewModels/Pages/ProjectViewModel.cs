@@ -21,6 +21,14 @@ namespace TaskTracker.ViewModels.Pages
 {
     public record WeekBarItem(string Tooltip, int Count, double Height);
 
+    /// <summary>A due-date filter choice with its localized label.</summary>
+    public record DueFilterOption(DueFilter Value, string Text);
+
+    /// <summary>
+    /// A priority filter choice; a null <see cref="Value"/> is the "any priority" entry.
+    /// </summary>
+    public record PriorityOption(TaskPriority? Value, string Text);
+
     public partial class ProjectViewModel : ObservableObject
     {
         private const double MaxBarHeight = 48;
@@ -82,6 +90,109 @@ namespace TaskTracker.ViewModels.Pages
 
         [ObservableProperty]
         private bool _hasLabels = false;
+
+        [ObservableProperty]
+        private ObservableCollection<DueFilterOption> _dueFilters = [];
+
+        [ObservableProperty]
+        private ObservableCollection<PriorityOption> _priorityFilters = [];
+
+        [ObservableProperty]
+        private DueFilterOption? _selectedDueFilter;
+
+        [ObservableProperty]
+        private PriorityOption? _selectedPriorityFilter;
+
+        /// <summary>
+        /// True when the board is showing a subset. Drives the clear affordance and,
+        /// with <see cref="HasAnyTasks"/>, tells "this project is empty" apart from
+        /// "your filters match nothing" — two situations that want different wording.
+        /// </summary>
+        [ObservableProperty]
+        private bool _isFilterActive;
+
+        /// <summary>False when the filters leave every lane empty on a non-empty project.</summary>
+        [ObservableProperty]
+        private bool _hasVisibleTasks = true;
+
+        /// <summary>
+        /// Set while more than one filter is being assigned at once. Every filter setter
+        /// re-projects the whole board, so without this a reset would build it three
+        /// times and throw the first two away.
+        /// </summary>
+        private bool _isSettingFilters;
+
+        /// <summary>
+        /// Rebuilds the filter dropdowns. The entries carry localized text, so they are
+        /// regenerated on a language change rather than re-resolved by a binding.
+        /// </summary>
+        private void BuildFilterOptions()
+        {
+            var previousDue = SelectedDueFilter?.Value ?? DueFilter.Any;
+            var previousPriority = SelectedPriorityFilter?.Value;
+
+            DueFilters =
+            [
+                new(DueFilter.Any, _languageService.GetString("AnyDueDate")),
+                new(DueFilter.Overdue, _languageService.GetString("OverdueSection")),
+                new(DueFilter.DueToday, _languageService.GetString("DueTodaySection")),
+                new(DueFilter.DueThisWeek, _languageService.GetString("DueThisWeekSection")),
+                new(DueFilter.NoDueDate, _languageService.GetString("NoDueDate")),
+            ];
+
+            // Priority values show their enum names, the same as the detail drawer's
+            // picker — localizing them here only would make the two disagree.
+            PriorityFilters = [new(null, _languageService.GetString("AnyPriority"))];
+            foreach (var priority in Priorities)
+                PriorityFilters.Add(new(priority, priority.ToString()));
+
+            // Reselected by value, because the option objects are new instances and the
+            // old selection would no longer match anything in the list — leaving the
+            // box blank while the board stayed filtered.
+            SetFilters(() =>
+            {
+                SelectedDueFilter = DueFilters.First(option => option.Value == previousDue);
+                SelectedPriorityFilter = PriorityFilters.First(option => option.Value == previousPriority);
+            });
+        }
+
+        private void SetFilters(Action assign)
+        {
+            _isSettingFilters = true;
+            try
+            {
+                assign();
+            }
+            finally
+            {
+                _isSettingFilters = false;
+            }
+        }
+
+        partial void OnSelectedDueFilterChanged(DueFilterOption? value) => ReprojectUnlessBatched();
+
+        partial void OnSelectedPriorityFilterChanged(PriorityOption? value) => ReprojectUnlessBatched();
+
+        private void ReprojectUnlessBatched()
+        {
+            if (!_isSettingFilters)
+                CategorizeTasks();
+        }
+
+        /// <summary>Puts all three filters back to "everything", re-projecting once.</summary>
+        private void ResetFilterSelections() => SetFilters(() =>
+        {
+            SelectedLabelFilter = AllLabelsFilter;
+            SelectedDueFilter = DueFilters.First(option => option.Value == DueFilter.Any);
+            SelectedPriorityFilter = PriorityFilters.First(option => option.Value == null);
+        });
+
+        [RelayCommand]
+        private void OnClearFilters()
+        {
+            ResetFilterSelections();
+            CategorizeTasks();
+        }
 
         [ObservableProperty]
         private ProjectStatsResult? _stats;
@@ -224,7 +335,12 @@ namespace TaskTracker.ViewModels.Pages
             _dialogService = dialogService;
             _selectedLabelFilter = AllLabelsFilter;
             _isCompact = settingsService.Settings.CompactCards;
-            languageService.LanguageChanged += RefreshFromProject;
+            BuildFilterOptions();
+            languageService.LanguageChanged += () =>
+            {
+                BuildFilterOptions();
+                RefreshFromProject();
+            };
 
             CurrentProject = mainViewModel.SelectedProject;
             mainViewModel.PropertyChanged += (sender, args) =>
@@ -261,7 +377,9 @@ namespace TaskTracker.ViewModels.Pages
 
         private void RefreshFromProject()
         {
-            SelectedLabelFilter = AllLabelsFilter;
+            // Filters are per-visit, not per-project: carrying "overdue only" onto a
+            // different board would make it look half empty for no visible reason.
+            ResetFilterSelections();
             CategorizeTasks();
             ArchiveButtonText = _languageService.GetString(CurrentProject?.IsArchived == true ? "Unarchive" : "Archive");
             RefreshGitHubState();
@@ -354,7 +472,7 @@ namespace TaskTracker.ViewModels.Pages
             }
         }
 
-        partial void OnSelectedLabelFilterChanged(string value) => CategorizeTasks();
+        partial void OnSelectedLabelFilterChanged(string value) => ReprojectUnlessBatched();
 
         private void CategorizeTasks()
         {
@@ -364,12 +482,13 @@ namespace TaskTracker.ViewModels.Pages
                 AvailableLabels = [];
                 HasLabels = false;
                 HasAnyTasks = false;
+                HasVisibleTasks = true;
                 Stats = null;
                 WeekBars = [];
                 return;
             }
 
-            // Counted before filtering: a label filter that matches nothing is not the
+            // Counted before filtering: a filter that matches nothing is not the
             // same as a project with nothing in it.
             HasAnyTasks = CurrentProject.Tasks.Count > 0;
 
@@ -377,8 +496,12 @@ namespace TaskTracker.ViewModels.Pages
             ProjectStore.NormalizeColumns(CurrentProject);
 
             // "All labels" is a localized display string; Core takes null for "no filter".
-            var activeFilter = SelectedLabelFilter == AllLabelsFilter ? null : SelectedLabelFilter;
-            var board = BoardProjection.Compute(CurrentProject, activeFilter);
+            var filter = new BoardFilter(
+                SelectedLabelFilter == AllLabelsFilter ? null : SelectedLabelFilter,
+                SelectedDueFilter?.Value ?? DueFilter.Any,
+                SelectedPriorityFilter?.Value);
+            IsFilterActive = filter.IsActive;
+            var board = BoardProjection.Compute(CurrentProject, filter);
 
             HasLabels = board.Labels.Count > 0;
             AvailableLabels = new ObservableCollection<string>(board.Labels.Prepend(AllLabelsFilter));
@@ -389,6 +512,7 @@ namespace TaskTracker.ViewModels.Pages
             }
 
             SyncLanes(board.Lanes);
+            HasVisibleTasks = board.Lanes.Any(lane => lane.Tasks.Count > 0);
 
             RefreshStats();
         }

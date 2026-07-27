@@ -162,6 +162,15 @@
   <data name="DoneColumnLabel" xml:space="preserve"><value>Done column</value></data>
   <data name="WipLimitReached" xml:space="preserve"><value>Over the column limit</value></data>
 
+  <!-- Board filters -->
+  <data name="FilterByDue" xml:space="preserve"><value>Due:</value></data>
+  <data name="FilterByPriority" xml:space="preserve"><value>Priority:</value></data>
+  <data name="AnyDueDate" xml:space="preserve"><value>Any</value></data>
+  <data name="AnyPriority" xml:space="preserve"><value>Any</value></data>
+  <data name="NoDueDate" xml:space="preserve"><value>No due date</value></data>
+  <data name="ClearFilters" xml:space="preserve"><value>Clear filters</value></data>
+  <data name="NoTasksMatchFilter" xml:space="preserve"><value>No tasks match the current filters.</value></data>
+
   <!-- Weekly review -->
   <data name="WeeklyReview" xml:space="preserve"><value>This week</value></data>
   <data name="ReviewRangeFormat" xml:space="preserve"><value>{0:d} to {1:d}</value></data>

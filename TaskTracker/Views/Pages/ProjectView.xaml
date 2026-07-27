@@ -10,6 +10,14 @@
     <UserControl.InputBindings>
         <KeyBinding Key="Escape" Command="{Binding CloseTaskDetailCommand}" />
     </UserControl.InputBindings>
+    <UserControl.Resources>
+        <!-- DisplayMemberPath styles what is drawn but not what is announced: without
+             this the container falls back to the item's ToString and a screen reader
+             reads "DueFilterOption { Value = Overdue, Text = Overdue }". -->
+        <Style x:Key="FilterOption" TargetType="ComboBoxItem">
+            <Setter Property="AutomationProperties.Name" Value="{Binding Text}" />
+        </Style>
+    </UserControl.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="auto" />
@@ -192,13 +200,37 @@
             </StackPanel>
         </Expander>
 
-        <!-- Label filter -->
-        <StackPanel Grid.Row="2" Grid.ColumnSpan="3" Orientation="Horizontal" Margin="10,0,10,5"
-                    Visibility="{Binding HasLabels, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=True}">
-            <Label Content="{DynamicResource FilterByLabel}" Foreground="{DynamicResource Brush.Text.Secondary}" VerticalAlignment="Center" />
-            <ComboBox MinWidth="120" VerticalAlignment="Center"
-                      ItemsSource="{Binding AvailableLabels}"
-                      SelectedItem="{Binding SelectedLabelFilter, Mode=TwoWay}" />
+        <!-- Filters. Due and priority always apply; the label box appears only once the
+             project actually uses labels, since an empty dropdown is just noise. -->
+        <StackPanel Grid.Row="2" Grid.ColumnSpan="3" Orientation="Horizontal" Margin="10,0,10,5">
+            <StackPanel Orientation="Horizontal"
+                        Visibility="{Binding HasLabels, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=True}">
+                <Label Content="{DynamicResource FilterByLabel}" Foreground="{DynamicResource Brush.Text.Secondary}" VerticalAlignment="Center" />
+                <ComboBox MinWidth="120" VerticalAlignment="Center" Margin="0,0,14,0"
+                          AutomationProperties.Name="{DynamicResource FilterByLabel}"
+                          ItemsSource="{Binding AvailableLabels}"
+                          SelectedItem="{Binding SelectedLabelFilter, Mode=TwoWay}" />
+            </StackPanel>
+
+            <Label Content="{DynamicResource FilterByDue}" Foreground="{DynamicResource Brush.Text.Secondary}" VerticalAlignment="Center" />
+            <ComboBox MinWidth="130" VerticalAlignment="Center" Margin="0,0,14,0"
+                      AutomationProperties.Name="{DynamicResource FilterByDue}"
+                      ItemsSource="{Binding DueFilters}" DisplayMemberPath="Text"
+                      ItemContainerStyle="{StaticResource FilterOption}"
+                      SelectedItem="{Binding SelectedDueFilter, Mode=TwoWay}" />
+
+            <Label Content="{DynamicResource FilterByPriority}" Foreground="{DynamicResource Brush.Text.Secondary}" VerticalAlignment="Center" />
+            <ComboBox MinWidth="100" VerticalAlignment="Center"
+                      AutomationProperties.Name="{DynamicResource FilterByPriority}"
+                      ItemsSource="{Binding PriorityFilters}" DisplayMemberPath="Text"
+                      ItemContainerStyle="{StaticResource FilterOption}"
+                      SelectedItem="{Binding SelectedPriorityFilter, Mode=TwoWay}" />
+
+            <!-- Only offered when there is something to clear, so the row stays quiet
+                 in its normal state. -->
+            <Button Style="{DynamicResource SubtleButton}" Command="{Binding ClearFiltersCommand}"
+                    Content="{DynamicResource ClearFilters}" Margin="14,0,0,0" VerticalAlignment="Center"
+                    Visibility="{Binding IsFilterActive, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=True}" />
         </StackPanel>
 
         <!-- Task detail panel (right side, visible when a task is selected) -->
@@ -543,6 +575,33 @@
             <TextBlock Style="{StaticResource Text.Subtitle}" Text="{DynamicResource EmptyBoard}"
                        Foreground="{DynamicResource Brush.Text.Hint}"
                        TextWrapping="Wrap" TextAlignment="Center" MaxWidth="420" />
+        </StackPanel>
+
+        <!-- Filtered-empty is a different situation from an empty project and needs
+             different wording: the tasks are there, they just don't match. Without this
+             a narrow filter looked exactly like a board that had lost its contents.
+             Hit-testable, unlike the empty-project state, because the way out is the
+             button inside it. -->
+        <StackPanel Grid.ColumnSpan="2" Grid.Row="3" VerticalAlignment="Center">
+            <StackPanel.Style>
+                <Style TargetType="StackPanel">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                    <Style.Triggers>
+                        <MultiDataTrigger>
+                            <MultiDataTrigger.Conditions>
+                                <Condition Binding="{Binding HasAnyTasks}" Value="True" />
+                                <Condition Binding="{Binding HasVisibleTasks}" Value="False" />
+                            </MultiDataTrigger.Conditions>
+                            <Setter Property="Visibility" Value="Visible" />
+                        </MultiDataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </StackPanel.Style>
+            <TextBlock Style="{StaticResource Text.Subtitle}" Text="{DynamicResource NoTasksMatchFilter}"
+                       Foreground="{DynamicResource Brush.Text.Hint}"
+                       TextWrapping="Wrap" TextAlignment="Center" MaxWidth="420" />
+            <Button Style="{DynamicResource SubtleButton}" Command="{Binding ClearFiltersCommand}"
+                    Content="{DynamicResource ClearFilters}" HorizontalAlignment="Center" Margin="0,12,0,0" />
         </StackPanel>
 
         <StackPanel Grid.Row="4" Grid.ColumnSpan="3" Orientation="Horizontal" Margin="0,12,0,0">

@@ -30,18 +30,28 @@ namespace TaskTracker.Core.Services
         /// knowing about display text.
         /// </param>
         public static BoardView Compute(ProjectModel project, string? labelFilter = null)
+            => Compute(project, new BoardFilter(labelFilter));
+
+        /// <param name="filter">What the board is narrowed to; <see cref="BoardFilter.None"/> shows everything.</param>
+        /// <param name="today">
+        /// Local calendar day the due buckets are measured against. Defaults to the
+        /// clock; passed in by tests so due filtering is not a moving target.
+        /// </param>
+        public static BoardView Compute(ProjectModel project, BoardFilter filter, DateTime? today = null)
         {
             ArgumentNullException.ThrowIfNull(project);
+            ArgumentNullException.ThrowIfNull(filter);
 
+            // Built from every task, not the filtered set: a label list that shrinks as
+            // you filter would strand you on a value you could no longer switch away from.
             var labels = project.Tasks
                 .SelectMany(task => task.Labels)
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .OrderBy(label => label, StringComparer.OrdinalIgnoreCase)
                 .ToList();
 
-            var visible = string.IsNullOrEmpty(labelFilter)
-                ? project.Tasks.AsEnumerable()
-                : project.Tasks.Where(task => task.Labels.Contains(labelFilter, StringComparer.OrdinalIgnoreCase));
+            var day = (today ?? DateTime.Today).Date;
+            var visible = project.Tasks.Where(task => filter.Matches(task, day));
 
             // Sort once over the whole project, then split — so a task's position is
             // decided by the same comparison regardless of which lane it lands in.

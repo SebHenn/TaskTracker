@@ -192,4 +192,108 @@ public class BoardProjectionTests
         Assert.NotEmpty(board.Lanes);
         Assert.Equal(new[] { "t" }, board.Lanes.SelectMany(l => l.Tasks).Select(t => t.Title));
     }
+
+    // --- filtering ------------------------------------------------------------
+
+    private static readonly DateTime Today = new(2026, 7, 27);
+
+    [Fact]
+    public void TheStringOverloadStillFiltersByLabel()
+    {
+        // Kept so existing callers and the "all labels" mapping do not have to change.
+        var project = ProjectWithColumns();
+        AddTask(project, "tagged", project.Columns[0], "bug");
+        AddTask(project, "untagged", project.Columns[0]);
+
+        var board = BoardProjection.Compute(project, "bug");
+
+        Assert.Equal(new[] { "tagged" }, board.Lanes.SelectMany(l => l.Tasks).Select(t => t.Title));
+    }
+
+    [Fact]
+    public void ADueFilterNarrowsEveryLane()
+    {
+        var project = ProjectWithColumns();
+        var first = project.Columns[0];
+        var done = project.FirstDoneColumn!;
+        AddTask(project, "late", first).DueDate = Today.AddDays(-3);
+        AddTask(project, "soon", first).DueDate = Today.AddDays(2);
+        AddTask(project, "finished late", done).DueDate = Today.AddDays(-3);
+
+        var board = BoardProjection.Compute(project, new BoardFilter(Due: DueFilter.Overdue), Today);
+
+        // The completed one drops out: finishing something stops it being overdue.
+        Assert.Equal(new[] { "late" }, board.Lanes.SelectMany(l => l.Tasks).Select(t => t.Title));
+    }
+
+    [Fact]
+    public void APriorityFilterNarrowsEveryLane()
+    {
+        var project = ProjectWithColumns();
+        AddTask(project, "urgent", project.Columns[0]).Priority = TaskPriority.High;
+        AddTask(project, "whenever", project.Columns[0]).Priority = TaskPriority.Low;
+
+        var board = BoardProjection.Compute(project, new BoardFilter(Priority: TaskPriority.High), Today);
+
+        Assert.Equal(new[] { "urgent" }, board.Lanes.SelectMany(l => l.Tasks).Select(t => t.Title));
+    }
+
+    [Fact]
+    public void LanesSurviveAFilterThatEmptiesThem()
+    {
+        // The board must keep its columns when a filter matches nothing, or the whole
+        // layout collapses and there is nowhere left to drop a card.
+        var project = ProjectWithColumns();
+        AddTask(project, "a", project.Columns[0]);
+
+        var board = BoardProjection.Compute(project, new BoardFilter(Priority: TaskPriority.High), Today);
+
+        Assert.Equal(project.Columns.Count, board.Lanes.Count);
+        Assert.All(board.Lanes, lane => Assert.Empty(lane.Tasks));
+    }
+
+    [Fact]
+    public void TheLabelListIsBuiltFromEveryTaskNotTheFilteredOnes()
+    {
+        // Otherwise filtering to "bug" would leave "bug" as the only option in the
+        // dropdown, with no way back to the other labels.
+        var project = ProjectWithColumns();
+        AddTask(project, "a", project.Columns[0], "bug");
+        AddTask(project, "b", project.Columns[0], "chore");
+
+        var board = BoardProjection.Compute(project, new BoardFilter("bug"), Today);
+
+        Assert.Equal(new[] { "bug", "chore" }, board.Labels);
+        Assert.Single(board.Lanes.SelectMany(l => l.Tasks));
+    }
+
+    [Fact]
+    public void FilterDimensionsCombineAcrossLanes()
+    {
+        var project = ProjectWithColumns();
+        var first = project.Columns[0];
+        var wanted = AddTask(project, "wanted", first, "bug");
+        wanted.Priority = TaskPriority.High;
+        wanted.DueDate = Today.AddDays(-1);
+        var wrongLabel = AddTask(project, "wrong label", first, "chore");
+        wrongLabel.Priority = TaskPriority.High;
+        wrongLabel.DueDate = Today.AddDays(-1);
+
+        var board = BoardProjection.Compute(
+            project, new BoardFilter("bug", DueFilter.Overdue, TaskPriority.High), Today);
+
+        Assert.Equal(new[] { "wanted" }, board.Lanes.SelectMany(l => l.Tasks).Select(t => t.Title));
+    }
+
+    [Fact]
+    public void FilteringDoesNotMutateTheProject()
+    {
+        var project = ProjectWithColumns();
+        AddTask(project, "a", project.Columns[0]).Priority = TaskPriority.Low;
+        AddTask(project, "b", project.Columns[0]).Priority = TaskPriority.High;
+
+        BoardProjection.Compute(project, new BoardFilter(Priority: TaskPriority.High), Today);
+
+        Assert.Equal(2, project.Tasks.Count);
+    }
 }
