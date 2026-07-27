@@ -19,14 +19,14 @@ user-facing feature list and GitHub-sync setup.
 
 ```
 dotnet build TaskTracker.sln                            # whole solution
-dotnet test TaskTracker.Core.Tests                      # 159 tests, ~180ms
+dotnet test TaskTracker.Core.Tests                      # 218 tests, ~180ms
 dotnet test TaskTracker.Core.Tests --filter FullyQualifiedName~ProjectStoreTests   # one class
 dotnet test TaskTracker.Core.Tests --filter "DisplayName~migrates"                 # one test
 dotnet format TaskTracker.sln --verify-no-changes        # CI gates on this; run before committing
 dotnet run --project TaskTracker\TaskTracker.csproj     # launches the GUI (blocks — run in background)
 ```
 
-- Baseline on a clean tree: **0 errors, 0 warnings, 159 tests passing**. Only new warnings are yours.
+- Baseline on a clean tree: **0 errors, 0 warnings, 218 tests passing**. Only new warnings are yours.
 - `Core` and `Mcp` build with `TreatWarningsAsErrors`; the WPF head does not, but is warning-free — keep it that way.
 - New files written by tooling often lack the UTF-8 BOM the rest of the tree has, and `dotnet format` adds it.
   Run the format check before committing or CI fails on files that compile fine.
