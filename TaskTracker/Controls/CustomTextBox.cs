@@ -12,7 +12,8 @@ namespace TaskTracker.Controls
 {
     public partial class CustomTextBox : Control
     {
-        private TextBox _textBox;
+        /// <summary>Null until the template is applied, which is why every use is guarded.</summary>
+        private TextBox? _textBox;
 
         static CustomTextBox()
         {
@@ -58,10 +59,12 @@ namespace TaskTracker.Controls
         public override void OnApplyTemplate()
         {
             base.OnApplyTemplate();
-            _textBox = GetTemplateChild("PART_TextBox") as TextBox;
-            if (_textBox != null)
+            // Captured in a local so the handler closes over a value the compiler knows
+            // is non-null, rather than over the nullable field.
+            if (GetTemplateChild("PART_TextBox") is TextBox textBox)
             {
-                _textBox.TextChanged += (s, e) => SetCurrentValue(TextProperty, _textBox.Text);
+                _textBox = textBox;
+                textBox.TextChanged += (_, _) => SetCurrentValue(TextProperty, textBox.Text);
             }
         }
     }

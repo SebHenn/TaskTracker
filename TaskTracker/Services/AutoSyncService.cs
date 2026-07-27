@@ -1,14 +1,17 @@
+﻿using CommunityToolkit.Mvvm.Messaging;
 using System;
 using System.Linq;
 using System.Windows.Threading;
 using TaskTracker.Core.GitHub;
+using TaskTracker.Messages;
 
 namespace TaskTracker.Services
 {
     /// <summary>
     /// Optional background refresh: every 15 minutes, syncs all GitHub-linked,
-    /// non-archived projects when enabled in settings. Failures are silent —
-    /// the manual Sync button surfaces errors.
+    /// non-archived projects when enabled in settings. A failure is logged and
+    /// broadcast as an <see cref="AutoSyncFailedMessage"/>, so the affected board can
+    /// say so rather than just quietly stopping.
     /// </summary>
     public class AutoSyncService : IDisposable
     {
@@ -64,8 +67,11 @@ namespace TaskTracker.Services
                     }
                     catch (Exception ex)
                     {
-                        // Silent by design; the next manual sync will surface problems.
+                        // Logged and announced. Silence made a bad token or a renamed
+                        // repository look exactly like "nothing changed", so a board could
+                        // quietly stop updating for days.
                         Core.Storage.AppLog.Write("auto-sync", $"{project.Name}: {ex.Message}");
+                        WeakReferenceMessenger.Default.Send(new AutoSyncFailedMessage(project.Id, ex.Message));
                     }
                 }
             }

@@ -42,9 +42,24 @@
              linked) and the rest neutral or subtle, so the toolbar has a single focal
              point instead of six competing coloured boxes. -->
         <StackPanel Grid.Column="2" VerticalAlignment="Center" Orientation="Horizontal">
-            <TextBlock Style="{StaticResource Text.Caption}" Text="{Binding LastSyncedText}"
+            <!-- Doubles as the failure line: a background sync that fails says so here
+                 rather than only in the log, where nobody looks. Trimmed to one line with
+                 the full reason on hover, so a long exception message cannot push the
+                 toolbar buttons off the edge. -->
+            <TextBlock Text="{Binding LastSyncedText}" ToolTip="{Binding LastSyncedText}"
                        VerticalAlignment="Center" Margin="0,0,8,0"
-                       Visibility="{Binding IsGitHubLinked, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=True}" />
+                       MaxWidth="240" TextTrimming="CharacterEllipsis"
+                       Visibility="{Binding IsGitHubLinked, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=True}">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock" BasedOn="{StaticResource Text.Caption}">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding HasSyncError}" Value="True">
+                                <Setter Property="Foreground" Value="{DynamicResource Brush.Danger.Text}" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
             <Button Command="{Binding SyncGitHubCommand}" Content="{DynamicResource Sync}"
                     ToolTip="{DynamicResource Sync}" Margin="{DynamicResource Gap.Column}"
                     Visibility="{Binding IsGitHubLinked, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=True}">

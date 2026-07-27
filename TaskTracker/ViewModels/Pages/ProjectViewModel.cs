@@ -194,6 +194,23 @@ namespace TaskTracker.ViewModels.Pages
         [ObservableProperty]
         private string _lastSyncedText = "";
 
+        /// <summary>
+        /// True while the sync line is reporting a failure rather than a timestamp, so
+        /// the board can style it as an error instead of quietly showing stale text.
+        /// </summary>
+        [ObservableProperty]
+        private bool _hasSyncError;
+
+        /// <summary>
+        /// Cancels the in-flight sync. Switching projects mid-sync used to let the old
+        /// project's response land and re-categorize a board that is no longer shown.
+        /// </summary>
+        private System.Threading.CancellationTokenSource? _syncCts;
+
+        // Cancel only — the sync's own finally block clears and disposes the source.
+        // Nulling it here instead would make that guard fail and leave IsSyncing stuck on.
+        public void CancelSync() => _syncCts?.Cancel();
+
         public ProjectViewModel(MainViewModel mainViewModel, IProjectsService projectsService, INavigationService navigationService, IServiceProvider serviceProvider, ILanguageService languageService, ISettingsService settingsService, GitHubSyncService gitHubSyncService, IGitHubApiFactory gitHubApiFactory, IDialogService dialogService)
         {
             _mainViewModel = mainViewModel;
@@ -214,10 +231,22 @@ namespace TaskTracker.ViewModels.Pages
             {
                 if (args.PropertyName == nameof(mainViewModel.SelectedProject))
                 {
+                    CancelSync();
                     CurrentProject = mainViewModel.SelectedProject;
                     RefreshFromProject();
                 }
             };
+            WeakReferenceMessenger.Default.Register<AutoSyncFailedMessage>(
+                this, (r, m) =>
+                {
+                    // Only the affected board reacts; a failure on some other project's
+                    // background sync is not this board's business.
+                    var vm = (ProjectViewModel)r;
+                    if (vm.CurrentProject?.Id != m.ProjectId)
+                        return;
+                    vm.HasSyncError = true;
+                    vm.LastSyncedText = $"{vm._languageService.GetString("SyncFailed")}: {m.Reason}";
+                });
             WeakReferenceMessenger.Default.Register<StoreReloadedMessage>(
                 this, (r, m) =>
                 {
@@ -240,6 +269,8 @@ namespace TaskTracker.ViewModels.Pages
 
         private void RefreshGitHubState()
         {
+            // Any successful refresh of this line clears the error styling with it.
+            HasSyncError = false;
             IsGitHubLinked = CurrentProject?.IsGitHubLinked == true;
             LastSyncedText = !IsGitHubLinked ? ""
                 : CurrentProject!.LastSyncedAtUtc == null
@@ -287,22 +318,39 @@ namespace TaskTracker.ViewModels.Pages
                 return;
             }
 
+            var cts = new System.Threading.CancellationTokenSource();
+            _syncCts = cts;
+
             IsSyncing = true;
             try
             {
                 // Await on the UI thread: model mutations happen in dispatcher
                 // continuations, HTTP calls run off-thread in between.
-                await _gitHubSyncService.SyncAsync(CurrentProject, _gitHubApiFactory.Create(token));
+                await _gitHubSyncService.SyncAsync(CurrentProject, _gitHubApiFactory.Create(token), cts.Token);
                 CategorizeTasks();
+            }
+            catch (OperationCanceledException)
+            {
+                // The user moved on. Not a failure, and the board they left has already
+                // been refreshed by the project switch.
+                return;
             }
             catch (Exception ex)
             {
+                HasSyncError = true;
                 _dialogService.Error($"{_languageService.GetString("SyncFailed")}: {ex.Message}");
             }
             finally
             {
-                IsSyncing = false;
-                RefreshGitHubState();
+                // Guarded: a newer sync may already own the field, and clearing
+                // IsSyncing or the status line on its behalf would be wrong.
+                if (ReferenceEquals(_syncCts, cts))
+                {
+                    _syncCts = null;
+                    IsSyncing = false;
+                    RefreshGitHubState();
+                }
+                cts.Dispose();
             }
         }
 
@@ -536,9 +584,17 @@ namespace TaskTracker.ViewModels.Pages
 
             if (newProjectWindow.DataContext is NewProjectViewModel vm && vm.DialogResult == true)
             {
-                _projectsService.ChangeProjectName(CurrentProject, vm.Name);
-                _projectsService.ChangeProjectDescription(CurrentProject, vm.Description);
-                CurrentProject.Color = string.IsNullOrEmpty(vm.SelectedColor) ? null : vm.SelectedColor;
+                // All-or-nothing: a rejected name leaves the description and colour alone
+                // too, so the dialog's contents and the project stay in agreement.
+                if (_projectsService.ChangeProjectName(CurrentProject, vm.Name))
+                {
+                    _projectsService.ChangeProjectDescription(CurrentProject, vm.Description);
+                    CurrentProject.Color = string.IsNullOrEmpty(vm.SelectedColor) ? null : vm.SelectedColor;
+                }
+                else
+                {
+                    _dialogService.Error(_languageService.GetString("InvalidProjectName"));
+                }
             }
 
             IsEditing = false;

@@ -17,3 +17,11 @@ jobs:
         run: dotnet build TaskTracker.sln -c Release -p:EnableWindowsTargeting=true
       - name: Test
         run: dotnet test TaskTracker.Core.Tests -c Release --no-build
+      # Runs after the build so a compile error reports as a compile error rather than
+      # as a formatting failure. `dotnet format` takes no -p: properties, so the WPF
+      # head's targeting override goes through the environment, which MSBuild reads
+      # as a property.
+      - name: Format
+        run: dotnet format TaskTracker.sln --verify-no-changes --no-restore
+        env:
+          EnableWindowsTargeting: true

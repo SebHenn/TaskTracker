@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using TaskTracker.Core.Models;
 
 namespace TaskTracker.Services
@@ -15,7 +15,8 @@ namespace TaskTracker.Services
 
         void RemoveProject(ProjectModel project);
 
-        void ChangeProjectName(ProjectModel project, string newName);
+        /// <summary>False when the name is blank or already taken; the project is left alone.</summary>
+        bool ChangeProjectName(ProjectModel project, string newName);
 
         void ChangeProjectDescription(ProjectModel project, string newDescription);
 

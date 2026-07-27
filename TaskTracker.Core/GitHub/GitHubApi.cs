@@ -18,12 +18,18 @@ namespace TaskTracker.Core.GitHub
     {
         private readonly HttpClient _http;
         private readonly string _token;
+        private readonly Func<TimeSpan, CancellationToken, Task> _delay;
 
-        public GitHubApi(string token, HttpClient? http = null)
+        /// <param name="delay">
+        /// How a rate-limit wait is served. Injected so tests can exercise the retry
+        /// without actually sleeping through it.
+        /// </param>
+        public GitHubApi(string token, HttpClient? http = null, Func<TimeSpan, CancellationToken, Task>? delay = null)
         {
             _token = token;
             _http = http ?? new HttpClient();
             _http.BaseAddress ??= new Uri("https://api.github.com/");
+            _delay = delay ?? Task.Delay;
         }
 
         private HttpRequestMessage Request(HttpMethod method, string url, HttpContent? content = null)
@@ -36,15 +42,45 @@ namespace TaskTracker.Core.GitHub
             return request;
         }
 
+        /// <summary>
+        /// Sends a request, waiting and retrying while GitHub reports a rate limit, and
+        /// throws on any other failure. The caller passes a *factory* rather than a
+        /// request because an <see cref="HttpRequestMessage"/> cannot be sent twice.
+        /// </summary>
+        private async Task<HttpResponseMessage> SendAsync(Func<HttpRequestMessage> factory, CancellationToken ct)
+        {
+            for (var attempt = 1; ; attempt++)
+            {
+                using var request = factory();
+                var response = await _http.SendAsync(request, ct);
+
+                if (response.IsSuccessStatusCode)
+                    return response;
+
+                var wait = attempt < GitHubRateLimit.MaxAttempts
+                    ? GitHubRateLimit.RetryDelay(response, DateTimeOffset.UtcNow)
+                    : null;
+                if (wait == null)
+                {
+                    // Out of retries, or not a rate limit: let the caller see the failure,
+                    // body and all.
+                    using (response)
+                        throw await FailureFor(response, ct);
+                }
+
+                // Nothing below reads the body, so the failed response is done with.
+                response.Dispose();
+                await _delay(wait.Value, ct);
+            }
+        }
+
         public async Task<IReadOnlyList<GitHubIssue>> ListIssuesAsync(string owner, string repo, string state, CancellationToken ct = default)
         {
             var issues = new List<GitHubIssue>();
             for (var page = 1; ; page++)
             {
-                using var request = Request(HttpMethod.Get,
-                    $"repos/{Uri.EscapeDataString(owner)}/{Uri.EscapeDataString(repo)}/issues?state={state}&per_page=100&page={page}");
-                using var response = await _http.SendAsync(request, ct);
-                await EnsureSuccess(response, ct);
+                var url = $"repos/{Uri.EscapeDataString(owner)}/{Uri.EscapeDataString(repo)}/issues?state={state}&per_page=100&page={page}";
+                using var response = await SendAsync(() => Request(HttpMethod.Get, url), ct);
 
                 using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync(ct));
                 var pageCount = 0;
@@ -81,11 +117,11 @@ namespace TaskTracker.Core.GitHub
         public async Task<int> CreateIssueAsync(string owner, string repo, string title, string? body, IReadOnlyList<string> labels, CancellationToken ct = default)
         {
             var payload = JsonSerializer.Serialize(new { title, body = body ?? "", labels });
-            using var request = Request(HttpMethod.Post,
+            // The content is rebuilt per attempt: a StringContent that has been sent
+            // cannot be reused, so a retry with a shared instance would fail on the wire.
+            using var response = await SendAsync(() => Request(HttpMethod.Post,
                 $"repos/{Uri.EscapeDataString(owner)}/{Uri.EscapeDataString(repo)}/issues",
-                new StringContent(payload, Encoding.UTF8, "application/json"));
-            using var response = await _http.SendAsync(request, ct);
-            await EnsureSuccess(response, ct);
+                new StringContent(payload, Encoding.UTF8, "application/json")), ct);
 
             using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync(ct));
             return doc.RootElement.GetProperty("number").GetInt32();
@@ -94,11 +130,9 @@ namespace TaskTracker.Core.GitHub
         public async Task UpdateIssueTitleAsync(string owner, string repo, int number, string title, CancellationToken ct = default)
         {
             var payload = JsonSerializer.Serialize(new { title });
-            using var request = Request(HttpMethod.Patch,
+            using var response = await SendAsync(() => Request(HttpMethod.Patch,
                 $"repos/{Uri.EscapeDataString(owner)}/{Uri.EscapeDataString(repo)}/issues/{number}",
-                new StringContent(payload, Encoding.UTF8, "application/json"));
-            using var response = await _http.SendAsync(request, ct);
-            await EnsureSuccess(response, ct);
+                new StringContent(payload, Encoding.UTF8, "application/json")), ct);
         }
 
         public Task CloseIssueAsync(string owner, string repo, int number, CancellationToken ct = default)
@@ -109,19 +143,15 @@ namespace TaskTracker.Core.GitHub
 
         private async Task PatchStateAsync(string owner, string repo, int number, string state, CancellationToken ct)
         {
-            using var request = Request(HttpMethod.Patch,
+            using var response = await SendAsync(() => Request(HttpMethod.Patch,
                 $"repos/{Uri.EscapeDataString(owner)}/{Uri.EscapeDataString(repo)}/issues/{number}",
-                new StringContent($"{{\"state\":\"{state}\"}}", Encoding.UTF8, "application/json"));
-            using var response = await _http.SendAsync(request, ct);
-            await EnsureSuccess(response, ct);
+                new StringContent($"{{\"state\":\"{state}\"}}", Encoding.UTF8, "application/json")), ct);
         }
 
-        private static async Task EnsureSuccess(HttpResponseMessage response, CancellationToken ct)
+        private static async Task<HttpRequestException> FailureFor(HttpResponseMessage response, CancellationToken ct)
         {
-            if (response.IsSuccessStatusCode)
-                return;
             var body = await response.Content.ReadAsStringAsync(ct);
-            throw new HttpRequestException(
+            return new HttpRequestException(
                 $"GitHub API returned {(int)response.StatusCode} {response.ReasonPhrase}: {Truncate(body)}");
         }
 

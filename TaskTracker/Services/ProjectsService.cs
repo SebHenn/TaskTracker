@@ -1,4 +1,4 @@
-using CommunityToolkit.Mvvm.Messaging;
+﻿using CommunityToolkit.Mvvm.Messaging;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Windows.Threading;
 using TaskTracker.Core.Models;
+using TaskTracker.Core.Services;
 using TaskTracker.Core.Storage;
 using TaskTracker.Messages;
 
@@ -205,9 +206,15 @@ namespace TaskTracker.Services
                 RebuildRecentProjection();
         }
 
-        public void ChangeProjectName(ProjectModel project, string newName)
+        public bool ChangeProjectName(ProjectModel project, string newName)
         {
-            project.Name = newName;
+            // Rename used to accept anything, so it could produce two projects with the
+            // same name even though creation rejected exactly that.
+            if (!ProjectNaming.IsAvailable(projectModels, newName, excluding: project))
+                return false;
+
+            project.Name = newName.Trim();
+            return true;
         }
 
         public void ChangeProjectDescription(ProjectModel project, string newDescription)

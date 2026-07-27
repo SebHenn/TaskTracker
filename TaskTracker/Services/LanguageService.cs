@@ -15,7 +15,7 @@ namespace TaskTracker.Services
         private readonly ResourceManager _resourceManager = new ResourceManager("TaskTracker.Resources.Lang", typeof(LanguageService).Assembly);
         private const string LanguageDictionaryKey = "LanguageDictionary";
 
-        public event Action LanguageChanged;
+        public event Action? LanguageChanged;
 
         public List<CultureInfo> AvailableLanguages { get; } = new List<CultureInfo>
         {
@@ -37,7 +37,11 @@ namespace TaskTracker.Services
             }
 
             var languageDictionary = new ResourceDictionary();
+            // Null when no satellite assembly matches the culture at all; the app then
+            // keeps the dictionary it already has rather than clearing every string.
             var resourceSet = _resourceManager.GetResourceSet(CultureInfo.CurrentUICulture, true, true);
+            if (resourceSet == null)
+                return;
 
             foreach (DictionaryEntry entry in resourceSet)
             {

@@ -10,9 +10,10 @@ namespace TaskTracker.Services
     public class NavigationService : ObservableObject, INavigationService
     {
         private readonly Func<Type, ObservableObject> _viewModelFactory;
-        private ObservableObject _currentView;
+        private ObservableObject? _currentView;
 
-        public ObservableObject CurrentView {
+        public ObservableObject? CurrentView
+        {
             get => _currentView;
             private set
             {
@@ -21,7 +22,7 @@ namespace TaskTracker.Services
             }
         }
 
-        public NavigationService(Func<Type,ObservableObject> viewModelFactory)
+        public NavigationService(Func<Type, ObservableObject> viewModelFactory)
         {
             _viewModelFactory = viewModelFactory;
         }
@@ -29,7 +30,7 @@ namespace TaskTracker.Services
         public void NavigateTo<TObservableObject>() where TObservableObject : ObservableObject
         {
             ObservableObject ViewModel = _viewModelFactory.Invoke(typeof(TObservableObject));
-            CurrentView = ViewModel;            
+            CurrentView = ViewModel;
         }
     }
 }

@@ -13,6 +13,7 @@ using System.Windows;
 using System.Windows.Controls;
 using TaskTracker.Messages;
 using TaskTracker.Core.Models;
+using TaskTracker.Core.Services;
 using TaskTracker.Services;
 using TaskTracker.ViewModels.Pages;
 using TaskTracker.Views.Windows;
@@ -27,9 +28,9 @@ namespace TaskTracker.ViewModels.Windows
         public INavigationService NavigationService
         {
             get { return _navigationService; }
-            set 
-            { 
-                _navigationService = value; 
+            set
+            {
+                _navigationService = value;
                 OnPropertyChanged();
             }
         }
@@ -178,10 +179,10 @@ namespace TaskTracker.ViewModels.Windows
         private void OnSortClick()
         {
             var sortProjectWindow = _serviceProvider.GetRequiredService<SortProjectWindow>();
-            
+
             sortProjectWindow.ShowDialog();
 
-            if(sortProjectWindow.DataContext is SortProjectViewModel vm && vm.DialogResult == true)
+            if (sortProjectWindow.DataContext is SortProjectViewModel vm && vm.DialogResult == true)
             {
                 IsShowEmpty = vm.IsShowEmpty;
                 IsShowDone = vm.IsShowDone;
@@ -198,7 +199,7 @@ namespace TaskTracker.ViewModels.Windows
                 if (p.IsArchived && !IsShowArchived)
                     return false;
 
-                if(IsShowOnlyFav && !p.IsFavourite)
+                if (IsShowOnlyFav && !p.IsFavourite)
                     return false;
 
                 if (IsShowEmpty && !p.Tasks.Any())
@@ -219,11 +220,11 @@ namespace TaskTracker.ViewModels.Windows
         [RelayCommand]
         private void OnNavigateToProject(Guid projectId)
         {
-            if(IsHomeSelected)
+            if (IsHomeSelected)
             {
                 IsHomeSelected = false;
             }
-            else if(IsSettingsSelected)
+            else if (IsSettingsSelected)
             {
                 IsSettingsSelected = false;
             }
@@ -253,9 +254,9 @@ namespace TaskTracker.ViewModels.Windows
 
             if (newProjectWindow.DataContext is NewProjectViewModel vm && vm.DialogResult == true)
             {
-                if (!string.IsNullOrWhiteSpace(vm.Name) && !Projects.Any(x => x.Name == vm.Name))
+                if (ProjectNaming.IsAvailable(_projectsService.projectModels, vm.Name))
                 {
-                    var created = _projectsService.AddProject(vm.Name, vm.Description);
+                    var created = _projectsService.AddProject(vm.Name.Trim(), vm.Description);
                     created.Color = string.IsNullOrEmpty(vm.SelectedColor) ? null : vm.SelectedColor;
                     OnNavigateToProject(created.Id);
                     return;
@@ -291,6 +292,10 @@ namespace TaskTracker.ViewModels.Windows
 
         public MainViewModel(INavigationService navigationService, IServiceProvider serviceProvider, IProjectsService projectsService, ILanguageService languageService, IDialogService dialogService)
         {
+            // Assigned to the field, not through the property: the setter's
+            // OnPropertyChanged is pointless before anything is bound, and going through
+            // it hides the assignment from nullable flow analysis.
+            _navigationService = navigationService;
             _projectsService = projectsService;
             _languageService = languageService;
             _dialogService = dialogService;
@@ -304,10 +309,8 @@ namespace TaskTracker.ViewModels.Windows
             ShownProjects = Projects;
             ResortProjects();
 
-            if(projectsService.projectModels.Count > 0)
+            if (projectsService.projectModels.Count > 0)
                 SelectedProject = projectsService.projectModels[0];
-
-            NavigationService = navigationService;
 
             _serviceProvider = serviceProvider;
 

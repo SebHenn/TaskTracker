@@ -194,6 +194,13 @@ namespace TaskTracker
 
             settingsService.Save();
 
+            // Before the flush, not after: a sync still in flight would otherwise land its
+            // changes on the model once there is nothing left to persist them. Reached
+            // through the current view so no page view model is constructed here just to
+            // be torn down — and a board navigated away from cancelled on the way out.
+            if (_serviceProvider.GetRequiredService<INavigationService>().CurrentView is ProjectViewModel board)
+                board.CancelSync();
+
             var projectsService = _serviceProvider.GetRequiredService<IProjectsService>();
             // Blocking: saving in the background is fine while running, but exiting
             // before the write completes would drop it.

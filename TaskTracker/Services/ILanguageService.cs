@@ -12,6 +12,6 @@ namespace TaskTracker.Services
         void ChangeLanguage(string cultureCode);
         public List<CultureInfo> AvailableLanguages { get; }
         string GetString(string key);
-        event Action LanguageChanged;
+        event Action? LanguageChanged;
     }
 }

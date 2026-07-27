@@ -9,7 +9,8 @@ namespace TaskTracker.Services
 {
     public interface INavigationService
     {
-        ObservableObject CurrentView { get; }
+        /// <summary>Null until the first <see cref="NavigateTo{T}"/> call.</summary>
+        ObservableObject? CurrentView { get; }
         void NavigateTo<T>() where T : ObservableObject;
     }
 }
