@@ -103,7 +103,7 @@ namespace TaskTracker.ViewModels.Windows
         [RelayCommand]
         private void OnNavigateToHome()
         {
-            _serviceProvider.GetRequiredService<HomeViewModel>().RefreshDueTasks();
+            _serviceProvider.GetRequiredService<HomeViewModel>().Refresh();
             NavigationService.NavigateTo<HomeViewModel>();
         }
 

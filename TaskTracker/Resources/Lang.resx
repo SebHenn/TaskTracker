@@ -162,6 +162,12 @@
   <data name="DoneColumnLabel" xml:space="preserve"><value>Done column</value></data>
   <data name="WipLimitReached" xml:space="preserve"><value>Over the column limit</value></data>
 
+  <!-- Weekly review -->
+  <data name="WeeklyReview" xml:space="preserve"><value>This week</value></data>
+  <data name="ReviewRangeFormat" xml:space="preserve"><value>{0:d} to {1:d}</value></data>
+  <data name="ReviewMoreCompleted" xml:space="preserve"><value>+{0} more</value></data>
+  <data name="ReviewNothing" xml:space="preserve"><value>Nothing completed or created in the last seven days.</value></data>
+
   <!-- Accessible names for icon-only buttons -->
   <data name="Clear" xml:space="preserve"><value>Clear</value></data>
   <data name="Remove" xml:space="preserve"><value>Remove</value></data>

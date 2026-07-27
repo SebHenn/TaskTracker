@@ -87,6 +87,100 @@
                            Foreground="{DynamicResource Brush.Text.Hint}" Margin="0,24,0,0"
                            Visibility="{Binding HasDueTasks, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=False}" />
 
+                <!-- Weekly review. Below the due list because what is coming up matters
+                     more on opening the app than what already happened, and collapsed by
+                     default so it stays a look-back rather than the first thing seen. -->
+                <Expander Margin="0,28,0,0" IsExpanded="False"
+                          Foreground="{DynamicResource Brush.Text.Primary}">
+                    <Expander.Header>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Style="{StaticResource Text.Body}" Text="{DynamicResource WeeklyReview}" />
+                            <TextBlock Style="{StaticResource Text.Caption}" Text="{Binding ReviewRangeText}"
+                                       VerticalAlignment="Center" Margin="8,1,0,0" />
+                        </StackPanel>
+                    </Expander.Header>
+
+                    <StackPanel Margin="4,12,0,4" MaxWidth="620" HorizontalAlignment="Left">
+                        <!-- Two headline numbers for the whole week, then the breakdown. -->
+                        <StackPanel Orientation="Horizontal"
+                                    Visibility="{Binding HasReview, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=True}">
+                            <StackPanel Margin="0,0,32,0">
+                                <TextBlock Style="{StaticResource Text.Metric}" Text="{Binding ReviewCompleted}" />
+                                <TextBlock Style="{StaticResource Text.Caption}" Text="{DynamicResource Done}" HorizontalAlignment="Center" />
+                            </StackPanel>
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource Text.Metric}" Text="{Binding ReviewCreated}" />
+                                <TextBlock Style="{StaticResource Text.Caption}" Text="{DynamicResource CreatedLabel}" HorizontalAlignment="Center" />
+                            </StackPanel>
+                        </StackPanel>
+
+                        <TextBlock Style="{StaticResource Text.Body}" Text="{DynamicResource ReviewNothing}"
+                                   Foreground="{DynamicResource Brush.Text.Hint}" TextWrapping="Wrap"
+                                   Visibility="{Binding HasReview, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=False}" />
+
+                        <!-- Read-only: the review reports, it does not edit. -->
+                        <ItemsControl ItemsSource="{Binding ReviewRows}" Margin="0,16,0,0">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Padding="12,10" Margin="0,0,0,6"
+                                            CornerRadius="{DynamicResource Radius.Card}"
+                                            Background="{DynamicResource Brush.Card.Background}"
+                                            BorderBrush="{DynamicResource Brush.Card.Border}" BorderThickness="1"
+                                            AutomationProperties.Name="{Binding ProjectName}">
+                                        <StackPanel>
+                                            <TextBlock Style="{StaticResource Text.BodyStrong}" Text="{Binding ProjectName}"
+                                                       TextTrimming="CharacterEllipsis" />
+                                            <!-- Counts on one caption line: four labelled numbers
+                                                 stacked would out-weigh the titles underneath. -->
+                                            <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                                <TextBlock Style="{StaticResource Text.Caption}" Margin="0,0,14,0">
+                                                    <Run Text="{Binding Completed, Mode=OneWay}" /><Run Text=" " /><Run Text="{DynamicResource Done}" />
+                                                </TextBlock>
+                                                <TextBlock Style="{StaticResource Text.Caption}" Margin="0,0,14,0">
+                                                    <Run Text="{Binding Created, Mode=OneWay}" /><Run Text=" " /><Run Text="{DynamicResource CreatedLabel}" />
+                                                </TextBlock>
+                                                <TextBlock Style="{StaticResource Text.Caption}" Margin="0,0,14,0">
+                                                    <Run Text="{Binding Open, Mode=OneWay}" /><Run Text=" " /><Run Text="{DynamicResource Open}" />
+                                                </TextBlock>
+                                                <!-- Overdue is the only count worth colouring, and only
+                                                     when it isn't zero. -->
+                                                <TextBlock Margin="0,0,14,0"
+                                                           Visibility="{Binding Overdue, Converter={StaticResource CountToVisibilityConverter}}">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock" BasedOn="{StaticResource Text.Caption}">
+                                                            <Setter Property="Foreground" Value="{DynamicResource Brush.Danger.Text}" />
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                    <Run Text="{Binding Overdue, Mode=OneWay}" /><Run Text=" " /><Run Text="{DynamicResource Overdue}" />
+                                                </TextBlock>
+                                                <TextBlock Style="{StaticResource Text.Caption}"
+                                                           Text="{Binding TrackedHours, StringFormat={}{0:0.##} h}"
+                                                           ToolTip="{DynamicResource TimeTracked}"
+                                                           Visibility="{Binding HasTrackedTime, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=True}" />
+                                            </StackPanel>
+
+                                            <ItemsControl ItemsSource="{Binding Highlights}" Margin="0,8,0,0"
+                                                          Visibility="{Binding HasHighlights, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=True}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <TextBlock Style="{StaticResource Text.Caption}" TextTrimming="CharacterEllipsis"
+                                                                   Foreground="{DynamicResource Brush.Text.Secondary}">
+                                                            <Run Text="✓ " /><Run Text="{Binding Mode=OneWay}" />
+                                                        </TextBlock>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                            <TextBlock Style="{StaticResource Text.Caption}" Text="{Binding MoreText}"
+                                                       Foreground="{DynamicResource Brush.Text.Hint}" Margin="0,2,0,0"
+                                                       Visibility="{Binding HasMore, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=True}" />
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Expander>
+
                 <TextBlock Style="{StaticResource Text.Subtitle}" Text="{DynamicResource RecentProjects}" Margin="0,28,0,8"
                            Visibility="{Binding RecentProjects.Count, Converter={StaticResource CountToVisibilityConverter}}" />
                 <ItemsControl ItemsSource="{Binding RecentProjects}" HorizontalAlignment="Left">
