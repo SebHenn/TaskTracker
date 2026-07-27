@@ -814,14 +814,18 @@ namespace TaskTracker.ViewModels.Pages
             }
         }
 
+        /// <summary>
+        /// The newest trash entry, for the undo bar. The bar is only the fast path back;
+        /// the entry stays recoverable from the trash window long after the bar goes.
+        /// </summary>
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(IsUndoVisible))]
-        private TaskModel? _lastDeletedTask;
+        private TrashedTask? _lastDeleted;
 
         private ProjectModel? _lastDeletedFrom;
         private System.Windows.Threading.DispatcherTimer? _undoTimer;
 
-        public bool IsUndoVisible => LastDeletedTask != null;
+        public bool IsUndoVisible => LastDeleted != null;
 
         [ObservableProperty]
         private string _undoText = "";
@@ -832,10 +836,10 @@ namespace TaskTracker.ViewModels.Pages
             if (CurrentProject == null) return;
             if (SelectedTask == task)
                 SelectedTask = null;
-            CurrentProject.Tasks.Remove(task);
 
-            // Offer undo for a few seconds instead of a confirmation dialog.
-            LastDeletedTask = task;
+            // Into the trash, not out of existence: the bar below is the fast way back,
+            // and the trash window is the one that still works tomorrow.
+            LastDeleted = Trash.Delete(CurrentProject, task);
             _lastDeletedFrom = CurrentProject;
             UndoText = string.Format(_languageService.GetString("TaskDeletedUndo"), task.Title);
             _undoTimer ??= CreateUndoTimer();
@@ -848,7 +852,8 @@ namespace TaskTracker.ViewModels.Pages
         private System.Windows.Threading.DispatcherTimer CreateUndoTimer()
         {
             var timer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(8) };
-            timer.Tick += (_, _) => { timer.Stop(); LastDeletedTask = null; _lastDeletedFrom = null; };
+            // Only the bar goes away; the entry stays in the trash.
+            timer.Tick += (_, _) => { timer.Stop(); LastDeleted = null; _lastDeletedFrom = null; };
             return timer;
         }
 
@@ -856,14 +861,30 @@ namespace TaskTracker.ViewModels.Pages
         private void OnUndoDelete()
         {
             _undoTimer?.Stop();
-            if (LastDeletedTask != null && _lastDeletedFrom != null)
+            if (LastDeleted != null && _lastDeletedFrom != null)
             {
-                _lastDeletedFrom.Tasks.Add(LastDeletedTask);
+                Trash.Restore(_lastDeletedFrom, LastDeleted);
                 if (_lastDeletedFrom == CurrentProject)
                     CategorizeTasks();
             }
-            LastDeletedTask = null;
+            LastDeleted = null;
             _lastDeletedFrom = null;
+        }
+
+        [RelayCommand]
+        private void OnOpenTrash()
+        {
+            if (CurrentProject == null) return;
+            var window = _serviceProvider.GetRequiredService<TrashWindow>();
+            if (window.DataContext is TrashViewModel vm)
+                vm.SetProject(CurrentProject);
+            window.ShowDialog();
+
+            // A restore from in there put tasks back on the board, and the undo bar may
+            // now be pointing at an entry that is no longer in the trash.
+            LastDeleted = null;
+            _lastDeletedFrom = null;
+            CategorizeTasks();
         }
     }
 }

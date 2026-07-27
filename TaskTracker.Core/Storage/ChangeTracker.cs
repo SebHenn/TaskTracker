@@ -44,6 +44,7 @@ namespace TaskTracker.Core.Storage
                 project.PropertyChanged -= OnItemPropertyChanged;
                 project.Tasks.CollectionChanged -= OnTasksCollectionChanged;
                 project.Columns.CollectionChanged -= OnColumnsCollectionChanged;
+                project.Trash.CollectionChanged -= OnNestedCollectionChanged;
             }
             foreach (var task in _trackedTasks)
             {
@@ -69,6 +70,10 @@ namespace TaskTracker.Core.Storage
             project.PropertyChanged += OnItemPropertyChanged;
             project.Tasks.CollectionChanged += OnTasksCollectionChanged;
             project.Columns.CollectionChanged += OnColumnsCollectionChanged;
+            // Deleting into the trash removes from Tasks and adds here in one step; only
+            // the removal would be seen otherwise, and a restore after a restart would
+            // find an entry that was never written.
+            project.Trash.CollectionChanged += OnNestedCollectionChanged;
             foreach (var task in project.Tasks)
                 TrackTask(task);
             foreach (var column in project.Columns)

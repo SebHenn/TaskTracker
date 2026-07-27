@@ -21,6 +21,14 @@ namespace TaskTracker.Core.Models
         [ObservableProperty]
         private ObservableCollection<BoardColumn> _columns = new ObservableCollection<BoardColumn>();
 
+        /// <summary>
+        /// Deleted tasks, newest first, pending retention. Go through
+        /// <see cref="Services.Trash"/> rather than mutating this directly — it owns
+        /// ordering, the retention clock and the size cap.
+        /// </summary>
+        [ObservableProperty]
+        private ObservableCollection<TrashedTask> _trash = new ObservableCollection<TrashedTask>();
+
         [ObservableProperty]
         [property: JsonIgnore]
         private bool _isSelected = false;

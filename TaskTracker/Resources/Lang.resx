@@ -162,6 +162,16 @@
   <data name="DoneColumnLabel" xml:space="preserve"><value>Done column</value></data>
   <data name="WipLimitReached" xml:space="preserve"><value>Over the column limit</value></data>
 
+  <!-- Trash -->
+  <data name="TrashTitle" xml:space="preserve"><value>Deleted tasks</value></data>
+  <data name="OpenTrash" xml:space="preserve"><value>Trash</value></data>
+  <data name="RestoreTask" xml:space="preserve"><value>Restore</value></data>
+  <data name="RestoreAll" xml:space="preserve"><value>Restore all</value></data>
+  <data name="EmptyTrash" xml:space="preserve"><value>Empty trash</value></data>
+  <data name="EmptyTrashConfirm" xml:space="preserve"><value>Permanently delete {0} task(s)? This cannot be undone.</value></data>
+  <data name="TrashEmpty" xml:space="preserve"><value>Nothing deleted. Tasks you delete land here first.</value></data>
+  <data name="TrashRetentionNotice" xml:space="preserve"><value>Deleted tasks stay here for {0} days, then go for good.</value></data>
+
   <!-- Board filters -->
   <data name="FilterByDue" xml:space="preserve"><value>Due:</value></data>
   <data name="FilterByPriority" xml:space="preserve"><value>Priority:</value></data>

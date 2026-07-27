@@ -85,6 +85,9 @@
                     Content="{DynamicResource LinkToGitHub}" Margin="{DynamicResource Gap.Column}" />
             <Button Style="{DynamicResource SubtleButton}" Command="{Binding EditColumnsCommand}"
                     Content="{DynamicResource EditColumns}" Margin="{DynamicResource Gap.Column}" />
+            <Button Style="{DynamicResource SubtleButton}" Command="{Binding OpenTrashCommand}"
+                    Content="{DynamicResource OpenTrash}" ToolTip="{DynamicResource TrashTitle}"
+                    Margin="{DynamicResource Gap.Column}" />
             <Button Style="{DynamicResource SubtleButton}" Command="{Binding ArchiveProjectCommand}"
                     Content="{Binding ArchiveButtonText}" ToolTip="{DynamicResource TooltipArchiveProject}"
                     Margin="{DynamicResource Gap.Column}" />

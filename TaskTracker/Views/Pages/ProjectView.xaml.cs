@@ -132,7 +132,8 @@ namespace TaskTracker.Views.Pages
                     e.Handled = true;
                     break;
                 case Key.Delete:
-                    // Deletion is undoable for a few seconds, so this needs no prompt.
+                    // No prompt: this moves the task to the project's trash, where it
+                    // stays recoverable long after the undo bar has gone.
                     viewModel.DeleteTaskCommand.Execute(task);
                     e.Handled = true;
                     break;

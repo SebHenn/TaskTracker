@@ -117,6 +117,7 @@ namespace TaskTracker.Core.Storage
             {
                 var migrated = MigrateFromV1(json);
                 NormalizeColumns(migrated);
+                Services.Trash.Purge(migrated);
                 return migrated;
             }
 
@@ -124,6 +125,10 @@ namespace TaskTracker.Core.Storage
             // Drop recent ids that no longer resolve to a project.
             data.RecentProjectIds.RemoveAll(id => data.Projects.All(p => p.Id != id));
             NormalizeColumns(data);
+            // Retention is enforced on load rather than on a timer, so it applies in both
+            // processes and to files written by hand or by the MCP server. The purge is
+            // persisted by whatever save comes next.
+            Services.Trash.Purge(data);
             return data;
         }
 

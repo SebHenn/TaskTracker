@@ -1,0 +1,109 @@
+<Window x:Class="TaskTracker.Views.Windows.TrashWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:TaskTracker.Views.Windows"
+        mc:Ignorable="d" WindowStyle="None"
+        Title="TrashWindow" Height="420" Width="560"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="CanResize">
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="30" ResizeBorderThickness="6" CornerRadius="0"
+                      GlassFrameThickness="0" UseAeroCaptionButtons="False" />
+    </WindowChrome.WindowChrome>
+    <Border Background="{DynamicResource Brush.Window.Background}" CornerRadius="0">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="auto" />
+                <RowDefinition Height="auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="auto" />
+            </Grid.RowDefinitions>
+
+            <Border Height="30">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <Label Content="{DynamicResource TrashTitle}" Foreground="{DynamicResource Brush.Text.Primary}" Margin="5,2,0,0" />
+                    <Button Style="{DynamicResource TitleCloseButton}" Height="30" Width="46"
+                            Click="CloseButton_Click" Grid.Column="1" HorizontalAlignment="Right"
+                            WindowChrome.IsHitTestVisibleInChrome="True"
+                            AutomationProperties.Name="{DynamicResource WindowClose}">
+                        <Path Style="{DynamicResource TitleBarGlyph}" Data="{DynamicResource Glyph.Close}" />
+                    </Button>
+                </Grid>
+            </Border>
+
+            <!-- Says how long things last, so "recoverable" is not an open-ended promise. -->
+            <TextBlock Grid.Row="1" Style="{StaticResource Text.Caption}" Text="{Binding RetentionText}"
+                       Margin="12,4,12,0" TextWrapping="Wrap" />
+
+            <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" Margin="10">
+                <Grid>
+                    <ItemsControl ItemsSource="{Binding Entries}"
+                                  AutomationProperties.AutomationId="TrashList">
+                        <ItemsControl.ItemContainerStyle>
+                            <Style TargetType="ContentPresenter">
+                                <Setter Property="AutomationProperties.Name" Value="{Binding Task.Title}" />
+                            </Style>
+                        </ItemsControl.ItemContainerStyle>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Padding="10,7" Margin="0,0,0,5"
+                                        CornerRadius="{DynamicResource Radius.Card}"
+                                        Background="{DynamicResource Brush.Card.Background}"
+                                        BorderBrush="{DynamicResource Brush.Card.Border}" BorderThickness="1">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel VerticalAlignment="Center">
+                                            <TextBlock Style="{StaticResource Text.BodyStrong}" Text="{Binding Task.Title}"
+                                                       TextTrimming="CharacterEllipsis" />
+                                            <TextBlock Style="{StaticResource Text.Caption}"
+                                                       Text="{Binding DeletedAtUtc, Converter={StaticResource UtcToLocalConverter}}" />
+                                        </StackPanel>
+                                        <Button Grid.Column="1" Style="{DynamicResource WindowButton}" Padding="8,4" Margin="10,0,0,0"
+                                                VerticalAlignment="Center"
+                                                Content="{DynamicResource RestoreTask}"
+                                                Command="{Binding DataContext.RestoreCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                CommandParameter="{Binding}" />
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <TextBlock Style="{StaticResource Text.Body}" Text="{DynamicResource TrashEmpty}"
+                               Foreground="{DynamicResource Brush.Text.Hint}"
+                               HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,24,0,0"
+                               TextWrapping="Wrap" TextAlignment="Center" MaxWidth="360"
+                               Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=True}" />
+                </Grid>
+            </ScrollViewer>
+
+            <Grid Grid.Row="3" Margin="10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="auto" />
+                    <ColumnDefinition Width="auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="auto" />
+                </Grid.ColumnDefinitions>
+                <Button Style="{DynamicResource WindowButton}" Padding="8,4"
+                        Command="{Binding RestoreAllCommand}" Content="{DynamicResource RestoreAll}"
+                        Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=False}" />
+                <Button Grid.Column="1" Style="{DynamicResource WindowButton}" Padding="8,4" Margin="8,0,0,0"
+                        Foreground="{DynamicResource Brush.Danger.Text}"
+                        Command="{Binding EmptyTrashCommand}" Content="{DynamicResource EmptyTrash}"
+                        Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=False}" />
+                <Button Grid.Column="3" Style="{DynamicResource WindowButton}" Padding="8,4"
+                        Click="CloseButton_Click" Content="{DynamicResource Close}" />
+            </Grid>
+        </Grid>
+    </Border>
+</Window>

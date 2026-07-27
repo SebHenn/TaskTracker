@@ -64,7 +64,10 @@ namespace TaskTracker.Core.Services
                     column.Id = newId;
                 }
 
-                foreach (var task in project.Tasks)
+                // Trashed tasks are remapped alongside the live ones: they are real
+                // TaskModels and importing the same export twice would otherwise leave
+                // two trash entries claiming the same task id.
+                foreach (var task in project.Tasks.Concat(project.Trash.Select(entry => entry.Task)))
                 {
                     task.Id = Guid.NewGuid();
                     task.ColumnId = task.ColumnId.HasValue && columnIdMap.TryGetValue(task.ColumnId.Value, out var mapped)

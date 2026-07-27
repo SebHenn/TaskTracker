@@ -44,6 +44,9 @@ namespace TaskTracker
             services.AddTransient<ColumnsWindow>(provider => new ColumnsWindow(
                 provider.GetRequiredService<ColumnsViewModel>()));
             services.AddTransient<ColumnsViewModel>();
+            services.AddTransient<TrashWindow>(provider => new TrashWindow(
+                provider.GetRequiredService<TrashViewModel>()));
+            services.AddTransient<TrashViewModel>();
             services.AddSingleton<AutoSyncService>();
             services.AddSingleton<TrayService>();
             services.AddSingleton<HotkeyService>();

@@ -69,6 +69,11 @@ Each project owns ordered `BoardColumn`s. `ProjectStore.NormalizeColumns` runs o
 the invariants — at least one column, at least one done column, every task pointing at a real column — so
 hand-edited and externally written files are safe to load.
 
+**Deleting goes through `Core/Services/Trash.cs`, not `project.Tasks.Remove`.** It moves the task into
+`ProjectModel.Trash` (newest first, 30-day retention, 200 entries per project), stops any running timer, and
+returns the entry that `Trash.Restore` takes back. `ProjectStore` purges past-retention entries on every load
+path, so both processes enforce it. `project.Tasks.Remove` on its own loses the task outright.
+
 `ProjectModel.MoveTaskToColumn` is the single place task placement happens: it sets `ColumnId`, derives `IsDone`
 from the column, and spawns the next occurrence via `Recurrence.SpawnNextIfRecurring`
 (`Core/Services/RecurrenceRules.cs`). Setting `task.IsDone` or `task.ColumnId` directly bypasses recurrence and

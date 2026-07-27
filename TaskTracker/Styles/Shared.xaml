@@ -22,6 +22,7 @@
     <helpers:NullableIntConverter x:Key="NullableIntConverter" />
     <helpers:ColorStringToBrushConverter x:Key="ColorStringToBrushConverter" />
     <helpers:SidebarWidthConverter x:Key="SidebarWidthConverter" />
+    <helpers:UtcToLocalConverter x:Key="UtcToLocalConverter" />
 
     <!-- A chip is a token, not a button: bordered rather than filled, so a row of them
          does not read as a row of things to click. -->
