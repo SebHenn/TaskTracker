@@ -1,0 +1,29 @@
+version: 2
+updates:
+  # NuGet packages. Grouped so a routine bump is one PR to review rather than
+  # five, and kept monthly because this is a hobby project.
+  - package-ecosystem: nuget
+    directory: "/"
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 5
+    groups:
+      microsoft-extensions:
+        patterns:
+          - "Microsoft.Extensions.*"
+      test-dependencies:
+        patterns:
+          - "xunit*"
+          - "Microsoft.NET.Test.Sdk"
+          - "coverlet.*"
+    ignore:
+      # The app targets net8.0; a major bump here means retargeting, not a
+      # dependency update, so it should be a deliberate decision.
+      - dependency-name: "Microsoft.Extensions.*"
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 3
