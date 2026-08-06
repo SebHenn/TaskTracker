@@ -153,18 +153,18 @@ scalings, drag & drop, the dialogs, and the sync button.
 
 ## Contributing
 
-Issues and pull requests are welcome. Two things CI will check, so it is worth
-running them first:
+Issues and pull requests are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md)
+for the build, the project layout, and the gotchas worth knowing before you
+start. Two things CI checks, so run them first:
 
 ```
 dotnet test TaskTracker.Core.Tests
 dotnet format TaskTracker.sln --verify-no-changes
 ```
 
-`TaskTracker.Core` and `TaskTracker.Mcp` build with warnings as errors and must
-stay free of WPF/WinForms types — that split is what keeps the logic testable
-and CI runnable on Linux, so anything worth a unit test belongs in `Core`
-rather than in the WPF head.
+Participation is covered by our [Code of Conduct](CODE_OF_CONDUCT.md). Security
+problems go through [SECURITY.md](SECURITY.md) rather than a public issue.
+Release history is in [CHANGELOG.md](CHANGELOG.md).
 
 ## License
 

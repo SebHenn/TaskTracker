@@ -1,0 +1,65 @@
+name: Bug report
+description: Something in the app or the MCP server does not work as expected
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. Please do not attach your `Save.json` — it contains all of your tasks.
+        If a data file is needed to reproduce the problem, trim it down first.
+
+        Found a security problem? Please use a
+        [private advisory](https://github.com/SebHenn/TaskTracker/security/advisories/new) instead.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, and what happened instead?
+      placeholder: |
+        1. Opened project "Work"
+        2. Dragged a card from Backlog to Done
+        3. Expected the card to stay in Done; it snapped back to Backlog
+    validations:
+      required: true
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Where does it happen?
+      options:
+        - Desktop app (WPF)
+        - MCP server
+        - GitHub sync
+        - Not sure
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: "Release tag, or the commit you built from. Help → About, or right-click TaskTracker.exe → Properties → Details."
+      placeholder: v1.0.0
+    validations:
+      required: true
+
+  - type: input
+    id: windows
+    attributes:
+      label: Windows version and display scaling
+      description: "Settings → System → About, and your scaling percentage if the problem is visual."
+      placeholder: Windows 11 23H2, 150% scaling
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Log output
+      description: |
+        Relevant lines from `Documents/TaskTracker/TaskTracker.log`. This is inserted as code, so no
+        backticks are needed.
+      render: text
+    validations:
+      required: false
