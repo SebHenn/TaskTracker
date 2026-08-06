@@ -18,7 +18,11 @@ read and manage your projects.
   start/stop work timer with accumulated time (exported to CSV)
 - **Due dates, priorities, labels** — tasks carry an optional due date
   (overdue tasks are highlighted), a Low/Medium/High priority shown as a
-  colored card edge, and free-form labels with per-project filtering
+  colored card edge, and free-form labels; the board filters by any
+  combination of label, due bucket (overdue / today / this week / undated)
+  and priority
+- **Bulk actions** — select several cards in a column and move or delete them
+  in one go
 - **Subtasks & task details** — click a card for a detail panel with a
   multi-line description, checklist (progress shown on the card), metadata,
   and quick edits
@@ -29,8 +33,10 @@ read and manage your projects.
   description, or label across all projects
 - **Favourites, archive & recents** — pin favourites, archive finished
   projects, and jump back into the five most recent ones from the home page
-- **Statistics** — per-project open/done/overdue counts, completion percent,
-  and a tasks-completed-per-week chart
+- **Statistics & weekly review** — per-project open/done/overdue counts,
+  completion percent and a tasks-completed-per-week chart, plus a "this week"
+  section on the home page summarising what was completed and created across
+  every project in the last seven days
 - **GitHub issue sync (two-way)** — link a project to a repository; open
   issues import as tasks, completing a task closes the issue and vice versa,
   and local tasks can be pushed to GitHub as new issues
@@ -38,9 +44,13 @@ read and manage your projects.
   Context Protocol so Claude Code can manage projects, tasks, columns, and
   checklists
 - **Safety** — autosave with atomic writes and three rolling backups,
-  project-delete confirmation, task-delete undo, single-instance guard;
-  external edits to the save file are picked up live
+  project-delete confirmation, single-instance guard; deleted tasks go to a
+  per-project trash (30-day retention) so they stay recoverable long after
+  the undo bar has gone; external edits to the save file are picked up live
 - **Export/import** — JSON round-trip (safe to re-import) and CSV export
+- **Keyboard & accessibility** — arrow keys move between cards, Ctrl+←/→
+  moves a card between columns, Enter opens it and Delete trashes it; lanes
+  and cards expose accessible names to screen readers
 - **Shortcuts** — Ctrl+N new project, Ctrl+T new task, Ctrl+F search,
   Esc closes the detail panel; window placement is remembered
 - **Dark & light theme, English & German UI**
@@ -91,6 +101,9 @@ All data lives in `Documents/TaskTracker/`:
   rolling backups.
 - `Settings.json` — theme, language, GitHub token, auto-sync flag.
 
+Nothing is written into the repository, and no data leaves your machine
+except the GitHub API calls you trigger yourself.
+
 The WPF app and the MCP server share these files safely via a lock file and
 atomic writes; the app reloads live when the MCP server changes anything.
 
@@ -129,7 +142,30 @@ resulting executable.
 
 ## Verification status
 
-Core logic (storage, sync, search, stats, MCP handlers) is covered by unit
-tests and runs on any OS. The WPF UI is validated by compilation in CI; a
-manual pass on a Windows machine is recommended after UI changes
-(theme switch, drag & drop, dialogs, sync button).
+Core logic (storage, board projection, filtering, trash, bulk actions, sync,
+search, stats, MCP handlers) is covered by 218 unit tests and runs on any OS.
+CI builds the whole solution on Linux, runs those tests, and gates on
+`dotnet format`.
+
+The WPF UI is validated by compilation only in CI, so a manual pass on a
+Windows machine is expected after UI changes: theme switching at several DPI
+scalings, drag & drop, the dialogs, and the sync button.
+
+## Contributing
+
+Issues and pull requests are welcome. Two things CI will check, so it is worth
+running them first:
+
+```
+dotnet test TaskTracker.Core.Tests
+dotnet format TaskTracker.sln --verify-no-changes
+```
+
+`TaskTracker.Core` and `TaskTracker.Mcp` build with warnings as errors and must
+stay free of WPF/WinForms types — that split is what keeps the logic testable
+and CI runnable on Linux, so anything worth a unit test belongs in `Core`
+rather than in the WPF head.
+
+## License
+
+[MIT](LICENSE) — © 2026 Sebastian Henn
