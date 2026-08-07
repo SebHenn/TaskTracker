@@ -86,6 +86,9 @@
   <data name="TokenNotSaved" xml:space="preserve"><value>No token saved.</value></data>
   <data name="TokenPlaintextWarning" xml:space="preserve"><value>Warning: on this operating system the token is stored unencrypted.</value></data>
   <data name="AutoSync" xml:space="preserve"><value>Automatically sync linked projects (every 15 minutes)</value></data>
+  <data name="NotifyNewIssues" xml:space="preserve"><value>Notify me when new issues arrive</value></data>
+  <data name="NewIssuesTitle" xml:space="preserve"><value>New issues</value></data>
+  <data name="NewIssuesCount" xml:space="preserve"><value>{0} new issues</value></data>
 
   <!-- Search page -->
   <data name="SearchResults" xml:space="preserve"><value>Search Results</value></data>
@@ -136,6 +139,9 @@
   <data name="QuickAddTitle" xml:space="preserve"><value>Quick add task</value></data>
   <data name="QuickAddHint" xml:space="preserve"><value>What needs doing?</value></data>
   <data name="QuickAddHotkeySetting" xml:space="preserve"><value>Global quick-add hotkey (Ctrl+Alt+T)</value></data>
+  <data name="LaunchOnStartupSetting" xml:space="preserve"><value>Start TaskTracker when Windows starts</value></data>
+  <data name="LaunchOnStartupHint" xml:space="preserve"><value>Starts minimised to the notification area.</value></data>
+  <data name="LaunchOnStartupFailed" xml:space="preserve"><value>Windows refused to register the startup entry. It may be blocked by a policy on this machine.</value></data>
   <data name="TimeTracked" xml:space="preserve"><value>Time tracked</value></data>
   <data name="StartTimer" xml:space="preserve"><value>Start timer</value></data>
   <data name="StopTimer" xml:space="preserve"><value>Stop timer</value></data>

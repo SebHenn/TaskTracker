@@ -341,4 +341,62 @@ public class GitHubSyncTests
 
         Assert.Equal(501, project.Tasks[0].Description.Length); // 500 chars + ellipsis
     }
+
+    [Fact]
+    public async Task ImportedIssues_NameWhatArrived()
+    {
+        var api = new FakeGitHubApi();
+        api.Issues.Add(Issue(7, "open", "Fix the login redirect"));
+        api.Issues.Add(Issue(9, "open", "Crash on empty board"));
+        var project = LinkedProject();
+
+        var result = await _sync.SyncAsync(project, api);
+
+        Assert.Equal(2, result.Imported);
+        Assert.Equal(new[] { (7, "Fix the login redirect"), (9, "Crash on empty board") },
+            result.ImportedIssues.Select(i => (i.Number, i.Title)));
+    }
+
+    [Fact]
+    public async Task ImportedIssues_ExcludesIssuesThatWereAlreadyLinked()
+    {
+        // The notification must only announce genuinely new issues. Counting every
+        // issue in the response would re-announce the whole repository every 15 minutes.
+        var api = new FakeGitHubApi();
+        api.Issues.Add(Issue(1, "open", "Already here"));
+        api.Issues.Add(Issue(2, "open", "Brand new"));
+        var project = LinkedProject();
+        project.Tasks.Add(LinkedTask(1, isDone: false, lastSyncedState: "open"));
+
+        var result = await _sync.SyncAsync(project, api);
+
+        Assert.Equal(1, result.Imported);
+        var only = Assert.Single(result.ImportedIssues);
+        Assert.Equal(2, only.Number);
+        Assert.Equal("Brand new", only.Title);
+    }
+
+    [Fact]
+    public async Task ImportedIssues_ExcludesClosedAndPullRequests()
+    {
+        var api = new FakeGitHubApi();
+        api.Issues.Add(Issue(1, "closed", "Historic"));
+        api.Issues.Add(Issue(2, "open", "A pull request", isPr: true));
+        var project = LinkedProject();
+
+        var result = await _sync.SyncAsync(project, api);
+
+        Assert.Equal(0, result.Imported);
+        Assert.Empty(result.ImportedIssues);
+    }
+
+    [Fact]
+    public async Task ImportedIssues_IsEmptyRatherThanNull_WhenNothingArrived()
+    {
+        // The tray reads .Count on this without a null check.
+        var result = await _sync.SyncAsync(LinkedProject(), new FakeGitHubApi());
+
+        Assert.NotNull(result.ImportedIssues);
+        Assert.Empty(result.ImportedIssues);
+    }
 }

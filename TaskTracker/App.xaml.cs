@@ -61,6 +61,7 @@ namespace TaskTracker
             services.AddSingleton<IThemeService, ThemeService>();
             services.AddSingleton<ISettingsService, SettingsService>();
             services.AddSingleton<IDialogService, DialogService>();
+            services.AddSingleton<IStartupService, StartupService>();
             // Singletons on purpose: the factory owns the one shared HttpClient,
             // and the sync service is stateless.
             services.AddSingleton<TaskTracker.Core.GitHub.IGitHubApiFactory, TaskTracker.Core.GitHub.GitHubApiFactory>();
@@ -114,8 +115,18 @@ namespace TaskTracker
 
             themeService.ChangeTheme(settings.Theme);
 
+            // Repairs an entry left pointing at an old path — the app is published over
+            // itself and can be moved, and a stale entry fails silently at every login.
+            _serviceProvider.GetRequiredService<IStartupService>().Reconcile(settings.LaunchOnStartupEnabled);
+
             var window = _serviceProvider.GetRequiredService<MainWindow>();
             ApplyWindowPlacement(window, settings);
+
+            // Shown either way, just minimised when Windows launched us: never showing it
+            // would leave Application.MainWindow unset, and the tray's restore has nothing
+            // to bring back.
+            if (Core.Services.StartupCommand.StartsMinimized(e.Args) && window.DataContext is MainViewModel startupViewModel)
+                startupViewModel.WindowState = WindowState.Minimized;
             window.Show();
 
             base.OnStartup(e);
@@ -184,13 +195,19 @@ namespace TaskTracker
             // theme, language and sidebar width all silently failed to persist. The
             // window is a DI singleton, so this is the same instance either way.
             var window = _serviceProvider.GetRequiredService<MainWindow>();
-            settings.WindowMaximized = window.WindowState == WindowState.Maximized;
-            if (window.WindowState == WindowState.Normal)
+            // A minimised window describes nothing worth restoring, and writing it back
+            // would clear a saved "maximised" for anyone who starts with Windows and exits
+            // without ever opening the window.
+            if (window.WindowState != WindowState.Minimized)
             {
-                settings.WindowLeft = window.Left;
-                settings.WindowTop = window.Top;
-                settings.WindowWidth = window.Width;
-                settings.WindowHeight = window.Height;
+                settings.WindowMaximized = window.WindowState == WindowState.Maximized;
+                if (window.WindowState == WindowState.Normal)
+                {
+                    settings.WindowLeft = window.Left;
+                    settings.WindowTop = window.Top;
+                    settings.WindowWidth = window.Width;
+                    settings.WindowHeight = window.Height;
+                }
             }
             if (window.DataContext is MainViewModel mainViewModel)
                 settings.SidebarWidth = mainViewModel.SidebarWidth;

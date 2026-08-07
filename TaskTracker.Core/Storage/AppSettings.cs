@@ -18,6 +18,15 @@ namespace TaskTracker.Core.Storage
         /// <summary>Periodically sync GitHub-linked projects while the app runs.</summary>
         public bool AutoSyncEnabled { get; set; }
 
+        /// <summary>
+        /// Show a tray notification when a background sync imports issues that were not
+        /// there before. Only reachable through auto-sync, which is what discovers them.
+        /// </summary>
+        public bool NotifyOnNewIssues { get; set; } = true;
+
+        /// <summary>Start the app minimised when Windows starts.</summary>
+        public bool LaunchOnStartupEnabled { get; set; }
+
         /// <summary>Global Ctrl+Alt+T quick-add hotkey.</summary>
         public bool QuickAddHotkeyEnabled { get; set; } = true;
 

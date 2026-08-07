@@ -2,6 +2,9 @@ using TaskTracker.Core.Models;
 
 namespace TaskTracker.Core.GitHub
 {
+    /// <summary>An issue that became a new task in this sync.</summary>
+    public record ImportedIssue(int Number, string Title);
+
     public record SyncResult(
         int Imported,
         int ClosedLocally,
@@ -10,6 +13,13 @@ namespace TaskTracker.Core.GitHub
         int ReopenedOnGitHub,
         int Unlinked)
     {
+        /// <summary>
+        /// Which issues arrived, not just how many — a notification wants to name the
+        /// issue when only one came in. An init property rather than a positional
+        /// parameter so existing callers keep compiling.
+        /// </summary>
+        public IReadOnlyList<ImportedIssue> ImportedIssues { get; init; } = Array.Empty<ImportedIssue>();
+
         public override string ToString() =>
             $"imported {Imported}, closed locally {ClosedLocally}, reopened locally {ReopenedLocally}, " +
             $"closed on GitHub {ClosedOnGitHub}, reopened on GitHub {ReopenedOnGitHub}, unlinked {Unlinked}";
@@ -36,6 +46,7 @@ namespace TaskTracker.Core.GitHub
             var repo = project.GitHubRepo!;
 
             int imported = 0, closedLocally = 0, reopenedLocally = 0, closedOnGitHub = 0, reopenedOnGitHub = 0, unlinked = 0;
+            var importedIssues = new List<ImportedIssue>();
 
             var issues = (await api.ListIssuesAsync(owner, repo, "all", ct))
                 .Where(i => !i.IsPullRequest)
@@ -65,6 +76,7 @@ namespace TaskTracker.Core.GitHub
                         task.Labels.Add(label);
                     project.Tasks.Add(task);
                     imported++;
+                    importedIssues.Add(new ImportedIssue(issue.Number, issue.Title));
                     continue;
                 }
 
@@ -127,7 +139,10 @@ namespace TaskTracker.Core.GitHub
             }
 
             project.LastSyncedAtUtc = DateTime.UtcNow;
-            return new SyncResult(imported, closedLocally, reopenedLocally, closedOnGitHub, reopenedOnGitHub, unlinked);
+            return new SyncResult(imported, closedLocally, reopenedLocally, closedOnGitHub, reopenedOnGitHub, unlinked)
+            {
+                ImportedIssues = importedIssues,
+            };
         }
 
         /// <summary>

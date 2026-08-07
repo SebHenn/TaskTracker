@@ -18,21 +18,28 @@ namespace TaskTracker.ViewModels.Pages
         private readonly ISettingsService _settingsService;
         private readonly IProjectsService _projectsService;
         private readonly IDialogService _dialogService;
+        private readonly IStartupService _startupService;
         private CultureInfo _selectedLanguage;
 
-        public SettingsViewModel(ILanguageService languageService, IThemeService themeService, ISettingsService settingsService, IProjectsService projectsService, IDialogService dialogService)
+        public SettingsViewModel(ILanguageService languageService, IThemeService themeService, ISettingsService settingsService, IProjectsService projectsService, IDialogService dialogService, IStartupService startupService)
         {
             _languageService = languageService;
             _themeService = themeService;
             _settingsService = settingsService;
             _projectsService = projectsService;
             _dialogService = dialogService;
+            _startupService = startupService;
             AvailableLanguages = _languageService.AvailableLanguages;
             _selectedLanguage = AvailableLanguages.FirstOrDefault(c => c.Name == _settingsService.Settings.Language)
                                 ?? AvailableLanguages.First();
             _isDark = _settingsService.Settings.Theme != "light";
             _autoSyncEnabled = _settingsService.Settings.AutoSyncEnabled;
             _quickAddHotkeyEnabled = _settingsService.Settings.QuickAddHotkeyEnabled;
+            _notifyOnNewIssues = _settingsService.Settings.NotifyOnNewIssues;
+            // Seeded from the OS rather than the setting: the user may have removed the
+            // entry through Task Manager's Startup tab, and the checkbox should show what
+            // is actually registered.
+            _launchOnStartupEnabled = _startupService.IsRegistered();
             RefreshTokenStatus();
             _languageService.LanguageChanged += RefreshTokenStatus;
         }
@@ -91,6 +98,56 @@ namespace TaskTracker.ViewModels.Pages
         partial void OnQuickAddHotkeyEnabledChanged(bool value)
         {
             _settingsService.Settings.QuickAddHotkeyEnabled = value;
+            _settingsService.Save();
+        }
+
+        [ObservableProperty]
+        private bool _notifyOnNewIssues;
+
+        partial void OnNotifyOnNewIssuesChanged(bool value)
+        {
+            _settingsService.Settings.NotifyOnNewIssues = value;
+            _settingsService.Save();
+        }
+
+        [ObservableProperty]
+        private bool _launchOnStartupEnabled;
+
+        /// <summary>Shown when the OS refused the startup entry, e.g. a locked-down Run key.</summary>
+        [ObservableProperty]
+        private bool _showStartupFailedWarning;
+
+        /// <summary>
+        /// Guards the toggle against its own correction: putting the checkbox back after a
+        /// failed write re-enters this handler, which would try the same write again.
+        /// </summary>
+        private bool _applyingStartupSetting;
+
+        partial void OnLaunchOnStartupEnabledChanged(bool value)
+        {
+            if (_applyingStartupSetting)
+                return;
+
+            if (!_startupService.SetRegistered(value))
+            {
+                // The OS said no, so the setting is not saved and the checkbox goes back.
+                // Persisting it anyway would claim a state that does not exist, and the
+                // startup reconcile on the next launch would silently undo it again.
+                ShowStartupFailedWarning = true;
+                _applyingStartupSetting = true;
+                try
+                {
+                    LaunchOnStartupEnabled = !value;
+                }
+                finally
+                {
+                    _applyingStartupSetting = false;
+                }
+                return;
+            }
+
+            ShowStartupFailedWarning = false;
+            _settingsService.Settings.LaunchOnStartupEnabled = value;
             _settingsService.Save();
         }
 

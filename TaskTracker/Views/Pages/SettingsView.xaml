@@ -43,6 +43,17 @@
                         <TextBlock Style="{StaticResource SettingLabel}" Text="{DynamicResource QuickAddHotkeySetting}" />
                         <CheckBox IsChecked="{Binding QuickAddHotkeyEnabled, Mode=TwoWay}" VerticalAlignment="Center" />
                     </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                        <TextBlock Style="{StaticResource SettingLabel}" Text="{DynamicResource LaunchOnStartupSetting}" />
+                        <CheckBox IsChecked="{Binding LaunchOnStartupEnabled, Mode=TwoWay}" VerticalAlignment="Center"
+                                  AutomationProperties.Name="{DynamicResource LaunchOnStartupSetting}" />
+                    </StackPanel>
+                    <TextBlock Style="{StaticResource Text.Caption}" Margin="0,4,0,0" TextWrapping="Wrap"
+                               Text="{DynamicResource LaunchOnStartupHint}" />
+                    <TextBlock Style="{StaticResource Text.Caption}" Margin="0,4,0,0" TextWrapping="Wrap"
+                               Foreground="{DynamicResource Brush.Danger.Text}"
+                               Text="{DynamicResource LaunchOnStartupFailed}"
+                               Visibility="{Binding ShowStartupFailedWarning, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=True}" />
                 </StackPanel>
             </Border>
 
@@ -72,8 +83,17 @@
                                Text="{DynamicResource TokenPlaintextWarning}"
                                Visibility="{Binding ShowPlaintextWarning, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=True}" />
                     <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
-                        <CheckBox IsChecked="{Binding AutoSyncEnabled, Mode=TwoWay}" VerticalAlignment="Center" />
+                        <CheckBox IsChecked="{Binding AutoSyncEnabled, Mode=TwoWay}" VerticalAlignment="Center"
+                                  AutomationProperties.Name="{DynamicResource AutoSync}" />
                         <TextBlock Style="{StaticResource SettingLabel}" Margin="8,0,0,0" Text="{DynamicResource AutoSync}" />
+                    </StackPanel>
+                    <!-- Indented and disabled with auto-sync: background sync is what
+                         discovers new issues, so this does nothing on its own. -->
+                    <StackPanel Orientation="Horizontal" Margin="24,8,0,0"
+                                IsEnabled="{Binding AutoSyncEnabled}">
+                        <CheckBox IsChecked="{Binding NotifyOnNewIssues, Mode=TwoWay}" VerticalAlignment="Center"
+                                  AutomationProperties.Name="{DynamicResource NotifyNewIssues}" />
+                        <TextBlock Style="{StaticResource SettingLabel}" Margin="8,0,0,0" Text="{DynamicResource NotifyNewIssues}" />
                     </StackPanel>
                 </StackPanel>
             </Border>

@@ -13,7 +13,11 @@ read and manage your projects.
 - **Recurring tasks** — daily/weekly/monthly repeats; completing one schedules
   the next occurrence automatically
 - **Quick capture & alerts** — global Ctrl+Alt+T opens a mini add-task window
-  from anywhere; the tray icon notifies when tasks become due or overdue
+  from anywhere; the tray icon notifies when tasks become due or overdue, and
+  optionally when a background sync pulls in new GitHub issues (clicking the
+  notification opens the project)
+- **Optional auto-start** — launch TaskTracker with Windows, minimised to the
+  notification area
 - **Activity journal & time tracking** — timestamped notes per task and a
   start/stop work timer with accumulated time (exported to CSV)
 - **Due dates, priorities, labels** — tasks carry an optional due date
@@ -121,7 +125,10 @@ atomic writes; the app reloads live when the MCP server changes anything.
    Title and labels of linked tasks follow GitHub.
 
 Optionally enable auto-sync in Settings to refresh linked projects every
-15 minutes while the app runs.
+15 minutes while the app runs. With auto-sync on, **Notify me when new issues
+arrive** shows a tray notification naming the issue (or how many arrived);
+clicking it opens the project. Only background syncs notify — a sync you
+started yourself reports into the board you are already looking at.
 
 ## Claude Code / MCP
 

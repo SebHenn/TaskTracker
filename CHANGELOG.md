@@ -7,6 +7,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+
+- **Optional auto-start** — a setting registers TaskTracker in the per-user Windows Run key so it
+  launches at login, minimised to the notification area. The entry is repaired on every start if the
+  app has been moved or republished elsewhere.
+- **New-issue notifications** — with auto-sync enabled, a tray notification names the issue a
+  background sync imported (or how many arrived). Clicking it opens the affected project. Only
+  background syncs notify; a sync you started reports into the board you are already looking at.
+
 ## [1.0.0] - 2026-08-06
 
 First tagged release.

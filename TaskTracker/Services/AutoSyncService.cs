@@ -63,7 +63,16 @@ namespace TaskTracker.Services
                 {
                     try
                     {
-                        await _sync.SyncAsync(project, api);
+                        var result = await _sync.SyncAsync(project, api);
+
+                        // Only a background sync announces itself. A sync the user clicked
+                        // reports into the board they are already looking at, and a balloon
+                        // on top of that is just noise.
+                        if (result.Imported > 0 && _settingsService.Settings.NotifyOnNewIssues)
+                        {
+                            WeakReferenceMessenger.Default.Send(
+                                new NewIssuesImportedMessage(project.Id, project.Name, result.ImportedIssues));
+                        }
                     }
                     catch (Exception ex)
                     {

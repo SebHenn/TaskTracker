@@ -86,6 +86,9 @@
   <data name="TokenNotSaved" xml:space="preserve"><value>Kein Token gespeichert.</value></data>
   <data name="TokenPlaintextWarning" xml:space="preserve"><value>Warnung: Auf diesem Betriebssystem wird der Token unverschlüsselt gespeichert.</value></data>
   <data name="AutoSync" xml:space="preserve"><value>Verknüpfte Projekte automatisch synchronisieren (alle 15 Minuten)</value></data>
+  <data name="NotifyNewIssues" xml:space="preserve"><value>Benachrichtigen, wenn neue Issues eintreffen</value></data>
+  <data name="NewIssuesTitle" xml:space="preserve"><value>Neue Issues</value></data>
+  <data name="NewIssuesCount" xml:space="preserve"><value>{0} neue Issues</value></data>
 
   <!-- Search page -->
   <data name="SearchResults" xml:space="preserve"><value>Suchergebnisse</value></data>
@@ -136,6 +139,9 @@
   <data name="QuickAddTitle" xml:space="preserve"><value>Aufgabe schnell hinzufügen</value></data>
   <data name="QuickAddHint" xml:space="preserve"><value>Was ist zu tun?</value></data>
   <data name="QuickAddHotkeySetting" xml:space="preserve"><value>Globaler Schnellzugriff (Strg+Alt+T)</value></data>
+  <data name="LaunchOnStartupSetting" xml:space="preserve"><value>TaskTracker mit Windows starten</value></data>
+  <data name="LaunchOnStartupHint" xml:space="preserve"><value>Startet minimiert im Infobereich.</value></data>
+  <data name="LaunchOnStartupFailed" xml:space="preserve"><value>Windows hat den Autostart-Eintrag abgelehnt. Möglicherweise blockiert eine Richtlinie auf diesem Rechner.</value></data>
   <data name="TimeTracked" xml:space="preserve"><value>Erfasste Zeit</value></data>
   <data name="StartTimer" xml:space="preserve"><value>Timer starten</value></data>
   <data name="StopTimer" xml:space="preserve"><value>Timer stoppen</value></data>
