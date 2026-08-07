@@ -15,6 +15,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - **New-issue notifications** — with auto-sync enabled, a tray notification names the issue a
   background sync imported (or how many arrived). Clicking it opens the affected project. Only
   background syncs notify; a sync you started reports into the board you are already looking at.
+- Test coverage for the MCP handlers, which had none despite the documentation claiming otherwise.
+
+### Fixed
+
+- **The MCP `delete_task` tool destroyed tasks permanently.** It removed the task from the project
+  outright instead of moving it to the trash, so which client you deleted from decided whether the
+  deletion could be undone — and a running timer on the task kept accruing against something no
+  longer visible. It now goes through the trash like the app, and reports when the task stops being
+  recoverable.
+- Starting minimised no longer overwrites the saved window placement on exit.
+- `actions/checkout` and `actions/setup-dotnet` bumped to v5; v4 forced the deprecated Node 20 runtime.
 
 ## [1.0.0] - 2026-08-06
 

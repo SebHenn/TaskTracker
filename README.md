@@ -66,7 +66,7 @@ read and manage your projects.
 | `TaskTracker` | `net8.0-windows` | WPF desktop app (Windows only) |
 | `TaskTracker.Core` | `net8.0` | Models, storage, search, stats, GitHub sync — cross-platform |
 | `TaskTracker.Mcp` | `net8.0` | MCP stdio server for Claude Code — cross-platform |
-| `TaskTracker.Core.Tests` | `net8.0` | xunit tests for Core |
+| `TaskTracker.Core.Tests` | `net8.0` | xunit tests for Core and the MCP handlers |
 
 ## Installing
 
@@ -150,7 +150,7 @@ resulting executable.
 ## Verification status
 
 Core logic (storage, board projection, filtering, trash, bulk actions, sync,
-search, stats, MCP handlers) is covered by 218 unit tests and runs on any OS.
+search, stats, MCP handlers) is covered by 246 unit tests and runs on any OS.
 CI builds the whole solution on Linux, runs those tests, and gates on
 `dotnet format`.
 

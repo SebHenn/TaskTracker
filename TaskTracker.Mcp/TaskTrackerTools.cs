@@ -230,16 +230,22 @@ public static class TaskTrackerTools
         return ToJson(ToDto(owner!, updated!));
     }
 
-    [McpServerTool(Name = "delete_task"), Description("Delete a task permanently.")]
+    [McpServerTool(Name = "delete_task"), Description("Move a task to its project's trash, where it stays recoverable for 30 days.")]
     public static string DeleteTask(
         [Description("Task id (GUID)")] string taskId)
     {
+        DateTime deletedAtUtc = default;
         CreateStore().Update(data =>
         {
             var (project, task) = FindTask(data, taskId);
-            project.Tasks.Remove(task);
+            // Trash.Delete, not project.Tasks.Remove: removing straight from the list
+            // loses the task outright and leaves a running timer accruing against
+            // something invisible. Deleting in the app has always been recoverable —
+            // going through the MCP server should not quietly be the one way to
+            // destroy a task for good.
+            deletedAtUtc = Trash.Delete(project, task).DeletedAtUtc;
         });
-        return ToJson(new { deleted = true, taskId });
+        return ToJson(new { deleted = true, taskId, recoverableUntilUtc = deletedAtUtc + Trash.Retention });
     }
 
     [McpServerTool(Name = "search_tasks"), Description("Search tasks across all projects by title, description, or label.")]
