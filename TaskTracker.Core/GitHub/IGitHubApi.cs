@@ -23,6 +23,14 @@ namespace TaskTracker.Core.GitHub
         Task<int> CreateIssueAsync(string owner, string repo, string title, string? body, IReadOnlyList<string> labels, CancellationToken ct = default);
 
         /// <summary>Renames an issue.</summary>
+        /// <remarks>
+        /// Title only, deliberately: there is no update-body call anywhere in this
+        /// interface, so an issue keeps the body it was created with. Bots that file
+        /// issues identify their own by a trailing HTML comment in the body, and
+        /// overwriting it makes them file duplicates instead. Anything that starts
+        /// writing bodies has to run the new one through
+        /// <see cref="IssueBodyMarkers.Preserve"/> first.
+        /// </remarks>
         Task UpdateIssueTitleAsync(string owner, string repo, int number, string title, CancellationToken ct = default);
     }
 }

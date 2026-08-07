@@ -150,7 +150,7 @@ resulting executable.
 ## Verification status
 
 Core logic (storage, board projection, filtering, trash, bulk actions, sync,
-search, stats, MCP handlers) is covered by 246 unit tests and runs on any OS.
+search, stats, MCP handlers) is covered by 264 unit tests and runs on any OS.
 CI builds the whole solution on Linux, runs those tests, and gates on
 `dotnet format`.
 

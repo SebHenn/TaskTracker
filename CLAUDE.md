@@ -19,14 +19,14 @@ user-facing feature list and GitHub-sync setup.
 
 ```
 dotnet build TaskTracker.sln                            # whole solution
-dotnet test TaskTracker.Core.Tests                      # 246 tests, ~250ms
+dotnet test TaskTracker.Core.Tests                      # 264 tests, ~250ms
 dotnet test TaskTracker.Core.Tests --filter FullyQualifiedName~ProjectStoreTests   # one class
 dotnet test TaskTracker.Core.Tests --filter "DisplayName~migrates"                 # one test
 dotnet format TaskTracker.sln --verify-no-changes        # CI gates on this; run before committing
 dotnet run --project TaskTracker\TaskTracker.csproj     # launches the GUI (blocks — run in background)
 ```
 
-- Baseline on a clean tree: **0 errors, 0 warnings, 246 tests passing**. Only new warnings are yours.
+- Baseline on a clean tree: **0 errors, 0 warnings, 264 tests passing**. Only new warnings are yours.
 - `Core` and `Mcp` build with `TreatWarningsAsErrors`; the WPF head does not, but is warning-free — keep it that way.
 - New files written by tooling often lack the UTF-8 BOM the rest of the tree has, and `dotnet format` adds it.
   Run the format check before committing or CI fails on files that compile fine.
@@ -90,6 +90,12 @@ test seams. `.mcp.json` registers the server via `dotnet run`.
 
 `Core/GitHub/` — `IGitHubApi` is the seam that makes sync testable without network. Tokens go through
 `TokenProtector` (DPAPI on Windows, base64 elsewhere). Conflicts resolve last-write-wins.
+
+**Issue bodies are never written after creation** — the API surface is create / rename / open / close on
+purpose. Bots that file issues (and GitHub's own tooling) identify their own by a trailing HTML comment in the
+body, so overwriting one makes the bot stop matching and file duplicates, silently. Any future body write must
+run the outgoing body through `IssueBodyMarkers.Preserve` with the freshly fetched body — not through
+`task.Description`, which `TrimBody` has already truncated past the marker.
 
 ### WPF head
 

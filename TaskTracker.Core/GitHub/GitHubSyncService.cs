@@ -94,7 +94,10 @@ namespace TaskTracker.Core.GitHub
                 task.LastSyncedTitle = task.Title;
 
                 // Description and labels stay remote-wins (imported bodies are
-                // truncated, so pushing them back would corrupt the issue).
+                // truncated, so pushing them back would corrupt the issue). Should that
+                // ever become two-way, the outgoing body has to go through
+                // IssueBodyMarkers.Preserve — bots find their own issues by a trailing
+                // HTML comment that truncation has already dropped from the description.
                 var trimmedBody = TrimBody(issue.Body);
                 if (task.Description != trimmedBody)
                     task.Description = trimmedBody;
