@@ -52,6 +52,15 @@ namespace TaskTracker.Core.Models
         [ObservableProperty]
         private string? _lastSyncedIssueState;
 
+        /// <summary>
+        /// Set when a linked issue disappeared from the repository (deleted or transferred)
+        /// and sync unlinked the task. It keeps the export pass from filing the very issue
+        /// that was just deleted, over and over, on every following sync. Pushing the task
+        /// by hand clears it.
+        /// </summary>
+        [ObservableProperty]
+        private bool _gitHubIssueVanished;
+
         [ObservableProperty]
         private ObservableCollection<SubTaskModel> _subTasks = new();
 

@@ -20,18 +20,34 @@ namespace TaskTracker.Core.GitHub
         /// </summary>
         public IReadOnlyList<ImportedIssue> ImportedIssues { get; init; } = Array.Empty<ImportedIssue>();
 
-        public override string ToString() =>
-            $"imported {Imported}, closed locally {ClosedLocally}, reopened locally {ReopenedLocally}, " +
-            $"closed on GitHub {ClosedOnGitHub}, reopened on GitHub {ReopenedOnGitHub}, unlinked {Unlinked}";
+        /// <summary>Local tasks that became new GitHub issues in this sync.</summary>
+        public int Exported { get; init; }
+
+        /// <summary>
+        /// Why the export pass could not file some tasks (missing token scope, rate limit),
+        /// or null when it had nothing to report. Export failures leave the rest of the sync
+        /// intact rather than aborting it, so this is the only place they surface.
+        /// </summary>
+        public string? ExportError { get; init; }
+
+        public override string ToString()
+        {
+            var summary =
+                $"imported {Imported}, exported {Exported}, closed locally {ClosedLocally}, " +
+                $"reopened locally {ReopenedLocally}, closed on GitHub {ClosedOnGitHub}, " +
+                $"reopened on GitHub {ReopenedOnGitHub}, unlinked {Unlinked}";
+            return ExportError == null ? summary : $"{summary} (export failed: {ExportError})";
+        }
     }
 
     /// <summary>
     /// Two-way sync between a project's tasks and the issues of its linked
-    /// GitHub repository. State (open/closed vs. not-done/done) merges via a
-    /// three-way compare against the state seen at the last sync. With binary
-    /// state, "both sides changed" always means they agree (each flipped away
-    /// from the same base), so no separate conflict resolution is needed.
-    /// Title/body/labels of linked tasks always follow GitHub.
+    /// GitHub repository. Issues become tasks, unlinked tasks become issues, and
+    /// state (open/closed vs. not-done/done) merges via a three-way compare against
+    /// the state seen at the last sync. With binary state, "both sides changed"
+    /// always means they agree (each flipped away from the same base), so no separate
+    /// conflict resolution is needed. Title/body/labels of linked tasks always follow
+    /// GitHub.
     /// </summary>
     public class GitHubSyncService
     {
@@ -138,14 +154,69 @@ namespace TaskTracker.Core.GitHub
             {
                 task.GitHubIssueNumber = null;
                 task.LastSyncedIssueState = null;
+                task.GitHubIssueVanished = true;
                 unlinked++;
             }
+
+            // Export last, so the numbers handed out here are not run through the
+            // unlink pass above — which knows only the issues the API listed.
+            var (exported, exportError) = await ExportNewTasksAsync(project, api, ct);
 
             project.LastSyncedAtUtc = DateTime.UtcNow;
             return new SyncResult(imported, closedLocally, reopenedLocally, closedOnGitHub, reopenedOnGitHub, unlinked)
             {
                 ImportedIssues = importedIssues,
+                Exported = exported,
+                ExportError = exportError,
             };
+        }
+
+        /// <summary>
+        /// Files every local task that has no issue yet, mirroring the import rule:
+        /// only open issues become tasks, so only tasks that are not done become issues.
+        /// A board linked to a repository after the fact therefore exports its open work
+        /// and leaves its finished history alone.
+        /// </summary>
+        /// <remarks>
+        /// A failed creation is counted and reported, never thrown: the tasks already
+        /// filed in this pass carry live issue numbers that only exist in memory until
+        /// the caller saves. Aborting here would drop those links on the floor and file
+        /// every one of them a second time on the next sync.
+        /// </remarks>
+        private static async Task<(int Exported, string? Error)> ExportNewTasksAsync(
+            ProjectModel project, IGitHubApi api, CancellationToken ct)
+        {
+            var owner = project.GitHubOwner!;
+            var repo = project.GitHubRepo!;
+            var pending = project.Tasks
+                .Where(t => t.GitHubIssueNumber == null
+                            && !t.IsDone
+                            && !t.GitHubIssueVanished
+                            && !string.IsNullOrWhiteSpace(t.Title))
+                .ToList();
+
+            int exported = 0;
+            string? error = null;
+            foreach (var task in pending)
+            {
+                ct.ThrowIfCancellationRequested();
+                try
+                {
+                    var number = await api.CreateIssueAsync(owner, repo, task.Title, task.Description, task.Labels.ToList(), ct);
+                    task.GitHubIssueNumber = number;
+                    task.LastSyncedIssueState = "open";
+                    task.LastSyncedTitle = task.Title;
+                    exported++;
+                }
+                catch (Exception ex) when (ex is not OperationCanceledException)
+                {
+                    // First failure only. A dead token fails once per pending task, and
+                    // repeating the same message once per task tells nobody anything new.
+                    error ??= ex.Message;
+                }
+            }
+
+            return (exported, error);
         }
 
         /// <summary>
@@ -163,6 +234,9 @@ namespace TaskTracker.Core.GitHub
             task.GitHubIssueNumber = number;
             task.LastSyncedIssueState = "open";
             task.LastSyncedTitle = task.Title;
+            // Pushing by hand is the way back for a task whose issue was deleted: the
+            // user asked for this one explicitly, so stop treating it as opted out.
+            task.GitHubIssueVanished = false;
 
             if (task.IsDone)
             {

@@ -444,8 +444,17 @@ namespace TaskTracker.ViewModels.Pages
             {
                 // Await on the UI thread: model mutations happen in dispatcher
                 // continuations, HTTP calls run off-thread in between.
-                await _gitHubSyncService.SyncAsync(CurrentProject, _gitHubApiFactory.Create(token), cts.Token);
+                var result = await _gitHubSyncService.SyncAsync(CurrentProject, _gitHubApiFactory.Create(token), cts.Token);
                 CategorizeTasks();
+
+                // Export failures do not throw — the sync keeps the issues it did file.
+                // Without this the board would report a clean sync while local tasks
+                // silently never reached the repository.
+                if (result.ExportError is { } exportError)
+                {
+                    HasSyncError = true;
+                    _dialogService.Error($"{_languageService.GetString("SyncFailed")}: {exportError}");
+                }
             }
             catch (OperationCanceledException)
             {

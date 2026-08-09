@@ -73,6 +73,15 @@ namespace TaskTracker.Services
                             WeakReferenceMessenger.Default.Send(
                                 new NewIssuesImportedMessage(project.Id, project.Name, result.ImportedIssues));
                         }
+
+                        // An export failure keeps the sync alive (see GitHubSyncService), so
+                        // it reaches the board the same way a thrown one does — otherwise a
+                        // token without issue-write scope looks exactly like a clean sync.
+                        if (result.ExportError is { } exportError)
+                        {
+                            Core.Storage.AppLog.Write("auto-sync", $"{project.Name}: export failed: {exportError}");
+                            WeakReferenceMessenger.Default.Send(new AutoSyncFailedMessage(project.Id, exportError));
+                        }
                     }
                     catch (Exception ex)
                     {

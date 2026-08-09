@@ -485,11 +485,13 @@ public static class TaskTrackerTools
             project.Name,
             repository = $"{project.GitHubOwner}/{project.GitHubRepo}",
             result.Imported,
+            result.Exported,
             result.ClosedLocally,
             result.ReopenedLocally,
             result.ClosedOnGitHub,
             result.ReopenedOnGitHub,
             result.Unlinked,
+            result.ExportError,
             summary = result.ToString(),
         });
     }

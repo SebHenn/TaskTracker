@@ -29,8 +29,13 @@ public class GitHubSyncTests
         public int NextIssueNumber { get; set; } = 100;
         public List<(string Title, string? Body, IReadOnlyList<string> Labels)> Created { get; } = new();
 
+        /// <summary>Creating this one title fails — a stand-in for a rejected create.</summary>
+        public string? FailCreateForTitle { get; set; }
+
         public Task<int> CreateIssueAsync(string owner, string repo, string title, string? body, IReadOnlyList<string> labels, CancellationToken ct = default)
         {
+            if (title == FailCreateForTitle)
+                throw new InvalidOperationException("Resource not accessible by personal access token");
             Created.Add((title, body, labels));
             return Task.FromResult(NextIssueNumber++);
         }
@@ -398,5 +403,148 @@ public class GitHubSyncTests
 
         Assert.NotNull(result.ImportedIssues);
         Assert.Empty(result.ImportedIssues);
+    }
+
+    [Fact]
+    public async Task Sync_FilesLocalTaskAsNewIssue()
+    {
+        // The point of the export pass: a task created on a linked board reaches
+        // GitHub on the next sync, without anyone pushing it by hand.
+        var api = new FakeGitHubApi();
+        var project = LinkedProject();
+        var task = new TaskModel { Title = "local work", Description = "details" };
+        task.Labels.Add("bug");
+        project.Tasks.Add(task);
+
+        var result = await _sync.SyncAsync(project, api);
+
+        Assert.Equal(1, result.Exported);
+        Assert.Null(result.ExportError);
+        var created = Assert.Single(api.Created);
+        Assert.Equal("local work", created.Title);
+        Assert.Equal("details", created.Body);
+        Assert.Equal(new[] { "bug" }, created.Labels);
+        Assert.Equal(100, task.GitHubIssueNumber);
+        Assert.Equal("open", task.LastSyncedIssueState);
+        Assert.Equal("local work", task.LastSyncedTitle);
+    }
+
+    [Fact]
+    public async Task Sync_DoesNotUnlinkTheIssueItJustFiled()
+    {
+        // The new number is not in the listing the sync started from, so an export
+        // that ran before the unlink pass would immediately orphan its own issue.
+        var api = new FakeGitHubApi();
+        var project = LinkedProject();
+        project.Tasks.Add(new TaskModel { Title = "local work" });
+
+        var result = await _sync.SyncAsync(project, api);
+
+        Assert.Equal(0, result.Unlinked);
+        Assert.Equal(100, project.Tasks[0].GitHubIssueNumber);
+    }
+
+    [Fact]
+    public async Task Sync_AfterExport_IsStable()
+    {
+        var api = new FakeGitHubApi();
+        var project = LinkedProject();
+        project.Tasks.Add(new TaskModel { Title = "local work" });
+
+        await _sync.SyncAsync(project, api);
+        api.Issues.Add(Issue(100, "open", "local work"));   // remote now returns it
+        var second = await _sync.SyncAsync(project, api);
+
+        Assert.Equal(0, second.Imported);
+        Assert.Equal(0, second.Exported);
+        Assert.Single(project.Tasks);
+        Assert.Single(api.Created);
+    }
+
+    [Fact]
+    public async Task Sync_DoesNotExportDoneTasks()
+    {
+        // Mirrors the import rule — historic closed issues stay out, so finished
+        // local history does not become a pile of freshly closed issues.
+        var api = new FakeGitHubApi();
+        var project = LinkedProject();
+        project.Tasks.Add(new TaskModel { Title = "finished", IsDone = true });
+
+        var result = await _sync.SyncAsync(project, api);
+
+        Assert.Equal(0, result.Exported);
+        Assert.Empty(api.Created);
+        Assert.Null(project.Tasks[0].GitHubIssueNumber);
+    }
+
+    [Fact]
+    public async Task Sync_DoesNotExportBlankTitles()
+    {
+        var api = new FakeGitHubApi();
+        var project = LinkedProject();
+        project.Tasks.Add(new TaskModel { Title = "   " });
+
+        var result = await _sync.SyncAsync(project, api);
+
+        Assert.Equal(0, result.Exported);
+        Assert.Empty(api.Created);
+    }
+
+    [Fact]
+    public async Task Sync_DoesNotRefileAnIssueThatWasDeletedOnGitHub()
+    {
+        // Unlink marks the task; without that mark the export pass would file the
+        // deleted issue again on this very sync, and on every one after it.
+        var api = new FakeGitHubApi();   // issue 7 is gone
+        var project = LinkedProject();
+        var task = LinkedTask(7, isDone: false, lastSyncedState: "open");
+        project.Tasks.Add(task);
+
+        var first = await _sync.SyncAsync(project, api);
+        var second = await _sync.SyncAsync(project, api);
+
+        Assert.Equal(1, first.Unlinked);
+        Assert.True(task.GitHubIssueVanished);
+        Assert.Equal(0, first.Exported);
+        Assert.Equal(0, second.Exported);
+        Assert.Empty(api.Created);
+    }
+
+    [Fact]
+    public async Task PushTask_ClearsTheVanishedMark()
+    {
+        // Pushing by hand is the way back for a task whose issue was deleted.
+        var api = new FakeGitHubApi();
+        var project = LinkedProject();
+        var task = new TaskModel { Title = "back please", GitHubIssueVanished = true };
+        project.Tasks.Add(task);
+
+        await _sync.PushTaskAsync(project, task, api);
+
+        Assert.False(task.GitHubIssueVanished);
+        Assert.Equal(100, task.GitHubIssueNumber);
+    }
+
+    [Fact]
+    public async Task FailedExport_KeepsTheRestOfTheSync_AndReportsWhy()
+    {
+        // A create that throws must not abort: the issues already filed in this pass
+        // exist on GitHub, and losing their numbers would file all of them twice.
+        var api = new FakeGitHubApi { FailCreateForTitle = "rejected" };
+        api.Issues.Add(Issue(1, "open", "from github"));
+        var project = LinkedProject();
+        var first = new TaskModel { Title = "fine" };
+        var bad = new TaskModel { Title = "rejected" };
+        project.Tasks.Add(first);
+        project.Tasks.Add(bad);
+
+        var result = await _sync.SyncAsync(project, api);
+
+        Assert.Equal(1, result.Exported);
+        Assert.Equal(100, first.GitHubIssueNumber);
+        Assert.Null(bad.GitHubIssueNumber);
+        Assert.Contains("not accessible", result.ExportError);
+        Assert.Equal(1, result.Imported);                  // import still applied
+        Assert.NotNull(project.LastSyncedAtUtc);
     }
 }
