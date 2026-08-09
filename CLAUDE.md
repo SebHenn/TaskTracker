@@ -19,14 +19,14 @@ user-facing feature list and GitHub-sync setup.
 
 ```
 dotnet build TaskTracker.sln                            # whole solution
-dotnet test TaskTracker.Core.Tests                      # 264 tests, ~250ms
+dotnet test TaskTracker.Core.Tests                      # 272 tests, ~250ms
 dotnet test TaskTracker.Core.Tests --filter FullyQualifiedName~ProjectStoreTests   # one class
 dotnet test TaskTracker.Core.Tests --filter "DisplayName~migrates"                 # one test
 dotnet format TaskTracker.sln --verify-no-changes        # CI gates on this; run before committing
 dotnet run --project TaskTracker\TaskTracker.csproj     # launches the GUI (blocks — run in background)
 ```
 
-- Baseline on a clean tree: **0 errors, 0 warnings, 264 tests passing**. Only new warnings are yours.
+- Baseline on a clean tree: **0 errors, 0 warnings, 272 tests passing**. Only new warnings are yours.
 - `Core` and `Mcp` build with `TreatWarningsAsErrors`; the WPF head does not, but is warning-free — keep it that way.
 - New files written by tooling often lack the UTF-8 BOM the rest of the tree has, and `dotnet format` adds it.
   Run the format check before committing or CI fails on files that compile fine.
@@ -84,12 +84,24 @@ completion timestamps. `task.ColumnId` is nullable and may be stale — resolve 
 `TaskTracker.Mcp` is a stdio server; tools are static `[McpServerTool]` methods in `TaskTrackerTools.cs`, each
 stateless (lock → load → mutate → save), which is why a running app picks changes up live. **stdout carries the
 protocol** — logging goes to stderr, never `Console.WriteLine`. `CreateStore` / `CreateSettingsStore` are the
-test seams. `.mcp.json` registers the server via `dotnet run`.
+test seams. `.mcp.json` registers the server via `dotnet run`, which resolves only inside a clone of this
+repo; consumers elsewhere install it as the global tool `tasktracker-mcp` (`PackAsTool` in the csproj,
+`dotnet pack` → `artifacts/nupkg`), so their `.mcp.json` carries no machine-specific path. It targets
+`net8.0` with `RollForward=LatestMajor` — without that it refuses to start on a machine whose only runtime
+is newer.
 
 ### GitHub sync
 
 `Core/GitHub/` — `IGitHubApi` is the seam that makes sync testable without network. Tokens go through
 `TokenProtector` (DPAPI on Windows, base64 elsewhere). Conflicts resolve last-write-wins.
+
+`SyncAsync` runs both directions: issues become tasks, then unlinked tasks become issues. The export pass
+is last on purpose — the unlink pass ahead of it only knows the issue numbers the API listed, so exporting
+earlier would unlink the issues the same sync just filed. It mirrors the import rule (only open issues
+import, so only not-done tasks export) and skips `TaskModel.GitHubIssueVanished`, the mark left when an
+issue is deleted on GitHub — without it, every sync re-files the issue the user just deleted. Its failures
+are counted into `SyncResult.ExportError` instead of thrown: created issues live in memory until the caller
+saves, so aborting mid-pass would drop the links and file duplicates next time.
 
 **Issue bodies are never written after creation** — the API surface is create / rename / open / close on
 purpose. Bots that file issues (and GitHub's own tooling) identify their own by a trailing HTML comment in the

@@ -15,6 +15,10 @@
     <PackageReference Include="ModelContextProtocol" Version="1.4.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="..\README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net8.0</TargetFramework>
@@ -22,6 +26,27 @@
     <Nullable>enable</Nullable>
     <!-- See TaskTracker.Core.csproj: warning-free today, kept that way here. -->
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <!-- Packable as a global tool, so another repository can register the server as
+       plain `tasktracker-mcp` instead of an absolute path into a clone of this one.
+       A path is machine-specific and cannot be committed to a shared .mcp.json. -->
+  <PropertyGroup>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>tasktracker-mcp</ToolCommandName>
+    <PackageId>SebHenn.TaskTracker.Mcp</PackageId>
+    <Version>1.0.0</Version>
+    <Description>MCP stdio server for TaskTracker: manage projects, tasks, columns and checklists from any MCP client.</Description>
+    <Authors>Sebastian Henn</Authors>
+    <PackageTags>mcp;tasktracker;claude;model-context-protocol</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageProjectUrl>https://github.com/SebHenn/TaskTracker</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/SebHenn/TaskTracker</RepositoryUrl>
+    <PackageOutputPath>$(MSBuildThisFileDirectory)..\artifacts\nupkg</PackageOutputPath>
+    <!-- The tool targets net8.0 but gets installed on machines whose newest runtime is
+         all they have; without this it refuses to start there. -->
+    <RollForward>LatestMajor</RollForward>
   </PropertyGroup>
 
 </Project>

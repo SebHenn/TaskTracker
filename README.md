@@ -42,8 +42,8 @@ read and manage your projects.
   section on the home page summarising what was completed and created across
   every project in the last seven days
 - **GitHub issue sync (two-way)** — link a project to a repository; open
-  issues import as tasks, completing a task closes the issue and vice versa,
-  and local tasks can be pushed to GitHub as new issues
+  issues import as tasks, unfinished tasks are filed as new issues, and
+  completing a task closes the issue and vice versa
 - **MCP server** — `TaskTracker.Mcp` exposes the same data over the Model
   Context Protocol so Claude Code can manage projects, tasks, columns, and
   checklists
@@ -120,9 +120,16 @@ atomic writes; the app reloads live when the MCP server changes anything.
 3. Open a project, click **Link to GitHub**, and enter the repository's owner
    and name.
 4. Click **Sync**. Open issues import as tasks (issue number shown on the
-   card). After that, sync is two-way: closing an issue marks the task done,
-   marking a task done closes the issue, with last-write-wins on conflicts.
-   Title and labels of linked tasks follow GitHub.
+   card), and unfinished tasks that have no issue yet are filed as new ones.
+   After that, sync is two-way: closing an issue marks the task done, marking
+   a task done closes the issue, with last-write-wins on conflicts. Title and
+   labels of linked tasks follow GitHub.
+
+Only unfinished tasks are filed, mirroring the import direction — linking a
+board you have been keeping for a while exports the work still open on it and
+leaves its finished history alone. A task whose issue is deleted on GitHub is
+unlinked and then left alone, rather than filed again on the next sync; **Push
+to GitHub** on the card files it again if that is what you want.
 
 Optionally enable auto-sync in Settings to refresh linked projects every
 15 minutes while the app runs. With auto-sync on, **Notify me when new issues
@@ -143,14 +150,42 @@ Available tools: `list_projects`, `get_project`, `create_project`,
 `delete_task`, `add_subtask`, `update_subtask`, `add_note`, `search_tasks`,
 `due_overview`, `weekly_review`, `github_sync`.
 
-For faster startup you can publish the server once
+### Using TaskTracker from another repository
+
+The `.mcp.json` above resolves `--project TaskTracker.Mcp` relative to the
+working directory, so it only works inside a clone of this repository. To drive
+your boards from any other project, install the server as a global tool:
+
+```
+dotnet pack TaskTracker.Mcp -c Release          # writes artifacts/nupkg
+dotnet tool install --global --add-source artifacts/nupkg SebHenn.TaskTracker.Mcp
+```
+
+Then register it in the other repository — no paths, so this `.mcp.json` is
+safe to commit and works on every machine that has the tool installed:
+
+```json
+{
+  "mcpServers": {
+    "tasktracker": { "type": "stdio", "command": "tasktracker-mcp", "args": [] }
+  }
+}
+```
+
+Both processes read the same `Documents/TaskTracker/` files, so tasks filed
+from another repository show up in the running app immediately. Upgrade later
+with `dotnet tool update --global --add-source artifacts/nupkg
+SebHenn.TaskTracker.Mcp`.
+
+The alternative is to publish the server once
 (`dotnet publish TaskTracker.Mcp -c Release`) and point `.mcp.json` at the
-resulting executable.
+resulting executable by absolute path. That also avoids the `dotnet run`
+startup cost, but the path is machine-specific and cannot be shared.
 
 ## Verification status
 
 Core logic (storage, board projection, filtering, trash, bulk actions, sync,
-search, stats, MCP handlers) is covered by 264 unit tests and runs on any OS.
+search, stats, MCP handlers) is covered by 272 unit tests and runs on any OS.
 CI builds the whole solution on Linux, runs those tests, and gates on
 `dotnet format`.
 
