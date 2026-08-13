@@ -173,14 +173,35 @@ safe to commit and works on every machine that has the tool installed:
 ```
 
 Both processes read the same `Documents/TaskTracker/` files, so tasks filed
-from another repository show up in the running app immediately. Upgrade later
-with `dotnet tool update --global --add-source artifacts/nupkg
-SebHenn.TaskTracker.Mcp`.
+from another repository show up in the running app immediately.
 
 The alternative is to publish the server once
 (`dotnet publish TaskTracker.Mcp -c Release`) and point `.mcp.json` at the
 resulting executable by absolute path. That also avoids the `dotnet run`
 startup cost, but the path is machine-specific and cannot be shared.
+
+### Refreshing the installed tool
+
+The installed tool is a snapshot of the code at pack time — changes to this
+repository do not reach it until you refresh it. Two things make that refresh
+quietly do nothing, or fail, rather than report a version mismatch:
+
+- **Bump `<Version>` in `TaskTracker.Mcp.csproj` first.** `dotnet tool update`
+  compares versions, so re-packing the version already installed just prints
+  *"Tool 'sebhenn.tasktracker.mcp' is already installed."* and leaves the old
+  binary in place.
+- **Close the MCP clients using the server first.** Updating uninstalls the old
+  version, and Windows will not delete files a running `tasktracker-mcp` still
+  holds, so the update aborts with *"Access to the path … is denied"*. Every
+  editor session that registered the server owns one of those processes;
+  `Get-Process tasktracker-mcp` lists the ones still holding it.
+
+With the version bumped and those sessions closed:
+
+```
+dotnet pack TaskTracker.Mcp -c Release
+dotnet tool update --global --add-source artifacts/nupkg SebHenn.TaskTracker.Mcp
+```
 
 ## Verification status
 

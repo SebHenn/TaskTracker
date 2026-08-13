@@ -88,7 +88,10 @@ test seams. `.mcp.json` registers the server via `dotnet run`, which resolves on
 repo; consumers elsewhere install it as the global tool `tasktracker-mcp` (`PackAsTool` in the csproj,
 `dotnet pack` → `artifacts/nupkg`), so their `.mcp.json` carries no machine-specific path. It targets
 `net8.0` with `RollForward=LatestMajor` — without that it refuses to start on a machine whose only runtime
-is newer.
+is newer. That installed tool is a **snapshot** — editing this repo does not change it, and refreshing it needs
+both a `<Version>` bump (`dotnet tool update` no-ops on an equal version) and every running `tasktracker-mcp`
+closed (Windows locks the old files, and each registered client owns a process). README's *Refreshing the
+installed tool* has the recipe; neither failure is loud, so a stale server looks like a broken tool.
 
 ### GitHub sync
 
