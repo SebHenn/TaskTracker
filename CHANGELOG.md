@@ -9,6 +9,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- **MCP list and search results are paged and far cheaper.** `list_tasks`, `search_tasks` and
+  `get_project` return a page with the unpaged total, so a truncated answer is distinguishable from a
+  complete one, and tasks come back compact by default — no descriptions, no empty or null fields, no
+  indentation. On a 60-task project the default response is roughly a fifth the size it was. Pass
+  `detail=full` for the whole record.
+- **MCP `list_tasks` filters** by label, due bucket (overdue / today / this week / undated) and
+  priority, using the same rules as the desktop board. `search_tasks` can now include archived
+  projects.
+- MCP tools declare whether they are read-only, destructive or idempotent, so clients can stop
+  confirming reversible actions and start confirming irreversible ones.
+- **Three MCP prompts**, surfaced as slash commands: `plan_my_day`, `review_my_week` and
+  `triage_project`.
+- The MCP server reports its name and version and ships usage instructions clients pick up
+  automatically.
 - **Optional auto-start** — a setting registers TaskTracker in the per-user Windows Run key so it
   launches at login, minimised to the notification area. The entry is repaired on every start if the
   app has been moved or republished elsewhere.

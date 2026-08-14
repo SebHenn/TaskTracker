@@ -1,4 +1,4 @@
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Text.Json;
 using ModelContextProtocol;
 using ModelContextProtocol.Server;
@@ -25,19 +25,17 @@ public static class TaskTrackerTools
     private static readonly GitHubSyncService Sync = new();
     internal static IGitHubApiFactory ApiFactory { get; set; } = new GitHubApiFactory();
 
-    private static readonly JsonSerializerOptions Json = new() { WriteIndented = true };
-
     private record ProjectSummary(Guid Id, string Name, string Description, int OpenTasks, int DoneTasks, bool IsArchived, bool IsFavourite, string? GitHubRepo);
-    private record SubTaskDto(Guid Id, string Title, bool IsDone);
-    private record TaskDto(Guid Id, string Title, string Description, bool IsDone, string? Column, string Priority, DateTime? DueDate, IReadOnlyList<string> Labels, IReadOnlyList<SubTaskDto> SubTasks, int? GitHubIssueNumber, DateTime? CompletedAtUtc, string Recurrence, double TrackedSeconds, int ActivityCount);
-    private record TaskWithProjectDto(Guid ProjectId, string ProjectName, TaskDto Task);
+    private record TaskWithProjectDto(Guid ProjectId, string ProjectName, object Task);
 
-    private static TaskDto ToDto(ProjectModel project, TaskModel t) => new(
-        t.Id, t.Title, t.Description, t.IsDone, project.ColumnOf(t)?.Name, t.Priority.ToString(), t.DueDate, t.Labels.ToList(),
-        t.SubTasks.Select(s => new SubTaskDto(s.Id, s.Title, s.IsDone)).ToList(), t.GitHubIssueNumber, t.CompletedAtUtc,
-        t.Recurrence, t.TrackedSeconds, t.Activity.Count);
+    /// <summary>
+    /// What a mutating tool echoes back: enough to confirm what changed, without
+    /// repeating the description the caller just sent. Ask get_project or list_tasks with
+    /// detail=full for the whole record.
+    /// </summary>
+    private static McpJson.TaskBrief ToDto(ProjectModel project, TaskModel t) => McpJson.ToBrief(project, t);
 
-    private static string ToJson<T>(T value) => JsonSerializer.Serialize(value, Json);
+    private static string ToJson<T>(T value) => McpJson.Serialize(value);
 
     /// <summary>
     /// Store access with store-level failures translated into McpException.
@@ -119,7 +117,7 @@ public static class TaskTrackerTools
             ? parsed.Date
             : throw new McpException($"Invalid date '{dueDate}'. Use ISO format, e.g. 2026-08-01.");
 
-    [McpServerTool(Name = "list_projects"), Description("List all TaskTracker projects with task counts.")]
+    [McpServerTool(Name = "list_projects", ReadOnly = true, Title = "List projects"), Description("List all TaskTracker projects with task counts.")]
     public static string ListProjects(
         [Description("Include archived projects (default false)")] bool includeArchived = false)
     {
@@ -134,12 +132,19 @@ public static class TaskTrackerTools
         return ToJson(projects);
     }
 
-    [McpServerTool(Name = "get_project"), Description("Get one project including all of its tasks.")]
+    [McpServerTool(Name = "get_project", ReadOnly = true, Title = "Get project"),
+     Description("Get one project with its columns and a page of its tasks.")]
     public static string GetProject(
-        [Description("Project id (GUID from list_projects)")] string projectId)
+        [Description("Project id (GUID from list_projects)")] string projectId,
+        [Description("Task fields: compact (default) or full. compact omits descriptions and checklists.")] string? detail = null,
+        [Description("Maximum tasks to return (default 100)")] int limit = 100,
+        [Description("Tasks to skip, for paging (default 0)")] int offset = 0)
     {
+        var level = McpJson.ParseDetail(detail);
         var data = LoadData();
         var project = FindProject(data, projectId);
+        var page = McpJson.Paginate(
+            project.Tasks.Select(t => McpJson.ToTask(project, t, level)).ToList(), limit, offset);
         return ToJson(new
         {
             project.Id,
@@ -149,12 +154,19 @@ public static class TaskTrackerTools
             project.IsFavourite,
             GitHubRepo = project.IsGitHubLinked ? $"{project.GitHubOwner}/{project.GitHubRepo}" : null,
             project.LastSyncedAtUtc,
-            Columns = project.Columns.Select(c => new { c.Id, c.Name, c.IsDoneColumn }),
-            Tasks = project.Tasks.Select(t => ToDto(project, t)),
+            Columns = project.Columns.Select(c => new
+            {
+                c.Id,
+                c.Name,
+                c.IsDoneColumn,
+                c.WipLimit,
+                TaskCount = project.Tasks.Count(t => project.ColumnOf(t)?.Id == c.Id),
+            }),
+            Tasks = page,
         });
     }
 
-    [McpServerTool(Name = "create_project"), Description("Create a new project.")]
+    [McpServerTool(Name = "create_project", Idempotent = false, Title = "Create project"), Description("Create a new project.")]
     public static string CreateProject(
         [Description("Project name (must be unique)")] string name,
         [Description("Optional project description")] string? description = null)
@@ -175,24 +187,51 @@ public static class TaskTrackerTools
         return ToJson(new { created!.Id, created.Name });
     }
 
-    [McpServerTool(Name = "list_tasks"), Description("List the tasks of a project.")]
+    [McpServerTool(Name = "list_tasks", ReadOnly = true, Title = "List tasks"),
+     Description("List the tasks of a project, optionally filtered by state, label, due bucket, or priority.")]
     public static string ListTasks(
         [Description("Project id (GUID from list_projects)")] string projectId,
-        [Description("Filter: all, open, or done (default all)")] string filter = "all")
+        [Description("State: all, open, or done (default all)")] string filter = "all",
+        [Description("Only tasks carrying this label")] string? label = null,
+        [Description("Due bucket: any, overdue, today, week, or none (default any)")] string? due = null,
+        [Description("Only this priority: low, medium, or high")] string? priority = null,
+        [Description("Task fields: compact (default) or full")] string? detail = null,
+        [Description("Maximum tasks to return (default 50)")] int limit = 50,
+        [Description("Tasks to skip, for paging (default 0)")] int offset = 0)
     {
+        var level = McpJson.ParseDetail(detail);
         var data = LoadData();
         var project = FindProject(data, projectId);
-        var tasks = filter.ToLowerInvariant() switch
+
+        var byState = filter.ToLowerInvariant() switch
         {
             "all" => project.Tasks.AsEnumerable(),
             "open" => project.Tasks.Where(t => !t.IsDone),
             "done" => project.Tasks.Where(t => t.IsDone),
             _ => throw new McpException($"Invalid filter '{filter}'. Use all, open, or done."),
         };
-        return ToJson(tasks.Select(t => ToDto(project, t)));
+
+        // BoardFilter is what the desktop board filters with; reusing it keeps the due
+        // buckets here identical to the ones in the app and in due_overview.
+        var board = new BoardFilter(label, ParseDue(due), priority == null ? null : ParsePriority(priority));
+        var matched = byState.Where(t => board.Matches(t, DateTime.Today))
+            .Select(t => McpJson.ToTask(project, t, level))
+            .ToList();
+
+        return ToJson(McpJson.Paginate(matched, limit, offset));
     }
 
-    [McpServerTool(Name = "create_task"), Description("Create a task in a project.")]
+    private static DueFilter ParseDue(string? due) => due?.ToLowerInvariant() switch
+    {
+        null or "" or "any" => DueFilter.Any,
+        "overdue" => DueFilter.Overdue,
+        "today" => DueFilter.DueToday,
+        "week" => DueFilter.DueThisWeek,
+        "none" => DueFilter.NoDueDate,
+        _ => throw new McpException($"Invalid due filter '{due}'. Use any, overdue, today, week, or none."),
+    };
+
+    [McpServerTool(Name = "create_task", Idempotent = false, Title = "Create task"), Description("Create a task in a project.")]
     public static string CreateTask(
         [Description("Project id (GUID from list_projects)")] string projectId,
         [Description("Task title")] string title,
@@ -235,7 +274,7 @@ public static class TaskTrackerTools
             $"No column '{column}' in project '{project.Name}'. Available: {string.Join(", ", project.Columns.Select(c => c.Name))}.");
     }
 
-    [McpServerTool(Name = "update_task"), Description("Update fields of a task. Only provided fields change; marking done/not-done is isDone.")]
+    [McpServerTool(Name = "update_task", Idempotent = true, Title = "Update task"), Description("Update fields of a task. Only provided fields change; marking done/not-done is isDone.")]
     public static string UpdateTask(
         [Description("Task id (GUID)")] string taskId,
         [Description("New title")] string? title = null,
@@ -277,7 +316,7 @@ public static class TaskTrackerTools
         return ToJson(ToDto(owner!, updated!));
     }
 
-    [McpServerTool(Name = "delete_task"), Description("Move a task to its project's trash, where it stays recoverable for 30 days.")]
+    [McpServerTool(Name = "delete_task", Idempotent = true, Title = "Delete task (recoverable)"), Description("Move a task to its project's trash, where it stays recoverable for 30 days.")]
     public static string DeleteTask(
         [Description("Task id (GUID)")] string taskId)
     {
@@ -295,19 +334,26 @@ public static class TaskTrackerTools
         return ToJson(new { deleted = true, taskId, recoverableUntilUtc = deletedAtUtc + Trash.Retention });
     }
 
-    [McpServerTool(Name = "search_tasks"), Description("Search tasks across all projects by title, description, or label.")]
+    [McpServerTool(Name = "search_tasks", ReadOnly = true, Title = "Search tasks"),
+     Description("Search tasks across all projects by title, description, or label.")]
     public static string SearchTasks(
         [Description("Text to search for (case-insensitive substring)")] string query,
         [Description("Only tasks carrying this label")] string? label = null,
-        [Description("Include completed tasks (default true)")] bool includeDone = true)
+        [Description("Include completed tasks (default true)")] bool includeDone = true,
+        [Description("Also search archived projects (default false)")] bool includeArchived = false,
+        [Description("Task fields: compact (default) or full")] string? detail = null,
+        [Description("Maximum results to return (default 50)")] int limit = 50,
+        [Description("Results to skip, for paging (default 0)")] int offset = 0)
     {
+        var level = McpJson.ParseDetail(detail);
         var data = LoadData();
-        var results = TaskSearch.Search(data.Projects, query, label, includeDone)
-            .Select(r => new TaskWithProjectDto(r.Project.Id, r.Project.Name, ToDto(r.Project, r.Task)));
-        return ToJson(results);
+        var results = TaskSearch.Search(data.Projects, query, label, includeDone, includeArchived)
+            .Select(r => new TaskWithProjectDto(r.Project.Id, r.Project.Name, McpJson.ToTask(r.Project, r.Task, level)))
+            .ToList();
+        return ToJson(McpJson.Paginate(results, limit, offset));
     }
 
-    [McpServerTool(Name = "create_tasks"), Description("Create several tasks in one call. Shared column/priority/dueDate/labels apply to all of them.")]
+    [McpServerTool(Name = "create_tasks", Idempotent = false, Title = "Create several tasks"), Description("Create several tasks in one call. Shared column/priority/dueDate/labels apply to all of them.")]
     public static string CreateTasks(
         [Description("Project id (GUID from list_projects)")] string projectId,
         [Description("One task title per entry")] string[] titles,
@@ -346,7 +392,7 @@ public static class TaskTrackerTools
         return ToJson(created.Select(t => ToDto(owner!, t)));
     }
 
-    [McpServerTool(Name = "add_note"), Description("Add a timestamped note to a task's activity journal.")]
+    [McpServerTool(Name = "add_note", Idempotent = false, Title = "Add note"), Description("Add a timestamped note to a task's activity journal.")]
     public static string AddNote(
         [Description("Task id (GUID)")] string taskId,
         [Description("Note text")] string text)
@@ -363,14 +409,14 @@ public static class TaskTrackerTools
         return ToJson(new { entry!.Id, entry.AtUtc, entry.Text });
     }
 
-    [McpServerTool(Name = "weekly_review"), Description("What happened in the last 7 days: completed and created tasks per project, plus open/overdue counts and tracked hours.")]
+    [McpServerTool(Name = "weekly_review", ReadOnly = true, Title = "Weekly review"), Description("What happened in the last 7 days: completed and created tasks per project, plus open/overdue counts and tracked hours.")]
     public static string WeeklyReview()
     {
         var data = LoadData();
         return ToJson(ReviewReport.Compute(data.Projects));
     }
 
-    [McpServerTool(Name = "update_project"), Description("Update a project's name, description, or archived state. Only provided fields change.")]
+    [McpServerTool(Name = "update_project", Idempotent = true, Title = "Update project"), Description("Update a project's name, description, or archived state. Only provided fields change.")]
     public static string UpdateProject(
         [Description("Project id (GUID from list_projects)")] string projectId,
         [Description("New name")] string? name = null,
@@ -399,7 +445,7 @@ public static class TaskTrackerTools
         return ToJson(new { updated!.Id, updated.Name, updated.Description, updated.IsArchived });
     }
 
-    [McpServerTool(Name = "delete_project"), Description("Delete a project and all of its tasks permanently. Requires confirm=true.")]
+    [McpServerTool(Name = "delete_project", Destructive = true, Idempotent = true, Title = "Delete project permanently"), Description("Delete a project and all of its tasks permanently. Requires confirm=true.")]
     public static string DeleteProject(
         [Description("Project id (GUID from list_projects)")] string projectId,
         [Description("Must be true to actually delete")] bool confirm = false)
@@ -417,7 +463,7 @@ public static class TaskTrackerTools
         return ToJson(new { deleted = true, name });
     }
 
-    [McpServerTool(Name = "project_stats"), Description("Get statistics for a project: open/done/overdue counts, completion percent, tasks completed per week.")]
+    [McpServerTool(Name = "project_stats", ReadOnly = true, Title = "Project statistics"), Description("Get statistics for a project: open/done/overdue counts, completion percent, tasks completed per week.")]
     public static string ProjectStatsTool(
         [Description("Project id (GUID from list_projects)")] string projectId)
     {
@@ -435,7 +481,7 @@ public static class TaskTrackerTools
         });
     }
 
-    [McpServerTool(Name = "move_task"), Description("Move a task to another board column of its project.")]
+    [McpServerTool(Name = "move_task", Idempotent = true, Title = "Move task to column"), Description("Move a task to another board column of its project.")]
     public static string MoveTask(
         [Description("Task id (GUID)")] string taskId,
         [Description("Target column (name, case-insensitive, or GUID)")] string column)
@@ -452,7 +498,7 @@ public static class TaskTrackerTools
         return ToJson(ToDto(owner!, moved!));
     }
 
-    [McpServerTool(Name = "add_subtask"), Description("Add a checklist item to a task.")]
+    [McpServerTool(Name = "add_subtask", Idempotent = false, Title = "Add checklist item"), Description("Add a checklist item to a task.")]
     public static string AddSubTask(
         [Description("Task id (GUID)")] string taskId,
         [Description("Checklist item text")] string title)
@@ -469,7 +515,7 @@ public static class TaskTrackerTools
         return ToJson(new { created!.Id, created.Title, created.IsDone });
     }
 
-    [McpServerTool(Name = "update_subtask"), Description("Rename or check/uncheck a checklist item.")]
+    [McpServerTool(Name = "update_subtask", Idempotent = true, Title = "Update checklist item"), Description("Rename or check/uncheck a checklist item.")]
     public static string UpdateSubTask(
         [Description("Subtask id (GUID, from get_project/list_tasks)")] string subtaskId,
         [Description("New text")] string? title = null,
@@ -488,7 +534,7 @@ public static class TaskTrackerTools
         return ToJson(new { updated!.Id, updated.Title, updated.IsDone });
     }
 
-    [McpServerTool(Name = "due_overview"), Description("Overdue, due-today, and due-this-week tasks across all non-archived projects.")]
+    [McpServerTool(Name = "due_overview", ReadOnly = true, Title = "Due overview"), Description("Overdue, due-today, and due-this-week tasks across all non-archived projects.")]
     public static string DueOverviewTool()
     {
         var data = LoadData();
@@ -502,7 +548,7 @@ public static class TaskTrackerTools
         });
     }
 
-    [McpServerTool(Name = "github_sync"), Description("Run the two-way GitHub issue sync for a linked project. Requires a token saved in the TaskTracker app settings.")]
+    [McpServerTool(Name = "github_sync", OpenWorld = true, Idempotent = false, Title = "Sync with GitHub"), Description("Run the two-way GitHub issue sync for a linked project. Requires a token saved in the TaskTracker app settings.")]
     public static async Task<string> GitHubSync(
         [Description("Project id (GUID from list_projects)")] string projectId)
     {

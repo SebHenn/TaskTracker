@@ -14,6 +14,7 @@ namespace TaskTracker.Core.Tests;
 /// the task from the list outright while the app moved it to the trash, so which client you
 /// used decided whether a delete could be undone.
 /// </summary>
+[Collection(McpCollection.Name)]
 public class McpTaskToolsTests : IDisposable
 {
     private readonly string _dir;

@@ -150,6 +150,21 @@ Available tools: `list_projects`, `get_project`, `create_project`,
 `delete_task`, `add_subtask`, `update_subtask`, `add_note`, `search_tasks`,
 `due_overview`, `weekly_review`, `github_sync`.
 
+There are also three prompts, which appear as slash commands: `plan_my_day`,
+`review_my_week`, and `triage_project`.
+
+**Response shape.** `list_tasks`, `search_tasks` and `get_project` return a page
+— `{ Total, Returned, Offset, Items }` — where `Total` is the count before
+paging, so you can tell a complete answer from a truncated one. Tasks come back
+compact by default: identity plus the fields you filter and triage on, with
+empty and null fields omitted and the description left out. Pass `detail=full`
+for the whole record, and `limit`/`offset` to page. On a 60-task project the
+compact default costs roughly a fifth of what the full indented form does.
+
+`list_tasks` filters by any combination of state (`all`/`open`/`done`), `label`,
+`due` (`any`/`overdue`/`today`/`week`/`none`) and `priority`, using the same due
+buckets as the desktop board and the Today dashboard.
+
 ### Using TaskTracker from another repository
 
 The `.mcp.json` above resolves `--project TaskTracker.Mcp` relative to the
