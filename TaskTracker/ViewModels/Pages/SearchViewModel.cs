@@ -40,7 +40,10 @@ namespace TaskTracker.ViewModels.Pages
         [RelayCommand]
         private void OnResultClick(SearchResult result)
         {
-            WeakReferenceMessenger.Default.Send(new ProjectSelectClickMessage(result.Project));
+            // Opens the board with the matched task selected. It used to send only
+            // ProjectSelectClickMessage, which dropped you on the project and left you to
+            // find by eye the task you had just searched for.
+            WeakReferenceMessenger.Default.Send(new OpenTaskMessage(result.Project, result.Task));
         }
     }
 }

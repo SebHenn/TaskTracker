@@ -29,6 +29,7 @@ namespace TaskTracker
             });
             services.AddSingleton<MainViewModel>();
             services.AddSingleton<HomeViewModel>();
+            services.AddSingleton<AgendaViewModel>();
             services.AddSingleton<SettingsViewModel>();
             services.AddSingleton<ProjectViewModel>();
             services.AddSingleton<SearchViewModel>();
@@ -81,6 +82,9 @@ namespace TaskTracker
             DispatcherUnhandledException += (_, args) =>
             {
                 TaskTracker.Core.Storage.AppLog.Write("unhandled", args.Exception);
+                // Deliberately the native MessageBox, not the themed MessageWindow: this
+                // runs after something already failed, and a themed window needs the
+                // resource dictionaries and DI container that may be exactly what broke.
                 MessageBox.Show(args.Exception.Message, "TaskTracker", MessageBoxButton.OK, MessageBoxImage.Error);
                 args.Handled = true;
             };
@@ -101,6 +105,8 @@ namespace TaskTracker
             if (!isFirstInstance)
             {
                 // A second instance would fight over the store's file watcher.
+                // Native MessageBox again: this fires before the container is built, so
+                // there is no language service and no theme to show it in yet.
                 MessageBox.Show("TaskTracker is already running.", "TaskTracker",
                     MessageBoxButton.OK, MessageBoxImage.Information);
                 Shutdown();
@@ -134,7 +140,17 @@ namespace TaskTracker
             langservice.ChangeLanguage(settings.Language);
 
             _serviceProvider.GetRequiredService<AutoSyncService>();
-            _serviceProvider.GetRequiredService<TrayService>().Initialize();
+
+            var tray = _serviceProvider.GetRequiredService<TrayService>();
+            tray.Initialize();
+
+            // The tray tooltip mirrors the shell's timer strip, so a forgotten timer is
+            // visible while the window is minimised.
+            var mainViewModel = _serviceProvider.GetRequiredService<MainViewModel>();
+            mainViewModel.TimerChanged += () => tray.ShowRunningTimer(
+                mainViewModel.IsTimerRunning ? mainViewModel.RunningTimerTitle : null,
+                mainViewModel.RunningTimerText);
+            mainViewModel.RefreshRunningTimer();
 
             var hotkeys = _serviceProvider.GetRequiredService<HotkeyService>();
             hotkeys.Initialize(window);

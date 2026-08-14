@@ -262,6 +262,10 @@ namespace TaskTracker.ViewModels.Pages
             IsTimerRunning = SelectedTask?.TimerStartedAtUtc != null;
             TrackedTimeText = SelectedTask == null ? "" : TimeTracking.Format(TimeTracking.TotalSeconds(SelectedTask));
 
+            // The shell shows the running timer on every page, so it has to hear about a
+            // start or stop that happens down here in the detail drawer.
+            _mainViewModel.RefreshRunningTimer();
+
             if (IsTimerRunning && _trackedTimeRefresh == null)
             {
                 _trackedTimeRefresh = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };

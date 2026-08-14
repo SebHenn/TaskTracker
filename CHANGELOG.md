@@ -9,6 +9,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- **Agenda page** — the week ahead a day at a time, with overdue work called out above it and empty
+  days kept so the shape of the week is readable. Clicking a row opens the board with that task
+  selected. It regroups the same data the Today dashboard uses, so the two can never disagree about
+  what "this week" means.
+- **A running timer is visible everywhere** — a strip along the bottom of the window naming the task
+  and its elapsed time with a stop button, a badge on the task's card, and the tray tooltip while the
+  window is minimised. Previously a timer was only visible in the detail drawer of the board it
+  belonged to, so closing the drawer left it running out of sight.
 - **The MCP server can link a project to GitHub.** `link_github`, `unlink_github` and
   `github_status` mean setting up and diagnosing a sync no longer requires opening the desktop app —
   which `github_sync` used to be reduced to advising. `push_task_to_github` files a single task as an
@@ -53,6 +61,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Fixed
 
+- **Search results now open the task, not just its project** — clicking a result used to drop you on
+  the board and leave you to find by eye the task you had just searched for.
+- **Due reminders repeat across days.** The set of already-announced tasks was never cleared, so
+  leaving the app running meant each task was announced once ever: still overdue tomorrow, silent;
+  rescheduled and then overdue again, silent.
+- Error and confirmation dialogs use the app's own themed window instead of the native message box,
+  which was the last unthemed surface — a light Win32 dialog in the middle of a dark window — and
+  could not have its buttons localized.
 - **Completing a recurring task outside the board never scheduled the next occurrence.** Marking one
   done through the MCP server, or closing its issue on GitHub, set the done flag directly instead of
   moving the task to a done column — so the repeat was silently dropped and the chore simply never

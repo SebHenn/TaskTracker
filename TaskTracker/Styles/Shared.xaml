@@ -182,6 +182,19 @@
                             <TextBlock Style="{StaticResource TaskChipText}" Text="{Binding SubTaskProgress}" />
                         </Border>
 
+                        <!-- Running timer. Accent-filled rather than a neutral chip, since
+                             the point is to catch the eye of someone who has forgotten it
+                             is running; the shell strip carries the elapsed time, so this
+                             only has to say which card. -->
+                        <Border Style="{StaticResource TaskChip}"
+                                Background="{DynamicResource Brush.Accent.Strong}"
+                                BorderBrush="{DynamicResource Brush.Accent.Strong}"
+                                ToolTip="{DynamicResource TimerRunning}"
+                                Visibility="{Binding TimerStartedAtUtc, Converter={StaticResource NullToVisibilityConverter}, ConverterParameter=False}">
+                            <TextBlock Style="{StaticResource TaskChipText}" Text="{DynamicResource TimerRunning}"
+                                       Foreground="#FFFFFFFF" FontWeight="SemiBold" />
+                        </Border>
+
                         <!-- Recurring. Spelled out and localized rather than an emoji
                              glyph, which picks up a colour font and ignores the theme. -->
                         <Border>

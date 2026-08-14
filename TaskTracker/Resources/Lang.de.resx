@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <resheader name="resmimetype">
     <value>text/microsoft-resx</value>
@@ -207,4 +207,13 @@
   <data name="CloseDetails" xml:space="preserve"><value>Details schließen</value></data>
   <data name="MoveUp" xml:space="preserve"><value>Nach oben</value></data>
   <data name="MoveDown" xml:space="preserve"><value>Nach unten</value></data>
+  <!-- Agenda page -->
+  <data name="Agenda" xml:space="preserve"><value>Agenda</value></data>
+  <data name="Today" xml:space="preserve"><value>Heute</value></data>
+  <data name="AgendaRangeFormat" xml:space="preserve"><value>{0:d. MMM} – {1:d. MMM}</value></data>
+  <data name="AgendaNothingScheduled" xml:space="preserve"><value>Nichts geplant</value></data>
+  <data name="AgendaAllClear" xml:space="preserve"><value>In der kommenden Woche ist nichts fällig.</value></data>
+  <data name="TimerRunning" xml:space="preserve"><value>Timer läuft</value></data>
+  <data name="OK" xml:space="preserve"><value>OK</value></data>
+  <data name="Yes" xml:space="preserve"><value>Ja</value></data>
 </root>

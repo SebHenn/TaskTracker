@@ -11,6 +11,9 @@
             <DataTemplate DataType="{x:Type viewModelPages:HomeViewModel}">
                 <pagesViews:HomeView/>
             </DataTemplate>
+            <DataTemplate DataType="{x:Type viewModelPages:AgendaViewModel}">
+                <pagesViews:AgendaView/>
+            </DataTemplate>
             <DataTemplate DataType="{x:Type viewModelPages:SettingsViewModel}">
                 <pagesViews:SettingsView/>
             </DataTemplate>
