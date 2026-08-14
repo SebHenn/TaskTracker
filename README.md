@@ -1,4 +1,4 @@
-# TaskTracker
+﻿# TaskTracker
 
 A Jira-style desktop task tracker for Windows (WPF, .NET 8) with GitHub issue
 synchronisation and an MCP server that lets Claude Code (or any MCP client)
@@ -180,7 +180,16 @@ buckets as the desktop board and the Today dashboard.
 
 The `.mcp.json` above resolves `--project TaskTracker.Mcp` relative to the
 working directory, so it only works inside a clone of this repository. To drive
-your boards from any other project, install the server as a global tool:
+your boards from any other project, install the server as a global tool.
+
+Every tagged release attaches the `.nupkg`, so the usual route is to download it
+and install from the folder you put it in:
+
+```
+dotnet tool install --global --add-source <folder-with-the-nupkg> SebHenn.TaskTracker.Mcp
+```
+
+Or build it yourself from a clone:
 
 ```
 dotnet pack TaskTracker.Mcp -c Release          # writes artifacts/nupkg
@@ -229,16 +238,25 @@ dotnet pack TaskTracker.Mcp -c Release
 dotnet tool update --global --add-source artifacts/nupkg SebHenn.TaskTracker.Mcp
 ```
 
+Ask the server which version answered — `store_info` reports it alongside the
+data directory and the save revision. That is the quickest way to tell a stale
+install from a real bug, since neither failure above is loud.
+
+CI fails a pull request that changes the server or Core without bumping
+`<Version>`, and the release workflow fails a tag that disagrees with it.
+
 ## Verification status
 
 Core logic (storage, board projection, filtering, trash, bulk actions, sync,
-search, stats, MCP handlers) is covered by 272 unit tests and runs on any OS.
+search, stats, agenda, cross-project moves, MCP handlers) is covered by 419
+unit tests and runs on any OS.
 CI builds the whole solution on Linux, runs those tests, and gates on
 `dotnet format`.
 
 The WPF UI is validated by compilation only in CI, so a manual pass on a
 Windows machine is expected after UI changes: theme switching at several DPI
-scalings, drag & drop, the dialogs, and the sync button.
+scalings, drag & drop, the dialogs, the agenda, the undo and running-timer
+strips, and the sync button.
 
 ## Contributing
 

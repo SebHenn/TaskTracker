@@ -29,3 +29,47 @@ jobs:
         run: dotnet format TaskTracker.sln --verify-no-changes --no-restore
         env:
           EnableWindowsTargeting: true
+
+  # An installed `tasktracker-mcp` is a snapshot, and `dotnet tool update` no-ops on an
+  # equal version — so shipping a behaviour change without bumping <Version> leaves every
+  # consumer silently on old code, with no error anywhere to notice. This is the only
+  # part of that failure mode a machine can catch.
+  version-bump:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Require a <Version> bump when the server or Core changes
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+
+          # Comment-only edits elsewhere should not trip this, so only .cs counts.
+          if ! git diff --name-only "$BASE" "$HEAD" \
+               | grep -qE '^TaskTracker\.(Mcp|Core)/.*\.cs$'; then
+            echo "No server or Core code changed; no bump needed."
+            exit 0
+          fi
+
+          if git log --format=%B "$BASE..$HEAD" | grep -qF '[skip version]'; then
+            echo "Bump waived by [skip version] in a commit message."
+            exit 0
+          fi
+
+          csproj=TaskTracker.Mcp/TaskTracker.Mcp.csproj
+          before=$(git show "$BASE:$csproj" | sed -n 's:.*<Version>\(.*\)</Version>.*:\1:p')
+          after=$(sed -n 's:.*<Version>\(.*\)</Version>.*:\1:p' "$csproj")
+
+          if [ "$before" = "$after" ]; then
+            echo "::error::TaskTracker.Mcp or TaskTracker.Core changed but <Version> is still $after."
+            echo "Bump it in TaskTracker.Mcp/TaskTracker.Mcp.csproj (patch = fix, minor = new tool,"
+            echo "major = removed/renamed tool or changed response shape), or add [skip version] to a"
+            echo "commit message if this genuinely does not affect the published tool."
+            exit 1
+          fi
+
+          echo "Version bumped $before -> $after."

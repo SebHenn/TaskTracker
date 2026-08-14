@@ -1,4 +1,4 @@
-# CLAUDE.md
+﻿# CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
@@ -19,14 +19,14 @@ user-facing feature list and GitHub-sync setup.
 
 ```
 dotnet build TaskTracker.sln                            # whole solution
-dotnet test TaskTracker.Core.Tests                      # 272 tests, ~250ms
+dotnet test TaskTracker.Core.Tests                      # 419 tests, ~2s
 dotnet test TaskTracker.Core.Tests --filter FullyQualifiedName~ProjectStoreTests   # one class
 dotnet test TaskTracker.Core.Tests --filter "DisplayName~migrates"                 # one test
 dotnet format TaskTracker.sln --verify-no-changes        # CI gates on this; run before committing
 dotnet run --project TaskTracker\TaskTracker.csproj     # launches the GUI (blocks — run in background)
 ```
 
-- Baseline on a clean tree: **0 errors, 0 warnings, 272 tests passing**. Only new warnings are yours.
+- Baseline on a clean tree: **0 errors, 0 warnings, 419 tests passing**. Only new warnings are yours.
 - `Core` and `Mcp` build with `TreatWarningsAsErrors`; the WPF head does not, but is warning-free — keep it that way.
 - New files written by tooling often lack the UTF-8 BOM the rest of the tree has, and `dotnet format` adds it.
   Run the format check before committing or CI fails on files that compile fine.
@@ -34,7 +34,10 @@ dotnet run --project TaskTracker\TaskTracker.csproj     # launches the GUI (bloc
   so build `TaskTracker.Core TaskTracker.Mcp` individually there. `dotnet format` takes no `-p:`, so it reads the
   same setting from the `EnableWindowsTargeting` environment variable instead.
 - CI (`.github/workflows/ci.yml`) runs on ubuntu: Release build of the whole solution, `dotnet test --no-build`,
-  then the format check.
+  then the format check. A second job fails a **pull request** that changes `TaskTracker.Mcp/**.cs` or
+  `TaskTracker.Core/**.cs` without bumping `<Version>` in `TaskTracker.Mcp.csproj` — an installed tool is a
+  snapshot and `dotnet tool update` no-ops on an equal version, so forgetting leaves consumers on old code
+  silently. `[skip version]` in a commit message waives it.
 - MSBuild output on this machine is localized to German (`Fehler` = error, `Warnung` = warning). Prefix with
   `$env:DOTNET_CLI_UI_LANGUAGE = 'en'` for English.
 
@@ -88,17 +91,33 @@ recurring task completed through GitHub sync or the MCP server.
 
 ### MCP server
 
-`TaskTracker.Mcp` is a stdio server; tools are static `[McpServerTool]` methods in `TaskTrackerTools.cs`, each
-stateless (lock → load → mutate → save), which is why a running app picks changes up live. **stdout carries the
-protocol** — logging goes to stderr, never `Console.WriteLine`. `CreateStore` / `CreateSettingsStore` are the
-test seams. `.mcp.json` registers the server via `dotnet run`, which resolves only inside a clone of this
+`TaskTracker.Mcp` is a stdio server; tools are static `[McpServerTool]` methods on the partial
+`TaskTrackerTools` class, split by area across `TaskTrackerTools.cs` (shared helpers), `.Tasks.cs`,
+`.Columns.cs`, `.Trash.cs` and `.GitHub.cs`. Each is stateless (lock → load → mutate → save), which is why a
+running app picks changes up live. **stdout carries the protocol** — logging goes to stderr, never
+`Console.WriteLine`. `CreateStore` / `CreateSettingsStore` are the test seams.
+
+**Go through `LoadData()` / `UpdateData(mutate)`, not `CreateStore()` directly** — they translate store
+failures (lock contention, a corrupt save file) into `McpException` with an actionable message, so a new tool
+inherits that without asking.
+
+**Response shape lives in `McpJson.cs`**: compact by default (no description), nulls and empty collections
+omitted, and lists returned as `Page<T>` carrying the *unpaged* total. Tool output is charged to the caller's
+context on every call, so a bare array or an echoed description is a real cost. Declare `ReadOnly` /
+`Destructive` / `Idempotent` on new tools; `delete_task` is **not** destructive — it routes through the trash.
+
+Prompts live in `TaskTrackerPrompts.cs`; server name, version and the client-visible instructions are in
+`Program.cs`. `.mcp.json` registers the server via `dotnet run`, which resolves only inside a clone of this
 repo; consumers elsewhere install it as the global tool `tasktracker-mcp` (`PackAsTool` in the csproj,
 `dotnet pack` → `artifacts/nupkg`), so their `.mcp.json` carries no machine-specific path. It targets
 `net8.0` with `RollForward=LatestMajor` — without that it refuses to start on a machine whose only runtime
 is newer. That installed tool is a **snapshot** — editing this repo does not change it, and refreshing it needs
 both a `<Version>` bump (`dotnet tool update` no-ops on an equal version) and every running `tasktracker-mcp`
 closed (Windows locks the old files, and each registered client owns a process). README's *Refreshing the
-installed tool* has the recipe; neither failure is loud, so a stale server looks like a broken tool.
+installed tool* has the recipe; neither failure is loud, so a stale server looks like a broken tool. The
+`store_info` tool reports the running server's version, which is how you tell a stale install from a real bug
+without leaving the client. CI enforces the bump on pull requests, and `release.yml` fails a tag that
+disagrees with `<Version>`.
 
 ### GitHub sync
 

@@ -165,7 +165,6 @@
   <data name="NothingDue" xml:space="preserve"><value>Nothing due. Enjoy it.</value></data>
   <data name="CompactCardsSetting" xml:space="preserve"><value>Compact cards</value></data>
   <data name="RecurringChip" xml:space="preserve"><value>Repeats</value></data>
-  <data name="DoneColumnLabel" xml:space="preserve"><value>Done column</value></data>
   <data name="WipLimitReached" xml:space="preserve"><value>Over the column limit</value></data>
 
   <!-- Bulk actions -->

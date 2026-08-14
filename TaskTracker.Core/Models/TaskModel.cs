@@ -40,7 +40,15 @@ namespace TaskTracker.Core.Models
         [ObservableProperty]
         private DateTime? _completedAtUtc;
 
-        /// <summary>Last time IsDone flipped; used by GitHub sync for last-write-wins conflicts.</summary>
+        /// <summary>
+        /// Last time IsDone flipped, in either direction — an audit timestamp, unlike
+        /// <see cref="CompletedAtUtc"/> which is cleared on reopening.
+        ///
+        /// It used to claim GitHub sync read it for last-write-wins conflicts. It never
+        /// did: sync resolves state with a three-way merge against
+        /// <see cref="LastSyncedIssueState"/>, which is strictly better than comparing
+        /// clocks across two machines. Kept because it is real data already in save files.
+        /// </summary>
         [ObservableProperty]
         private DateTime? _stateChangedUtc;
 

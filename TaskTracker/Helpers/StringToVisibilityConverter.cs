@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using System.Windows.Data;
 using System.Windows;
 
-namespace TaskTracker.Utilities
+namespace TaskTracker.Helpers
 {
     public class StringToVisibilityConverter : IValueConverter
     {

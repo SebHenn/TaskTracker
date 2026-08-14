@@ -70,11 +70,12 @@ namespace TaskTracker.ViewModels.Windows
 
         public NewProjectViewModel(ProjectViewModel projectViewModel, Services.ILanguageService languageService)
         {
-            IsTaskMode = projectViewModel.IsCreateTask || projectViewModel.IsEditTask;
+            // No edit-task mode: editing a task moved into the board's detail drawer, so
+            // this dialog only ever creates one.
+            IsTaskMode = projectViewModel.IsCreateTask;
             TitleString = languageService.GetString(
                 projectViewModel.IsEditing ? "ChangeCurrentProject"
                 : projectViewModel.IsCreateTask ? "CreateNewTask"
-                : projectViewModel.IsEditTask ? "ChangeCurrentTask"
                 : "CreateNewProject");
             NameString = languageService.GetString(IsTaskMode ? "TaskName" : "ProjectName");
             DescriptionString = languageService.GetString(IsTaskMode ? "TaskDescription" : "ProjectDescription");

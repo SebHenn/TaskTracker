@@ -9,6 +9,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- **Releases ship the MCP server as an installable package.** The global tool previously had to be
+  packed from a clone, which rather defeats the point; the `.nupkg` is now attached to every tagged
+  release. The release fails if the tag disagrees with the package version, and CI fails a pull
+  request that changes the server or Core without bumping it — both are the failure that otherwise
+  leaves everyone silently running old code.
+- CSV export carries the checklist, recurrence, ordering, issue number and note count, which it
+  previously dropped without saying so.
 - **Undo covers more than deleting a task.** One bar in the shell now backs task and bulk deletes,
   bulk column moves, archiving, and **deleting a project** — which was irreversible, took its tasks,
   notes and tracked time with it, and had only a confirmation dialog between a misclick and losing

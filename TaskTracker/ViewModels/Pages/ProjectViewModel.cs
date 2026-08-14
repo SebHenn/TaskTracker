@@ -78,9 +78,6 @@ namespace TaskTracker.ViewModels.Pages
         private bool _isCreateTask = false;
 
         [ObservableProperty]
-        private bool _isEditTask = false;
-
-        [ObservableProperty]
         private ProjectModel? _currentProject;
 
         [ObservableProperty]
