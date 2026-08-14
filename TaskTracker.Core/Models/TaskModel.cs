@@ -100,6 +100,11 @@ namespace TaskTracker.Core.Models
 
         public TaskModel()
         {
+            // Stamped here so no creation path can forget it — ReviewReport counts tasks
+            // created in the last week and silently misses any with a null. Tasks loaded
+            // from a file that predates the field get this cleared again on load; see
+            // ProjectStore.ClearBackfilledCreatedAt.
+            _createdAtUtc = DateTime.UtcNow;
             HookSubTasks(_subTasks);
         }
 

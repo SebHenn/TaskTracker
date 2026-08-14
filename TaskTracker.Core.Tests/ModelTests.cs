@@ -18,7 +18,11 @@ public class ModelTests
         Assert.Equal(TaskPriority.Medium, task.Priority);
         Assert.Empty(task.Labels);
         Assert.Null(task.GitHubIssueNumber);
-        Assert.Null(task.CreatedAtUtc);
+        // Deserializing bare runs the constructor, which stamps CreatedAtUtc so no
+        // creation path can forget it. Loading through ProjectStore clears it again for
+        // tasks whose stored JSON predates the field — see
+        // ProjectStoreTests.Load_LeavesCreatedAtNull_ForTasksSavedWithoutIt.
+        Assert.NotNull(task.CreatedAtUtc);
     }
 
     [Fact]

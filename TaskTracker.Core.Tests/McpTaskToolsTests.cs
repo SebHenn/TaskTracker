@@ -54,6 +54,44 @@ public class McpTaskToolsTests : IDisposable
     private ProjectModel Reload() => Store.Load().Projects.Single();
 
     [Fact]
+    public void UpdateTask_MarkingRecurringTaskDone_SpawnsAndPersistsTheNextOccurrence()
+    {
+        // update_task used to fall back to task.IsDone = value, which skipped recurrence
+        // entirely — a recurring chore completed from Claude Code simply never came back.
+        var (_, task) = Seed("Water the plants");
+        var store = Store;
+        var data = store.Load();
+        var seeded = data.Projects.Single().Tasks.Single();
+        seeded.Recurrence = RecurrenceRules.Weekly;
+        seeded.DueDate = new DateTime(2026, 8, 1);
+        store.Save(data);
+
+        TaskTrackerTools.UpdateTask(task.Id.ToString(), isDone: true);
+
+        var project = Reload();
+        Assert.Equal(2, project.Tasks.Count);
+        var next = project.Tasks.Single(t => t.Id != task.Id);
+        Assert.Equal("Water the plants", next.Title);
+        Assert.Equal(new DateTime(2026, 8, 8), next.DueDate);
+        Assert.False(next.IsDone);
+        Assert.Equal(RecurrenceRules.Weekly, next.Recurrence);
+    }
+
+    [Fact]
+    public void MoveTask_ToADoneColumn_SpawnsTheNextOccurrence()
+    {
+        var (project, task) = Seed("Standup");
+        var store = Store;
+        var data = store.Load();
+        data.Projects.Single().Tasks.Single().Recurrence = RecurrenceRules.Daily;
+        store.Save(data);
+
+        TaskTrackerTools.MoveTask(task.Id.ToString(), project.FirstDoneColumn!.Name);
+
+        Assert.Equal(2, Reload().Tasks.Count);
+    }
+
+    [Fact]
     public void DeleteTask_MovesToTrashRatherThanDestroying()
     {
         var (_, task) = Seed();

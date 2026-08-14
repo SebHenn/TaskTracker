@@ -246,4 +246,117 @@ public class ProjectStoreTests : IDisposable
         project.IsSelected = true;                   // ignored UI-only property
         Assert.Equal(afterDone, count);
     }
+
+    [Fact]
+    public void AcquireLock_ThrowsStoreLocked_WhenTheOtherProcessHoldsIt()
+    {
+        // Contention is a normal condition with two processes on one store, and callers
+        // need to tell it apart from a corrupt or missing file.
+        var store = NewStore();
+        using var held = new FileStream(
+            Path.Combine(_dir, "store.lock"), FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
+
+        Assert.Throws<StoreLockedException>(() => store.Load());
+    }
+
+    [Fact]
+    public void TrySaveIfUnchanged_Saves_WhenNothingElseWrote()
+    {
+        var store = NewStore();
+        store.Save(SampleData());
+
+        var data = store.Load();
+        data.Projects[0].Name = "Renamed";
+
+        Assert.True(store.TrySaveIfUnchanged(data, data.Revision));
+        Assert.Equal("Renamed", NewStore().Load().Projects[0].Name);
+    }
+
+    [Fact]
+    public void TrySaveIfUnchanged_Refuses_WhenTheFileMovedOn()
+    {
+        // This is what stops a slow GitHub sync from silently overwriting whatever the
+        // desktop app wrote while it was waiting on the network.
+        var store = NewStore();
+        store.Save(SampleData());
+
+        var data = store.Load();
+        var baseRevision = data.Revision;
+        data.Projects[0].Name = "Renamed by sync";
+
+        // Another process writes in the meantime.
+        var other = NewStore();
+        var otherData = other.Load();
+        otherData.Projects[0].Description = "Edited in the app";
+        other.Save(otherData);
+
+        Assert.False(store.TrySaveIfUnchanged(data, baseRevision));
+
+        var onDisk = NewStore().Load();
+        Assert.Equal("Alpha", onDisk.Projects[0].Name);              // sync's write did not land
+        Assert.Equal("Edited in the app", onDisk.Projects[0].Description); // the app's did
+    }
+
+    [Fact]
+    public void Load_LeavesCreatedAtNull_ForTasksSavedWithoutIt()
+    {
+        // TaskModel's constructor stamps CreatedAtUtc so no creation path can forget it.
+        // Deserializing runs that constructor, so without the back-out every legacy task
+        // would acquire its load time as a creation date and the next save would persist
+        // it — rewriting creation history for the whole store.
+        var id = Guid.NewGuid();
+        var json = $$"""
+        {
+          "version": 2,
+          "revision": "{{Guid.NewGuid()}}",
+          "projects": [
+            { "Name": "Legacy", "Tasks": [ { "Id": "{{id}}", "Title": "Ancient", "IsDone": false } ] }
+          ]
+        }
+        """;
+        File.WriteAllText(Path.Combine(_dir, "Save.json"), json);
+
+        var loaded = NewStore().Load();
+        var task = loaded.Projects[0].Tasks.Single(t => t.Id == id);
+        Assert.Null(task.CreatedAtUtc);
+
+        // And it stays null across a save/reload, rather than being backfilled later.
+        NewStore().Save(loaded);
+        Assert.Null(NewStore().Load().Projects[0].Tasks.Single(t => t.Id == id).CreatedAtUtc);
+    }
+
+    [Fact]
+    public void Load_KeepsCreatedAt_WhenTheFileHasIt()
+    {
+        var store = NewStore();
+        var data = SampleData();
+        var stamped = new DateTime(2026, 1, 2, 3, 4, 5, DateTimeKind.Utc);
+        data.Projects[0].Tasks[0].CreatedAtUtc = stamped;
+        store.Save(data);
+
+        Assert.Equal(stamped, NewStore().Load().Projects[0].Tasks[0].CreatedAtUtc);
+    }
+
+    [Fact]
+    public void Load_NormalizesAnUnknownRecurrence()
+    {
+        // An unrecognised value leaves IsRecurring true while SpawnNextIfRecurring
+        // refuses to spawn — a recurring task that silently never recurs.
+        var json = $$"""
+        {
+          "version": 2,
+          "revision": "{{Guid.NewGuid()}}",
+          "projects": [
+            { "Name": "P", "Tasks": [ { "Id": "{{Guid.NewGuid()}}", "Title": "T", "Recurrence": "fortnightly", "RecurrenceInterval": 0 } ] }
+          ]
+        }
+        """;
+        File.WriteAllText(Path.Combine(_dir, "Save.json"), json);
+
+        var task = NewStore().Load().Projects[0].Tasks[0];
+
+        Assert.Equal(RecurrenceRules.None, task.Recurrence);
+        Assert.False(task.IsRecurring);
+        Assert.Equal(1, task.RecurrenceInterval);
+    }
 }

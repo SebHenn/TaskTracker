@@ -2,6 +2,13 @@ namespace TaskTracker.Core.Storage
 {
     public class AppSettings
     {
+        /// <summary>
+        /// Schema version of this file. Bumped when a field changes meaning rather than
+        /// merely being added, so a future load can tell "written by an older build" from
+        /// "written by a build that did not have the field".
+        /// </summary>
+        public int Version { get; set; } = 1;
+
         public string Theme { get; set; } = "dark";
 
         public string Language { get; set; } = "en";

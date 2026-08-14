@@ -834,16 +834,16 @@ namespace TaskTracker.ViewModels.Pages
         [RelayCommand]
         private void OnMarkAsDone(TaskModel task)
         {
-            if (CurrentProject?.FirstDoneColumn is { } column)
-                CurrentProject.MoveTaskToColumn(task, column);
+            if (CurrentProject != null)
+                TaskCompletion.SetDone(CurrentProject, task, true);
             CategorizeTasks();
         }
 
         [RelayCommand]
         private void OnMarkAsInProgress(TaskModel task)
         {
-            if (CurrentProject?.FirstColumn is { } column)
-                CurrentProject.MoveTaskToColumn(task, column);
+            if (CurrentProject != null)
+                TaskCompletion.SetDone(CurrentProject, task, false);
             CategorizeTasks();
         }
 

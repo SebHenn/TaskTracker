@@ -76,8 +76,15 @@ path, so both processes enforce it. `project.Tasks.Remove` on its own loses the 
 
 `ProjectModel.MoveTaskToColumn` is the single place task placement happens: it sets `ColumnId`, derives `IsDone`
 from the column, and spawns the next occurrence via `Recurrence.SpawnNextIfRecurring`
-(`Core/Services/RecurrenceRules.cs`). Setting `task.IsDone` or `task.ColumnId` directly bypasses recurrence and
-completion timestamps. `task.ColumnId` is nullable and may be stale — resolve it with `project.ColumnOf(task)`.
+(`Core/Services/RecurrenceRules.cs`), which it returns. Setting `task.IsDone` or `task.ColumnId` directly
+bypasses recurrence and completion timestamps. `task.ColumnId` is nullable and may be stale — resolve it with
+`project.ColumnOf(task)`.
+
+**When you know the done-state but not the column, use `Core/Services/TaskCompletion.SetDone(project, task,
+value)`** — never `task.IsDone = value`. It picks `FirstDoneColumn`/`FirstColumn`, repairs the board with
+`NormalizeColumns` if neither exists, and delegates to `MoveTaskToColumn`. Three callers previously resolved the
+column themselves and fell back to `task.IsDone = value`, which silently dropped the next occurrence of every
+recurring task completed through GitHub sync or the MCP server.
 
 ### MCP server
 

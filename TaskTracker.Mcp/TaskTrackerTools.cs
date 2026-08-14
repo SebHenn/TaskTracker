@@ -39,6 +39,55 @@ public static class TaskTrackerTools
 
     private static string ToJson<T>(T value) => JsonSerializer.Serialize(value, Json);
 
+    /// <summary>
+    /// Store access with store-level failures translated into McpException.
+    ///
+    /// The desktop app and this server share one lock file, so contention is a normal
+    /// condition rather than a bug — but ProjectStore surfaces it as an IOException,
+    /// which reaches the client as an unhandled crash instead of "busy, try again".
+    /// Guarding at this seam rather than in each tool body means every tool, including
+    /// ones added later, gets the treatment without remembering to ask for it.
+    /// </summary>
+    private static StoreData LoadData()
+    {
+        try
+        {
+            return CreateStore().Load();
+        }
+        catch (Exception ex) when (Translate(ex) is { } translated)
+        {
+            throw translated;
+        }
+    }
+
+    /// <inheritdoc cref="LoadData"/>
+    private static StoreData UpdateData(Action<StoreData> mutate)
+    {
+        try
+        {
+            return CreateStore().Update(mutate);
+        }
+        catch (Exception ex) when (Translate(ex) is { } translated)
+        {
+            throw translated;
+        }
+    }
+
+    /// <summary>
+    /// Maps store-level failures onto actionable messages, or null to let the exception
+    /// through untouched — McpException from a tool's own validation must not be caught.
+    /// </summary>
+    private static McpException? Translate(Exception ex) => ex switch
+    {
+        StoreLockedException => new McpException(
+            "The TaskTracker store is busy — the desktop app is writing to it. Try again in a moment."),
+        JsonException => new McpException(
+            "The TaskTracker save file could not be parsed. A backup may be recoverable: see Save.json.bak1 in the data directory."),
+        UnauthorizedAccessException => new McpException(
+            "No permission to read the TaskTracker data directory."),
+        _ => null,
+    };
+
     private static ProjectModel FindProject(StoreData data, string projectId)
     {
         if (!Guid.TryParse(projectId, out var id))
@@ -74,7 +123,7 @@ public static class TaskTrackerTools
     public static string ListProjects(
         [Description("Include archived projects (default false)")] bool includeArchived = false)
     {
-        var data = CreateStore().Load();
+        var data = LoadData();
         var projects = data.Projects
             .Where(p => includeArchived || !p.IsArchived)
             .Select(p => new ProjectSummary(
@@ -89,7 +138,7 @@ public static class TaskTrackerTools
     public static string GetProject(
         [Description("Project id (GUID from list_projects)")] string projectId)
     {
-        var data = CreateStore().Load();
+        var data = LoadData();
         var project = FindProject(data, projectId);
         return ToJson(new
         {
@@ -114,7 +163,7 @@ public static class TaskTrackerTools
             throw new McpException("Project name must not be empty.");
 
         ProjectModel? created = null;
-        CreateStore().Update(data =>
+        UpdateData(data =>
         {
             if (data.Projects.Any(p => p.Name.Equals(name, StringComparison.OrdinalIgnoreCase)))
                 throw new McpException($"A project named '{name}' already exists.");
@@ -131,7 +180,7 @@ public static class TaskTrackerTools
         [Description("Project id (GUID from list_projects)")] string projectId,
         [Description("Filter: all, open, or done (default all)")] string filter = "all")
     {
-        var data = CreateStore().Load();
+        var data = LoadData();
         var project = FindProject(data, projectId);
         var tasks = filter.ToLowerInvariant() switch
         {
@@ -158,7 +207,7 @@ public static class TaskTrackerTools
 
         TaskModel? created = null;
         ProjectModel? owner = null;
-        CreateStore().Update(data =>
+        UpdateData(data =>
         {
             var project = FindProject(data, projectId);
             owner = project;
@@ -199,7 +248,7 @@ public static class TaskTrackerTools
     {
         TaskModel? updated = null;
         ProjectModel? owner = null;
-        CreateStore().Update(data =>
+        UpdateData(data =>
         {
             var (project, task) = FindTask(data, taskId);
             owner = project;
@@ -207,14 +256,12 @@ public static class TaskTrackerTools
             if (description != null) task.Description = description;
             if (column != null)
                 project.MoveTaskToColumn(task, FindColumn(project, column));
-            if (isDone.HasValue && task.IsDone != isDone.Value)
+            if (isDone.HasValue)
             {
-                // Route through the column model so ColumnId stays coherent.
-                var target = isDone.Value ? project.FirstDoneColumn : project.FirstColumn;
-                if (target != null)
-                    project.MoveTaskToColumn(task, target);
-                else
-                    task.IsDone = isDone.Value;
+                // Route through TaskCompletion so ColumnId stays coherent and completing
+                // a recurring task spawns its next occurrence. A no-op when the column
+                // move above already put the task in the requested state.
+                TaskCompletion.SetDone(project, task, isDone.Value);
             }
             if (dueDate != null)
                 task.DueDate = dueDate.Equals("none", StringComparison.OrdinalIgnoreCase) ? null : ParseDate(dueDate);
@@ -235,7 +282,7 @@ public static class TaskTrackerTools
         [Description("Task id (GUID)")] string taskId)
     {
         DateTime deletedAtUtc = default;
-        CreateStore().Update(data =>
+        UpdateData(data =>
         {
             var (project, task) = FindTask(data, taskId);
             // Trash.Delete, not project.Tasks.Remove: removing straight from the list
@@ -254,7 +301,7 @@ public static class TaskTrackerTools
         [Description("Only tasks carrying this label")] string? label = null,
         [Description("Include completed tasks (default true)")] bool includeDone = true)
     {
-        var data = CreateStore().Load();
+        var data = LoadData();
         var results = TaskSearch.Search(data.Projects, query, label, includeDone)
             .Select(r => new TaskWithProjectDto(r.Project.Id, r.Project.Name, ToDto(r.Project, r.Task)));
         return ToJson(results);
@@ -275,7 +322,7 @@ public static class TaskTrackerTools
 
         var created = new List<TaskModel>();
         ProjectModel? owner = null;
-        CreateStore().Update(data =>
+        UpdateData(data =>
         {
             var project = FindProject(data, projectId);
             owner = project;
@@ -307,7 +354,7 @@ public static class TaskTrackerTools
         if (string.IsNullOrWhiteSpace(text))
             throw new McpException("Note text must not be empty.");
         ActivityEntry? entry = null;
-        CreateStore().Update(data =>
+        UpdateData(data =>
         {
             var (_, task) = FindTask(data, taskId);
             entry = new ActivityEntry { Text = text.Trim() };
@@ -319,7 +366,7 @@ public static class TaskTrackerTools
     [McpServerTool(Name = "weekly_review"), Description("What happened in the last 7 days: completed and created tasks per project, plus open/overdue counts and tracked hours.")]
     public static string WeeklyReview()
     {
-        var data = CreateStore().Load();
+        var data = LoadData();
         return ToJson(ReviewReport.Compute(data.Projects));
     }
 
@@ -331,7 +378,7 @@ public static class TaskTrackerTools
         [Description("Archive (true) or unarchive (false)")] bool? isArchived = null)
     {
         ProjectModel? updated = null;
-        CreateStore().Update(data =>
+        UpdateData(data =>
         {
             var project = FindProject(data, projectId);
             if (!string.IsNullOrWhiteSpace(name))
@@ -360,7 +407,7 @@ public static class TaskTrackerTools
         if (!confirm)
             throw new McpException("Deletion is permanent. Call again with confirm=true to delete the project.");
         string? name = null;
-        CreateStore().Update(data =>
+        UpdateData(data =>
         {
             var project = FindProject(data, projectId);
             name = project.Name;
@@ -374,7 +421,7 @@ public static class TaskTrackerTools
     public static string ProjectStatsTool(
         [Description("Project id (GUID from list_projects)")] string projectId)
     {
-        var data = CreateStore().Load();
+        var data = LoadData();
         var project = FindProject(data, projectId);
         var stats = ProjectStats.Compute(project);
         return ToJson(new
@@ -395,7 +442,7 @@ public static class TaskTrackerTools
     {
         TaskModel? moved = null;
         ProjectModel? owner = null;
-        CreateStore().Update(data =>
+        UpdateData(data =>
         {
             var (project, task) = FindTask(data, taskId);
             owner = project;
@@ -413,7 +460,7 @@ public static class TaskTrackerTools
         if (string.IsNullOrWhiteSpace(title))
             throw new McpException("Subtask title must not be empty.");
         SubTaskModel? created = null;
-        CreateStore().Update(data =>
+        UpdateData(data =>
         {
             var (_, task) = FindTask(data, taskId);
             created = new SubTaskModel { Title = title.Trim() };
@@ -431,7 +478,7 @@ public static class TaskTrackerTools
         if (!Guid.TryParse(subtaskId, out var id))
             throw new McpException($"'{subtaskId}' is not a valid subtask id (expected a GUID).");
         SubTaskModel? updated = null;
-        CreateStore().Update(data =>
+        UpdateData(data =>
         {
             updated = data.Projects.SelectMany(p => p.Tasks).SelectMany(t => t.SubTasks).FirstOrDefault(s => s.Id == id)
                       ?? throw new McpException($"No subtask with id {subtaskId}.");
@@ -444,7 +491,7 @@ public static class TaskTrackerTools
     [McpServerTool(Name = "due_overview"), Description("Overdue, due-today, and due-this-week tasks across all non-archived projects.")]
     public static string DueOverviewTool()
     {
-        var data = CreateStore().Load();
+        var data = LoadData();
         var overview = DueTasks.Collect(data.Projects);
         object Row(DueTaskItem i) => new { ProjectName = i.Project.Name, i.Task.Id, i.Task.Title, i.Task.DueDate };
         return ToJson(new
@@ -465,24 +512,47 @@ public static class TaskTrackerTools
             throw new McpException("No GitHub token configured. Save a Personal Access Token in the TaskTracker app settings first.");
 
         var store = CreateStore();
-        var data = store.Load();
-        var project = FindProject(data, projectId);
-        if (!project.IsGitHubLinked)
-            throw new McpException($"Project '{project.Name}' is not linked to a GitHub repository. Link it in the TaskTracker app first.");
+        var api = ApiFactory.Create(token);
 
-        SyncResult result;
-        try
+        // Sync cannot use Update(): it does network I/O in the middle, and holding the
+        // cross-process lock across that would make the desktop app's autosave start
+        // failing within two seconds. So load, sync, then save only if nothing else wrote
+        // meanwhile — and if something did, redo the sync against the fresh data rather
+        // than overwriting the other process's work. SyncAsync re-lists issues, so a
+        // second run is safe; one retry, then hand it back to the caller.
+        SyncResult? result = null;
+        ProjectModel? project = null;
+
+        for (var attempt = 0; attempt < 2 && result == null; attempt++)
         {
-            result = await Sync.SyncAsync(project, ApiFactory.Create(token));
+            var data = LoadData();
+            project = FindProject(data, projectId);
+            if (!project.IsGitHubLinked)
+                throw new McpException($"Project '{project.Name}' is not linked to a GitHub repository. Link it in the TaskTracker app first.");
+
+            var baseRevision = data.Revision;
+            SyncResult attempted;
+            try
+            {
+                attempted = await Sync.SyncAsync(project, api);
+            }
+            catch (HttpRequestException ex)
+            {
+                throw new McpException($"GitHub sync failed: {ex.Message}");
+            }
+
+            if (store.TrySaveIfUnchanged(data, baseRevision))
+                result = attempted;
         }
-        catch (HttpRequestException ex)
-        {
-            throw new McpException($"GitHub sync failed: {ex.Message}");
-        }
-        store.Save(data);
+
+        if (result == null)
+            throw new McpException(
+                "GitHub sync could not be saved: the TaskTracker store kept changing underneath it. " +
+                "Close or idle the desktop app and try again.");
+
         return ToJson(new
         {
-            project.Name,
+            project!.Name,
             repository = $"{project.GitHubOwner}/{project.GitHubRepo}",
             result.Imported,
             result.Exported,

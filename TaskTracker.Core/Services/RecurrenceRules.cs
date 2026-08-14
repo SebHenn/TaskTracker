@@ -10,6 +10,18 @@ namespace TaskTracker.Core.Models
         public const string Monthly = "monthly";
 
         public static readonly string[] All = { None, Daily, Weekly, Monthly };
+
+        /// <summary>True for one of <see cref="All"/>, case-insensitively.</summary>
+        public static bool IsValid(string? recurrence)
+            => recurrence != null && Array.Exists(All, r => r.Equals(recurrence, StringComparison.OrdinalIgnoreCase));
+
+        /// <summary>
+        /// Maps any input onto one of <see cref="All"/>, lower-cased. Unrecognised values
+        /// become <see cref="None"/> rather than staying a recurrence that reports
+        /// IsRecurring but can never spawn.
+        /// </summary>
+        public static string Normalize(string? recurrence)
+            => IsValid(recurrence) ? recurrence!.ToLowerInvariant() : None;
     }
 }
 

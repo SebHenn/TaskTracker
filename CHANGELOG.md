@@ -19,6 +19,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Fixed
 
+- **Completing a recurring task outside the board never scheduled the next occurrence.** Marking one
+  done through the MCP server, or closing its issue on GitHub, set the done flag directly instead of
+  moving the task to a done column — so the repeat was silently dropped and the chore simply never
+  came back. Done-state now goes through one place (`TaskCompletion.SetDone`), which also keeps the
+  column and the flag from disagreeing.
+- **A GitHub sync started from the MCP server could overwrite changes made in the app.** It loaded the
+  store, waited on the network, then saved over whatever had been written meanwhile. It now saves only
+  if nothing else wrote first, retrying against fresh data before giving up.
+- Store contention between the app and the MCP server reported as an unhandled error rather than
+  "busy, try again".
+- An unrecognised recurrence value (from a hand-edited or externally written save file) left a task
+  claiming to recur while never producing an occurrence; such values are normalised on load, as is a
+  recurrence interval below 1.
+- Settings failed to save loudly out of a checkbox toggle if the file was briefly unwritable, and had
+  no backup to fall back on when corrupt.
+- Tasks now record their creation time on every path rather than only the ones that remembered to set
+  it, without backdating tasks saved before the field existed.
 - **The MCP `delete_task` tool destroyed tasks permanently.** It removed the task from the project
   outright instead of moving it to the trash, so which client you deleted from decided whether the
   deletion could be undone — and a running timer on the task kept accruing against something no
