@@ -32,11 +32,15 @@
             <RowDefinition Height="auto" />
         </Grid.RowDefinitions>
 
-        <StackPanel Grid.ColumnSpan="2" VerticalAlignment="Center">
+        <!-- Capped, and trimming rather than growing: this sits in the auto column, so
+             an untrimmed long project name would widen it and take the space the
+             toolbar beside it needs to lay out. -->
+        <StackPanel VerticalAlignment="Center" MaxWidth="320">
             <StackPanel Orientation="Horizontal">
                 <Ellipse Width="12" Height="12" Margin="0,0,8,0" VerticalAlignment="Center"
                          Fill="{Binding CurrentProject.Color, Converter={StaticResource ColorStringToBrushConverter}}" />
-                <TextBlock Style="{StaticResource Text.Title}" Text="{Binding CurrentProject.Name}" />
+                <TextBlock Style="{StaticResource Text.Title}" Text="{Binding CurrentProject.Name}"
+                           ToolTip="{Binding CurrentProject.Name}" TextTrimming="CharacterEllipsis" />
                 <Border Style="{StaticResource TaskChip}" VerticalAlignment="Center" Margin="8,4,0,0"
                         Visibility="{Binding CurrentProject.IsArchived, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=True}">
                     <TextBlock Style="{StaticResource TaskChipText}" Text="{DynamicResource Archived}" />
@@ -48,8 +52,15 @@
 
         <!-- Project actions. One accent button (the primary action when GitHub is
              linked) and the rest neutral or subtle, so the toolbar has a single focal
-             point instead of six competing coloured boxes. -->
-        <StackPanel Grid.Column="2" VerticalAlignment="Center" Orientation="Horizontal">
+             point instead of six competing coloured boxes.
+
+             In the star column and wrapping, not an auto column: these buttons want
+             ~900px in a row, and an auto column simply takes that, which starved the
+             board's column down to a few pixels per lane at any normal window size.
+             Here the row gets what is left over and folds onto a second line when that
+             is not enough. -->
+        <WrapPanel Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Right"
+                   Orientation="Horizontal" ItemHeight="34">
             <!-- Doubles as the failure line: a background sync that fails says so here
                  rather than only in the log, where nobody looks. Trimmed to one line with
                  the full reason on hover, so a long exception message cannot push the
@@ -142,7 +153,7 @@
                 <Path Data="{StaticResource Icon.Trash}" Width="17" Height="17" Stretch="Uniform"
                       Fill="{DynamicResource Brush.Danger.Text}" />
             </Button>
-        </StackPanel>
+        </WrapPanel>
 
         <!-- Statistics -->
         <Expander Grid.Row="1" Grid.ColumnSpan="3" Margin="0,12,0,0" Foreground="{DynamicResource Brush.Text.Primary}">
@@ -418,10 +429,22 @@
              layer, and its own DragOver — reached only through the gutters between
              lanes, since a lane handles its own — is how "dropped outside a column"
              is detected. Transparent rather than unpainted so it hit-tests at all. -->
-        <ItemsControl x:Name="BoardRoot" Grid.ColumnSpan="2" Grid.Row="3" Margin="0,8,0,0" ItemsSource="{Binding Lanes}"
+        <!-- Lanes share the width while they still fit, and the board scrolls once they
+             do not, rather than every lane getting thinner without limit. -->
+        <ScrollViewer x:Name="BoardScroll" Grid.ColumnSpan="2" Grid.Row="3" Margin="0,8,0,0"
+                      HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled"
+                      Focusable="False">
+        <ItemsControl x:Name="BoardRoot" ItemsSource="{Binding Lanes}"
                       AutomationProperties.Name="{Binding CurrentProject.Name}"
                       AutomationProperties.AutomationId="Board"
+                      HorizontalAlignment="Left"
                       Background="Transparent" AllowDrop="True" DragOver="OnDragOverBoard">
+            <ItemsControl.Width>
+                <MultiBinding Converter="{StaticResource BoardWidthConverter}">
+                    <Binding Path="ViewportWidth" ElementName="BoardScroll" />
+                    <Binding Path="Lanes.Count" />
+                </MultiBinding>
+            </ItemsControl.Width>
             <ItemsControl.ItemsPanel>
                 <ItemsPanelTemplate>
                     <UniformGrid Rows="1" />
@@ -572,6 +595,7 @@
                 </DataTemplate>
             </ItemsControl.ItemTemplate>
         </ItemsControl>
+        </ScrollViewer>
 
         <!-- Whole-project empty state: distinct from an empty column, and the one place
              that says what to do next on a brand new project. -->
