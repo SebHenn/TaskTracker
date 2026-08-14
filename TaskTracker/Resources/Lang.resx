@@ -216,4 +216,16 @@
   <data name="TimerRunning" xml:space="preserve"><value>Timer running</value></data>
   <data name="OK" xml:space="preserve"><value>OK</value></data>
   <data name="Yes" xml:space="preserve"><value>Yes</value></data>
+  <data name="TasksMovedUndo" xml:space="preserve"><value>Moved {0} task(s) to {1}</value></data>
+  <data name="ProjectArchivedUndo" xml:space="preserve"><value>Archived “{0}”</value></data>
+  <data name="ProjectDeletedUndo" xml:space="preserve"><value>Deleted “{0}”</value></data>
+  <data name="MoveToProject" xml:space="preserve"><value>Move to project</value></data>
+  <data name="Move" xml:space="preserve"><value>Move</value></data>
+  <data name="TaskMovedToProjectUndo" xml:space="preserve"><value>Moved “{0}” to {1}</value></data>
+  <data name="FollowSystemTheme" xml:space="preserve"><value>Follow Windows theme</value></data>
+  <data name="QuickAddHotkeyCombo" xml:space="preserve"><value>Quick add shortcut</value></data>
+  <data name="HotkeyInvalid" xml:space="preserve"><value>Needs a modifier and a key, e.g. Ctrl+Alt+T</value></data>
+  <data name="HotkeyInUse" xml:space="preserve"><value>In use by another app</value></data>
+  <data name="IncludeDone" xml:space="preserve"><value>Include done</value></data>
+  <data name="IncludeArchived" xml:space="preserve"><value>Include archived</value></data>
 </root>

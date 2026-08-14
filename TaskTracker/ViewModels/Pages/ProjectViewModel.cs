@@ -1,4 +1,4 @@
-using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Extensions.DependencyInjection;
@@ -39,6 +39,7 @@ namespace TaskTracker.ViewModels.Pages
         private MainViewModel _mainViewModel;
         private ILanguageService _languageService;
         private ISettingsService _settingsService;
+        private readonly UndoService _undoService;
         private readonly GitHubSyncService _gitHubSyncService;
         private readonly IGitHubApiFactory _gitHubApiFactory;
         private readonly IDialogService _dialogService;
@@ -325,9 +326,10 @@ namespace TaskTracker.ViewModels.Pages
         // Nulling it here instead would make that guard fail and leave IsSyncing stuck on.
         public void CancelSync() => _syncCts?.Cancel();
 
-        public ProjectViewModel(MainViewModel mainViewModel, IProjectsService projectsService, INavigationService navigationService, IServiceProvider serviceProvider, ILanguageService languageService, ISettingsService settingsService, GitHubSyncService gitHubSyncService, IGitHubApiFactory gitHubApiFactory, IDialogService dialogService)
+        public ProjectViewModel(MainViewModel mainViewModel, IProjectsService projectsService, INavigationService navigationService, IServiceProvider serviceProvider, ILanguageService languageService, ISettingsService settingsService, GitHubSyncService gitHubSyncService, IGitHubApiFactory gitHubApiFactory, IDialogService dialogService, UndoService undoService)
         {
             _mainViewModel = mainViewModel;
+            _undoService = undoService;
             _projectsService = projectsService;
             _navigationService = navigationService;
             _serviceProvider = serviceProvider;
@@ -500,6 +502,8 @@ namespace TaskTracker.ViewModels.Pages
                 return;
             }
 
+            RefreshMoveTargets();
+
             // Counted before filtering: a filter that matches nothing is not the
             // same as a project with nothing in it.
             HasAnyTasks = CurrentProject.Tasks.Count > 0;
@@ -603,7 +607,26 @@ namespace TaskTracker.ViewModels.Pages
         {
             if (CurrentProject == null || SelectedTasks.Count == 0)
                 return;
-            BulkOperations.MoveAll(CurrentProject, SelectedTasks, column);
+
+            // Snapshot where each card was first: a bulk move was one-way, and moving the
+            // wrong five cards meant putting them back one at a time from memory.
+            var project = CurrentProject;
+            var origin = SelectedTasks
+                .Select(task => (Task: task, Column: project.ColumnOf(task)))
+                .Where(pair => pair.Column != null)
+                .ToList();
+
+            var moved = BulkOperations.MoveAll(project, SelectedTasks, column);
+            _undoService.Offer(
+                string.Format(_languageService.GetString("TasksMovedUndo"), moved, column.Name),
+                () =>
+                {
+                    foreach (var (task, from) in origin)
+                        project.MoveTaskToColumn(task, from!);
+                    if (project == CurrentProject)
+                        CategorizeTasks();
+                });
+
             SelectionCleared?.Invoke();
             CategorizeTasks();
         }
@@ -617,11 +640,11 @@ namespace TaskTracker.ViewModels.Pages
             // Recoverable, like a single delete — so no prompt, and the undo bar offers
             // the whole batch back at once.
             var count = SelectedTasks.Count;
-            LastDeleted = new ObservableCollection<TrashedTask>(
-                BulkOperations.DeleteAll(CurrentProject, SelectedTasks));
-            _lastDeletedFrom = CurrentProject;
-            UndoText = string.Format(_languageService.GetString("TasksDeletedUndo"), count);
-            StartUndoWindow();
+            var project = CurrentProject;
+            var entries = BulkOperations.DeleteAll(project, SelectedTasks);
+            OfferUndoRestore(
+                string.Format(_languageService.GetString("TasksDeletedUndo"), count),
+                project, entries);
 
             SelectionCleared?.Invoke();
             CategorizeTasks();
@@ -751,11 +774,24 @@ namespace TaskTracker.ViewModels.Pages
             }
             else
             {
-                CurrentProject.IsArchived = true;
-                CurrentProject.ArchivedAtUtc = DateTime.UtcNow;
+                var project = CurrentProject;
+                project.IsArchived = true;
+                project.ArchivedAtUtc = DateTime.UtcNow;
                 _mainViewModel.IsHomeSelected = true;
                 _mainViewModel.ResortProjects();
                 _navigationService.NavigateTo<HomeViewModel>();
+
+                // Archiving navigates away and drops the project out of the sidebar,
+                // so without this the way back is to go and change the sidebar filter.
+                _undoService.Offer(
+                    string.Format(_languageService.GetString("ProjectArchivedUndo"), project.Name),
+                    () =>
+                    {
+                        project.IsArchived = false;
+                        project.ArchivedAtUtc = null;
+                        ArchiveButtonText = _languageService.GetString("Archive");
+                        _mainViewModel.ResortProjects();
+                    });
             }
         }
 
@@ -798,10 +834,26 @@ namespace TaskTracker.ViewModels.Pages
             if (!_dialogService.Confirm(
                     string.Format(_languageService.GetString("DeleteProjectConfirm"), CurrentProject.Name)))
                 return;
-            _projectsService.RemoveProject(CurrentProject);
+
+            // Deleting a project takes its tasks, trash, notes and tracked time with it,
+            // and unlike a task it does not go anywhere recoverable. The confirmation was
+            // the only thing standing between a misclick and losing all of that; holding
+            // the model for the length of the undo window is cheap insurance.
+            var project = CurrentProject;
+            var index = _projectsService.projectModels.IndexOf(project);
+            _projectsService.RemoveProject(project);
             _mainViewModel.IsHomeSelected = true;
             _mainViewModel.ResortProjects();
             _navigationService.NavigateTo<HomeViewModel>();
+
+            _undoService.Offer(
+                string.Format(_languageService.GetString("ProjectDeletedUndo"), project.Name),
+                () =>
+                {
+                    var models = _projectsService.projectModels;
+                    models.Insert(Math.Clamp(index, 0, models.Count), project);
+                    _mainViewModel.ResortProjects();
+                });
         }
 
         [RelayCommand]
@@ -881,26 +933,6 @@ namespace TaskTracker.ViewModels.Pages
             }
         }
 
-        /// <summary>
-        /// The most recent deletion, for the undo bar — one task or a whole bulk batch.
-        /// The bar is only the fast path back; the entries stay recoverable from the
-        /// trash window long after it goes.
-        ///
-        /// Always assigned a fresh collection, never mutated in place, because that is
-        /// what makes the dependent notifications fire.
-        /// </summary>
-        [ObservableProperty]
-        [NotifyPropertyChangedFor(nameof(IsUndoVisible))]
-        private ObservableCollection<TrashedTask> _lastDeleted = [];
-
-        private ProjectModel? _lastDeletedFrom;
-        private System.Windows.Threading.DispatcherTimer? _undoTimer;
-
-        public bool IsUndoVisible => LastDeleted.Count > 0;
-
-        [ObservableProperty]
-        private string _undoText = "";
-
         [RelayCommand]
         private void OnDeleteTask(TaskModel task)
         {
@@ -908,44 +940,74 @@ namespace TaskTracker.ViewModels.Pages
             if (SelectedTask == task)
                 SelectedTask = null;
 
-            // Into the trash, not out of existence: the bar below is the fast way back,
+            // Into the trash, not out of existence: the undo bar is the fast way back,
             // and the trash window is the one that still works tomorrow.
-            LastDeleted = [Trash.Delete(CurrentProject, task)];
-            _lastDeletedFrom = CurrentProject;
-            UndoText = string.Format(_languageService.GetString("TaskDeletedUndo"), task.Title);
-            StartUndoWindow();
+            var project = CurrentProject;
+            var entry = Trash.Delete(project, task);
+            OfferUndoRestore(
+                string.Format(_languageService.GetString("TaskDeletedUndo"), task.Title),
+                project, [entry]);
 
             CategorizeTasks();
         }
 
-        private void StartUndoWindow()
+        /// <summary>
+        /// Offers the shell's undo bar a restore of trashed entries. Captures the project
+        /// rather than reading CurrentProject on undo, so navigating away before clicking
+        /// puts the tasks back where they came from instead of wherever you now are.
+        /// </summary>
+        private void OfferUndoRestore(string text, ProjectModel project, IReadOnlyList<TrashedTask> entries)
         {
-            _undoTimer ??= CreateUndoTimer();
-            _undoTimer.Stop();
-            _undoTimer.Start();
+            _undoService.Offer(text, () =>
+            {
+                foreach (var entry in entries)
+                    Trash.Restore(project, entry);
+                if (project == CurrentProject)
+                    CategorizeTasks();
+            });
         }
 
-        private System.Windows.Threading.DispatcherTimer CreateUndoTimer()
+        /// <summary>
+        /// Projects a card can be sent to: everything except this one and the archived.
+        /// Rebuilt on each board projection so the context menu cannot offer a project
+        /// that has since been deleted or renamed.
+        /// </summary>
+        [ObservableProperty]
+        private ObservableCollection<ProjectModel> _moveTargets = [];
+
+        private void RefreshMoveTargets()
         {
-            var timer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(8) };
-            // Only the bar goes away; the entries stay in the trash.
-            timer.Tick += (_, _) => { timer.Stop(); LastDeleted = []; _lastDeletedFrom = null; };
-            return timer;
+            MoveTargets = new ObservableCollection<ProjectModel>(
+                _projectsService.projectModels.Where(p => p != CurrentProject && !p.IsArchived));
         }
 
         [RelayCommand]
-        private void OnUndoDelete()
+        private void OnMoveTaskToProject(ProjectModel? target)
         {
-            _undoTimer?.Stop();
-            if (_lastDeletedFrom != null)
-            {
-                foreach (var entry in LastDeleted)
-                    Trash.Restore(_lastDeletedFrom, entry);
-                if (_lastDeletedFrom == CurrentProject)
-                    CategorizeTasks();
-            }
-            LastDeleted = [];
-            _lastDeletedFrom = null;
+            // Acts on the drawer's selected task, so the caller only has to say where to.
+            if (CurrentProject == null || target == null || SelectedTask is not { } task)
+                return;
+
+            var from = CurrentProject;
+            var wasDone = task.IsDone;
+            if (!TaskTransfer.Move(from, target, task))
+                return;
+
+            // The task is not on this board any more, so the drawer showing it has to go.
+            SelectedTask = null;
+
+            _undoService.Offer(
+                string.Format(_languageService.GetString("TaskMovedToProjectUndo"), task.Title, target.Name),
+                () =>
+                {
+                    // Straight back, into the column matching the state it left with.
+                    TaskTransfer.Move(target, from, task,
+                        wasDone ? from.FirstDoneColumn : from.FirstColumn);
+                    if (from == CurrentProject)
+                        CategorizeTasks();
+                });
+
+            CategorizeTasks();
         }
 
         [RelayCommand]
@@ -959,8 +1021,7 @@ namespace TaskTracker.ViewModels.Pages
 
             // A restore from in there put tasks back on the board, and the undo bar may
             // now be pointing at entries that are no longer in the trash.
-            LastDeleted = [];
-            _lastDeletedFrom = null;
+            _undoService.Dismiss();
             CategorizeTasks();
         }
     }

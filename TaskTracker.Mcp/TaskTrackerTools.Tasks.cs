@@ -50,6 +50,48 @@ public static partial class TaskTrackerTools
         });
     }
 
+    [McpServerTool(Name = "move_task_to_project", Idempotent = true, Title = "Move a task to another project"),
+     Description("Move a task to a different project, keeping its checklist, notes and tracked time. Any GitHub issue link is dropped, since the issue belongs to the old project's repository.")]
+    public static string MoveTaskToProject(
+        [Description("Task id (GUID)")] string taskId,
+        [Description("Destination project id (GUID from list_projects)")] string projectId,
+        [Description("Column in the destination (name or GUID); defaults to its first column")] string? column = null)
+    {
+        ProjectModel? target = null;
+        TaskModel? moved = null;
+        string? fromName = null;
+        var hadIssue = false;
+
+        UpdateData(data =>
+        {
+            var (from, task) = FindTask(data, taskId);
+            var destination = FindProject(data, projectId);
+            if (from.Id == destination.Id)
+                throw new McpException($"Task '{task.Title}' is already in project '{destination.Name}'.");
+
+            fromName = from.Name;
+            hadIssue = task.GitHubIssueNumber.HasValue;
+            var targetColumn = column == null ? null : FindColumn(destination, column);
+
+            if (!TaskTransfer.Move(from, destination, task, targetColumn))
+                throw new McpException($"Task '{task.Title}' could not be moved.");
+
+            target = destination;
+            moved = task;
+        });
+
+        return ToJson(new
+        {
+            moved = true,
+            from = fromName,
+            to = target!.Name,
+            task = ToDto(target, moved!),
+            // Worth saying out loud rather than leaving the caller to notice the field
+            // disappear: the link is dropped, not transferred.
+            gitHubLinkDropped = hadIssue ? true : (bool?)null,
+        });
+    }
+
     [McpServerTool(Name = "delete_subtask", Idempotent = true, Title = "Delete a checklist item"),
      Description("Remove a checklist item from its task.")]
     public static string DeleteSubTask(

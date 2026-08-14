@@ -24,6 +24,7 @@
     <helpers:SidebarWidthConverter x:Key="SidebarWidthConverter" />
     <helpers:BoardWidthConverter x:Key="BoardWidthConverter" />
     <helpers:UtcToLocalConverter x:Key="UtcToLocalConverter" />
+    <helpers:InverseBoolConverter x:Key="InverseBoolConverter" />
 
     <!-- A chip is a token, not a button: bordered rather than filled, so a row of them
          does not read as a row of things to click. -->

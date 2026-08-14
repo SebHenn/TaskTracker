@@ -39,6 +39,9 @@ namespace TaskTracker.ViewModels.Windows
         private ILanguageService _languageService;
         private IDialogService _dialogService;
 
+        /// <summary>The one undo bar, hosted by the shell so any page's action can use it.</summary>
+        public UndoService Undo { get; }
+
         [ObservableProperty]
         private bool _isHomeSelected = true;
 
@@ -388,8 +391,10 @@ namespace TaskTracker.ViewModels.Windows
             ResortProjects();
         }
 
-        public MainViewModel(INavigationService navigationService, IServiceProvider serviceProvider, IProjectsService projectsService, ILanguageService languageService, IDialogService dialogService)
+        public MainViewModel(INavigationService navigationService, IServiceProvider serviceProvider, IProjectsService projectsService, ILanguageService languageService, IDialogService dialogService, UndoService undoService)
         {
+            Undo = undoService;
+
             // Assigned to the field, not through the property: the setter's
             // OnPropertyChanged is pointless before anything is bound, and going through
             // it hides the assignment from nullable flow analysis.

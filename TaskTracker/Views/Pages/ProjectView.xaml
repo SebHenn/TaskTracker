@@ -301,6 +301,29 @@
                                  Text="{Binding SelectedTask.RecurrenceInterval, Mode=TwoWay}" />
                     </StackPanel>
 
+                    <!-- Move to another project. In the drawer rather than the card's
+                         context menu: a submenu there would need the card and the chosen
+                         project from two different data contexts, and the drawer already
+                         has exactly one task selected. Hidden when there is nowhere to
+                         move to, so a single-project install shows no dead control. -->
+                    <StackPanel Margin="0,10,0,0"
+                                Visibility="{Binding MoveTargets.Count, Converter={StaticResource CountToVisibilityConverter}}">
+                        <Label Foreground="{DynamicResource Brush.Text.Secondary}" Content="{DynamicResource MoveToProject}" />
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="auto" />
+                            </Grid.ColumnDefinitions>
+                            <ComboBox x:Name="MoveTargetPicker" Height="28"
+                                      ItemsSource="{Binding MoveTargets}" DisplayMemberPath="Name"
+                                      AutomationProperties.Name="{DynamicResource MoveToProject}" />
+                            <Button Grid.Column="1" Style="{DynamicResource SubtleButton}" Margin="8,0,0,0" Padding="12,2"
+                                    Command="{Binding MoveTaskToProjectCommand}"
+                                    CommandParameter="{Binding SelectedItem, ElementName=MoveTargetPicker}"
+                                    Content="{DynamicResource Move}" />
+                        </Grid>
+                    </StackPanel>
+
                     <!-- Checklist -->
                     <Label Margin="0,10,0,0" Foreground="{DynamicResource Brush.Text.Secondary}" Content="{DynamicResource Checklist}" />
                     <ItemsControl ItemsSource="{Binding SelectedTask.SubTasks}">
@@ -677,18 +700,8 @@
                 </StackPanel>
             </Border>
 
-            <!-- Undo bar shown briefly after a task deletion -->
-            <Border VerticalAlignment="Center" Margin="16,0" Padding="10,5"
-                    CornerRadius="{DynamicResource Radius.Control}"
-                    Background="{DynamicResource Brush.Chip.Background}"
-                    BorderBrush="{DynamicResource Brush.Chip.Border}" BorderThickness="1"
-                    Visibility="{Binding IsUndoVisible, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=True}">
-                <StackPanel Orientation="Horizontal">
-                    <TextBlock Style="{StaticResource Text.Body}" Text="{Binding UndoText}" VerticalAlignment="Center" />
-                    <Button Style="{DynamicResource TitleButton}" Margin="10,0,0,0" Padding="6,2" FontWeight="Bold"
-                            Foreground="{DynamicResource Brush.Accent}" Command="{Binding UndoDeleteCommand}" Content="{DynamicResource Undo}" />
-                </StackPanel>
-            </Border>
+            <!-- The undo bar lives in MainWindow now: archiving and deleting a project
+                 navigate away from this board, so a bar hosted here left with it. -->
         </WrapPanel>
     </Grid>
 </UserControl>

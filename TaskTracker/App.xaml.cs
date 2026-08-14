@@ -48,6 +48,7 @@ namespace TaskTracker
             services.AddTransient<TrashWindow>(provider => new TrashWindow(
                 provider.GetRequiredService<TrashViewModel>()));
             services.AddTransient<TrashViewModel>();
+            services.AddSingleton<UndoService>();
             services.AddSingleton<AutoSyncService>();
             services.AddSingleton<TrayService>();
             services.AddSingleton<HotkeyService>();
@@ -153,7 +154,7 @@ namespace TaskTracker
             mainViewModel.RefreshRunningTimer();
 
             var hotkeys = _serviceProvider.GetRequiredService<HotkeyService>();
-            hotkeys.Initialize(window);
+            hotkeys.Initialize(window, settings.QuickAddHotkey);
             hotkeys.HotkeyPressed += (_, _) =>
             {
                 if (_serviceProvider.GetRequiredService<ISettingsService>().Settings.QuickAddHotkeyEnabled)

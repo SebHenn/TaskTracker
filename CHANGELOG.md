@@ -9,6 +9,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- **Undo covers more than deleting a task.** One bar in the shell now backs task and bulk deletes,
+  bulk column moves, archiving, and **deleting a project** — which was irreversible, took its tasks,
+  notes and tracked time with it, and had only a confirmation dialog between a misclick and losing
+  all of it.
+- **Move a task to another project**, from the task detail drawer or the MCP `move_task_to_project`
+  tool. The task keeps its id, checklist, notes and tracked time; its GitHub issue link is dropped,
+  because the issue belongs to the old project's repository.
+- **Follow the Windows theme** — a third option alongside dark and light that switches with the OS.
+- **The quick-add shortcut is configurable.** It was hard-coded to Ctrl+Alt+T, so a clash with
+  another application left no way out. Unparseable or already-claimed combinations say so instead of
+  silently leaving no shortcut at all.
+- **Search results can be narrowed** by due bucket, priority, and whether to include done or
+  archived tasks — the same filters the board uses, so the buckets mean the same thing on both.
 - **Agenda page** — the week ahead a day at a time, with overdue work called out above it and empty
   days kept so the shape of the week is readable. Clicking a row opens the board with that task
   selected. It regroups the same data the Today dashboard uses, so the two can never disagree about

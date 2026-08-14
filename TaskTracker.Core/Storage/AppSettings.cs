@@ -34,8 +34,16 @@ namespace TaskTracker.Core.Storage
         /// <summary>Start the app minimised when Windows starts.</summary>
         public bool LaunchOnStartupEnabled { get; set; }
 
-        /// <summary>Global Ctrl+Alt+T quick-add hotkey.</summary>
+        /// <summary>Global quick-add hotkey, on or off.</summary>
         public bool QuickAddHotkeyEnabled { get; set; } = true;
+
+        /// <summary>
+        /// The combination itself, like "Ctrl+Alt+T". Configurable because a global
+        /// hotkey can clash with another application, and a hard-coded one leaves no way
+        /// out. Parsed by <see cref="Services.HotkeyBinding"/>; unparseable falls back to
+        /// the default rather than leaving no hotkey.
+        /// </summary>
+        public string QuickAddHotkey { get; set; } = Services.HotkeyBinding.Default;
 
         /// <summary>Sidebar width in pixels, as left by the GridSplitter.</summary>
         public double? SidebarWidth { get; set; }

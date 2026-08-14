@@ -1,4 +1,4 @@
-using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using System;
@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using TaskTracker.Core.GitHub;
+using TaskTracker.Core.Services;
 using TaskTracker.Services;
 
 namespace TaskTracker.ViewModels.Pages
@@ -19,9 +20,10 @@ namespace TaskTracker.ViewModels.Pages
         private readonly IProjectsService _projectsService;
         private readonly IDialogService _dialogService;
         private readonly IStartupService _startupService;
+        private readonly HotkeyService? _hotkeyService;
         private CultureInfo _selectedLanguage;
 
-        public SettingsViewModel(ILanguageService languageService, IThemeService themeService, ISettingsService settingsService, IProjectsService projectsService, IDialogService dialogService, IStartupService startupService)
+        public SettingsViewModel(ILanguageService languageService, IThemeService themeService, ISettingsService settingsService, IProjectsService projectsService, IDialogService dialogService, IStartupService startupService, HotkeyService hotkeyService)
         {
             _languageService = languageService;
             _themeService = themeService;
@@ -29,10 +31,13 @@ namespace TaskTracker.ViewModels.Pages
             _projectsService = projectsService;
             _dialogService = dialogService;
             _startupService = startupService;
+            _hotkeyService = hotkeyService;
             AvailableLanguages = _languageService.AvailableLanguages;
             _selectedLanguage = AvailableLanguages.FirstOrDefault(c => c.Name == _settingsService.Settings.Language)
                                 ?? AvailableLanguages.First();
+            _followSystemTheme = _settingsService.Settings.Theme == ThemeService.System;
             _isDark = _settingsService.Settings.Theme != "light";
+            _quickAddHotkey = HotkeyBinding.Parse(_settingsService.Settings.QuickAddHotkey)?.Text ?? HotkeyBinding.Default;
             _autoSyncEnabled = _settingsService.Settings.AutoSyncEnabled;
             _quickAddHotkeyEnabled = _settingsService.Settings.QuickAddHotkeyEnabled;
             _notifyOnNewIssues = _settingsService.Settings.NotifyOnNewIssues;
@@ -69,9 +74,52 @@ namespace TaskTracker.ViewModels.Pages
 
         partial void OnIsDarkChanged(bool value)
         {
+            // Ignored while following Windows — the checkbox is disabled then, but a
+            // programmatic change (switching FollowSystem off) still runs this.
+            if (FollowSystemTheme)
+                return;
             _themeService.ChangeTheme(value ? "dark" : "light");
             _settingsService.Settings.Theme = value ? "dark" : "light";
             _settingsService.Save();
+        }
+
+        [ObservableProperty]
+        private bool _followSystemTheme;
+
+        partial void OnFollowSystemThemeChanged(bool value)
+        {
+            var theme = value ? ThemeService.System : (IsDark ? "dark" : "light");
+            _themeService.ChangeTheme(theme);
+            _settingsService.Settings.Theme = theme;
+            _settingsService.Save();
+        }
+
+        /// <summary>
+        /// The quick-add combination. Rejected input is put back rather than saved, so the
+        /// box always shows the hotkey that is actually registered.
+        /// </summary>
+        [ObservableProperty]
+        private string _quickAddHotkey = HotkeyBinding.Default;
+
+        [ObservableProperty]
+        private string _hotkeyStatusText = "";
+
+        partial void OnQuickAddHotkeyChanged(string value)
+        {
+            var binding = HotkeyBinding.Parse(value);
+            if (binding == null)
+            {
+                HotkeyStatusText = _languageService.GetString("HotkeyInvalid");
+                return;
+            }
+
+            _settingsService.Settings.QuickAddHotkey = binding.Text;
+            _settingsService.Save();
+
+            // Null when the settings page is open before the window has a handle, which
+            // cannot happen in practice but keeps this independent of startup order.
+            var claimed = _hotkeyService?.Rebind(binding.Text) ?? true;
+            HotkeyStatusText = claimed ? "" : _languageService.GetString("HotkeyInUse");
         }
 
         /// <summary>Set from the view's PasswordBox (PasswordBox does not support binding).</summary>
