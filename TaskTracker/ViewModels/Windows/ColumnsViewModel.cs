@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
 using System.Linq;
 using TaskTracker.Core.Models;
+using TaskTracker.Core.Services;
 
 namespace TaskTracker.ViewModels.Windows
 {
@@ -19,43 +20,35 @@ namespace TaskTracker.ViewModels.Windows
             OnPropertyChanged(nameof(Columns));
         }
 
+        // The rules live in Core.ColumnOperations so the MCP server enforces the same
+        // ones; this dialog is just the Windows front end for them.
+
         [RelayCommand]
         private void OnAddColumn()
         {
-            Columns.Add(new BoardColumn { Name = "New column" });
+            if (_project != null)
+                ColumnOperations.Add(_project, "New column");
         }
 
         [RelayCommand]
         private void OnDeleteColumn(BoardColumn column)
         {
-            if (_project == null || Columns.Count <= 1)
-                return;
-            // Keep at least one done column on the board.
-            if (column.IsDoneColumn && Columns.Count(c => c.IsDoneColumn) == 1)
-                return;
-
-            Columns.Remove(column);
-
-            // Rehome the deleted column's tasks.
-            var fallback = _project.FirstColumn ?? Columns[0];
-            foreach (var task in _project.Tasks.Where(t => t.ColumnId == column.Id).ToList())
-                _project.MoveTaskToColumn(task, fallback);
+            if (_project != null)
+                ColumnOperations.Delete(_project, column);
         }
 
         [RelayCommand]
         private void OnMoveUp(BoardColumn column)
         {
-            var index = Columns.IndexOf(column);
-            if (index > 0)
-                Columns.Move(index, index - 1);
+            if (_project != null)
+                ColumnOperations.Move(_project, column, -1);
         }
 
         [RelayCommand]
         private void OnMoveDown(BoardColumn column)
         {
-            var index = Columns.IndexOf(column);
-            if (index >= 0 && index < Columns.Count - 1)
-                Columns.Move(index, index + 1);
+            if (_project != null)
+                ColumnOperations.Move(_project, column, +1);
         }
     }
 }

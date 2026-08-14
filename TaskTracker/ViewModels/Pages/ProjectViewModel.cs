@@ -250,10 +250,9 @@ namespace TaskTracker.ViewModels.Pages
             }
             else
             {
-                // Single active timer across the whole store.
-                foreach (var running in _projectsService.projectModels.SelectMany(p => p.Tasks).Where(t => t.TimerStartedAtUtc != null))
-                    TimeTracking.Stop(running);
-                TimeTracking.Start(SelectedTask);
+                // Single active timer across the whole store; the rule lives in Core so
+                // the MCP server's start_timer enforces it too.
+                TimeTracking.StartExclusive(_projectsService.projectModels, SelectedTask);
             }
             RefreshTimerState();
         }

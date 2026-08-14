@@ -2,18 +2,26 @@ using TaskTracker.Core.Storage;
 
 namespace TaskTracker.Core.Tests;
 
+// Save failures are logged, so this class redirects AppLog away from the real user log.
+[Collection(AppLogCollection.Name)]
 public class SettingsStoreTests : IDisposable
 {
     private readonly string _dir;
+    private readonly string _originalLogPath;
 
     public SettingsStoreTests()
     {
         _dir = Path.Combine(Path.GetTempPath(), "tasktracker-settings-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_dir);
+        _originalLogPath = AppLog.LogFilePath;
         AppLog.LogFilePath = Path.Combine(_dir, "test.log");
     }
 
-    public void Dispose() => Directory.Delete(_dir, recursive: true);
+    public void Dispose()
+    {
+        AppLog.LogFilePath = _originalLogPath;
+        Directory.Delete(_dir, recursive: true);
+    }
 
     private SettingsStore NewStore() => new(_dir);
 

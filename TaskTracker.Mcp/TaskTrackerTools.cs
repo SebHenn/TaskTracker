@@ -15,7 +15,7 @@ namespace TaskTracker.Mcp;
 /// change up live (and vice versa).
 /// </summary>
 [McpServerToolType]
-public static class TaskTrackerTools
+public static partial class TaskTrackerTools
 {
     /// <summary>Overridable for tests (points at a temp directory there).</summary>
     internal static Func<ProjectStore> CreateStore { get; set; } = () => new ProjectStore();
@@ -421,7 +421,9 @@ public static class TaskTrackerTools
         [Description("Project id (GUID from list_projects)")] string projectId,
         [Description("New name")] string? name = null,
         [Description("New description")] string? description = null,
-        [Description("Archive (true) or unarchive (false)")] bool? isArchived = null)
+        [Description("Archive (true) or unarchive (false)")] bool? isArchived = null,
+        [Description("Pin to the top of the sidebar (true) or unpin (false)")] bool? isFavourite = null,
+        [Description("Accent colour as a hex string like #4C8DFF, or 'none' to clear")] string? color = null)
     {
         ProjectModel? updated = null;
         UpdateData(data =>
@@ -440,9 +442,34 @@ public static class TaskTrackerTools
                 project.IsArchived = isArchived.Value;
                 project.ArchivedAtUtc = isArchived.Value ? DateTime.UtcNow : null;
             }
+            if (isFavourite.HasValue)
+                project.IsFavourite = isFavourite.Value;
+            if (color != null)
+                project.Color = ParseColor(color);
             updated = project;
         });
-        return ToJson(new { updated!.Id, updated.Name, updated.Description, updated.IsArchived });
+        return ToJson(new { updated!.Id, updated.Name, updated.Description, updated.IsArchived, updated.IsFavourite, updated.Color });
+    }
+
+    /// <summary>
+    /// Validates a hex colour up front. The WPF head parses this string to a brush and
+    /// falls back silently when it cannot, so an unvalidated value here becomes a colour
+    /// the user set that never appears.
+    /// </summary>
+    private static string? ParseColor(string color)
+    {
+        if (color.Equals("none", StringComparison.OrdinalIgnoreCase) || string.IsNullOrWhiteSpace(color))
+            return null;
+
+        var value = color.Trim();
+        if (!value.StartsWith('#'))
+            value = "#" + value;
+
+        var digits = value[1..];
+        if (digits.Length is 6 or 8 && digits.All(Uri.IsHexDigit))
+            return value.ToUpperInvariant();
+
+        throw new McpException($"Invalid colour '{color}'. Use a hex value like #4C8DFF, or 'none' to clear.");
     }
 
     [McpServerTool(Name = "delete_project", Destructive = true, Idempotent = true, Title = "Delete project permanently"), Description("Delete a project and all of its tasks permanently. Requires confirm=true.")]
@@ -552,11 +579,7 @@ public static class TaskTrackerTools
     public static async Task<string> GitHubSync(
         [Description("Project id (GUID from list_projects)")] string projectId)
     {
-        var settings = CreateSettingsStore().Load();
-        var token = TokenProtector.Unprotect(settings.GitHubTokenProtected, settings.GitHubTokenIsPlaintext);
-        if (string.IsNullOrEmpty(token))
-            throw new McpException("No GitHub token configured. Save a Personal Access Token in the TaskTracker app settings first.");
-
+        var token = RequireToken();
         var store = CreateStore();
         var api = ApiFactory.Create(token);
 

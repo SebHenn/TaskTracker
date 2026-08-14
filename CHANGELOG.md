@@ -9,6 +9,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- **The MCP server can link a project to GitHub.** `link_github`, `unlink_github` and
+  `github_status` mean setting up and diagnosing a sync no longer requires opening the desktop app —
+  which `github_sync` used to be reduced to advising. `push_task_to_github` files a single task as an
+  issue without a full sync.
+- **Board columns are manageable over MCP** — `list_columns`, `add_column`, `update_column`,
+  `delete_column` (rehoming its tasks) and `reorder_columns`, including WIP limits, which were
+  previously invisible. The README has claimed this for a while; it is true now. The rules moved into
+  Core so the desktop dialog and the server refuse exactly the same edits.
+- **The trash is reachable over MCP** — `list_trash`, `restore_task` and `empty_trash`. `delete_task`
+  has always written there, but nothing could read it back, so a 30-day recovery window was
+  unreachable for anything but the app.
+- **Recurrence, timers and ordering over MCP** — `set_recurrence`, `start_timer` / `stop_timer` /
+  `timer_status` (honouring the one-timer-at-a-time rule the app enforces), and `reorder_tasks`.
+- `delete_subtask`, `list_activity` and `delete_activity` — the counterparts to the add tools that
+  already existed. `list_labels` reports label usage so a filter can be spelled correctly first time.
+- `store_info` reports the data directory, save revision and the **running server version**, so an
+  installed `tasktracker-mcp` that has gone stale is diagnosable from inside the client instead of
+  looking like a broken tool.
+- `update_project` can set a project's favourite flag and accent colour, validating the colour rather
+  than storing one the app will silently fail to parse.
 - **MCP list and search results are paged and far cheaper.** `list_tasks`, `search_tasks` and
   `get_project` return a page with the unpaged total, so a truncated answer is distinguishable from a
   complete one, and tasks come back compact by default — no descriptions, no empty or null fields, no

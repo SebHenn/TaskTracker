@@ -9,6 +9,30 @@ namespace TaskTracker.Core.Services
             task.TimerStartedAtUtc ??= nowUtc ?? DateTime.UtcNow;
         }
 
+        /// <summary>
+        /// Starts a timer after stopping every other one in the store, and returns the
+        /// task whose timer it stopped (null when none was running).
+        ///
+        /// One timer at a time across the whole store is the rule the desktop app
+        /// enforces; it lived in the board view model, so the MCP server would happily
+        /// have left two running and double-counted the overlap.
+        /// </summary>
+        public static TaskModel? StartExclusive(IEnumerable<ProjectModel> projects, TaskModel task, DateTime? nowUtc = null)
+        {
+            ArgumentNullException.ThrowIfNull(projects);
+            ArgumentNullException.ThrowIfNull(task);
+
+            TaskModel? stopped = null;
+            foreach (var running in projects.SelectMany(p => p.Tasks).Where(t => t.TimerStartedAtUtc != null && t.Id != task.Id).ToList())
+            {
+                Stop(running, nowUtc);
+                stopped ??= running;
+            }
+
+            Start(task, nowUtc);
+            return stopped;
+        }
+
         public static void Stop(TaskModel task, DateTime? nowUtc = null)
         {
             if (task.TimerStartedAtUtc == null)

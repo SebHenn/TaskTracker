@@ -45,8 +45,8 @@ read and manage your projects.
   issues import as tasks, unfinished tasks are filed as new issues, and
   completing a task closes the issue and vice versa
 - **MCP server** — `TaskTracker.Mcp` exposes the same data over the Model
-  Context Protocol so Claude Code can manage projects, tasks, columns, and
-  checklists
+  Context Protocol so Claude Code can manage projects, tasks, board columns,
+  checklists, recurrence, timers, the trash and GitHub links
 - **Safety** — autosave with atomic writes and three rolling backups,
   project-delete confirmation, single-instance guard; deleted tasks go to a
   per-project trash (30-day retention) so they stay recoverable long after
@@ -144,14 +144,25 @@ server via `dotnet run`. Open the repo in Claude Code and approve the server,
 then ask things like *"what's still open in project X?"* or *"add a task to
 prepare the release notes, due Friday, high priority"*.
 
-Available tools: `list_projects`, `get_project`, `create_project`,
-`update_project`, `delete_project`, `project_stats`, `list_tasks`,
-`create_task`, `create_tasks` (bulk), `update_task`, `move_task`,
-`delete_task`, `add_subtask`, `update_subtask`, `add_note`, `search_tasks`,
-`due_overview`, `weekly_review`, `github_sync`.
+Available tools:
+
+| Area | Tools |
+|---|---|
+| Projects | `list_projects`, `get_project`, `create_project`, `update_project`, `delete_project`, `project_stats` |
+| Tasks | `list_tasks`, `create_task`, `create_tasks` (bulk), `update_task`, `move_task`, `delete_task`, `reorder_tasks`, `set_recurrence`, `search_tasks` |
+| Board columns | `list_columns`, `add_column`, `update_column`, `delete_column`, `reorder_columns` |
+| Checklists & notes | `add_subtask`, `update_subtask`, `delete_subtask`, `add_note`, `list_activity`, `delete_activity` |
+| Trash | `list_trash`, `restore_task`, `empty_trash` |
+| Time tracking | `start_timer`, `stop_timer`, `timer_status` |
+| GitHub | `link_github`, `unlink_github`, `github_status`, `github_sync`, `push_task_to_github` |
+| Overview | `due_overview`, `weekly_review`, `list_labels`, `store_info` |
 
 There are also three prompts, which appear as slash commands: `plan_my_day`,
 `review_my_week`, and `triage_project`.
+
+Deleting a task is recoverable for 30 days — `list_trash` and `restore_task`
+reach the same trash the desktop app does. `delete_project` and `empty_trash`
+are the only irreversible operations and both require `confirm=true`.
 
 **Response shape.** `list_tasks`, `search_tasks` and `get_project` return a page
 — `{ Total, Returned, Offset, Items }` — where `Total` is the count before

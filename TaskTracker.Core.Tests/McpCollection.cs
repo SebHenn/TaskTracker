@@ -14,3 +14,16 @@ public class McpCollection
 {
     public const string Name = "mcp-tools";
 }
+
+/// <summary>
+/// Serializes every test class that redirects <see cref="TaskTracker.Core.Storage.AppLog.LogFilePath"/>.
+///
+/// Same hazard as above, different static: two classes pointing the log somewhere else at
+/// once makes one of them read the other's file, which surfaces as a rare, timing-
+/// dependent failure in whichever class happened to lose.
+/// </summary>
+[CollectionDefinition(Name)]
+public class AppLogCollection
+{
+    public const string Name = "app-log";
+}

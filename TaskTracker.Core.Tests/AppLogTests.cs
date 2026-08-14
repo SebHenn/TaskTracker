@@ -2,6 +2,7 @@ using TaskTracker.Core.Storage;
 
 namespace TaskTracker.Core.Tests;
 
+[Collection(AppLogCollection.Name)]
 public class AppLogTests : IDisposable
 {
     private readonly string _dir;
