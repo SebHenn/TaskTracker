@@ -14,9 +14,31 @@
 
         <StackPanel>
             <TextBlock Style="{StaticResource Text.Title}" Text="{DynamicResource SearchResults}" />
-            <TextBlock Style="{StaticResource Text.Secondary}" Margin="0,4,0,12">
+            <TextBlock Style="{StaticResource Text.Secondary}" Margin="0,4,0,8">
                 <Run Text="{Binding ResultCount, Mode=OneWay}" /> <Run Text="{DynamicResource ResultsFor}" /> "<Run Text="{Binding Query, Mode=OneWay}" />"
             </TextBlock>
+
+            <!-- The same narrowing the board offers. Results used to be every match in
+                 every project with no way to cut them down, so a common word was
+                 unusable as a query. -->
+            <WrapPanel Margin="0,0,0,12" ItemHeight="30">
+                <ComboBox Width="150" Height="26" Margin="0,0,8,0" VerticalAlignment="Center"
+                          ItemsSource="{Binding DueFilters}" DisplayMemberPath="Text"
+                          SelectedItem="{Binding SelectedDueFilter, Mode=TwoWay}"
+                          AutomationProperties.Name="{DynamicResource AnyDueDate}" />
+                <ComboBox Width="130" Height="26" Margin="0,0,12,0" VerticalAlignment="Center"
+                          ItemsSource="{Binding PriorityFilters}" DisplayMemberPath="Text"
+                          SelectedItem="{Binding SelectedPriorityFilter, Mode=TwoWay}"
+                          AutomationProperties.Name="{DynamicResource AnyPriority}" />
+                <CheckBox VerticalAlignment="Center" Margin="0,0,12,0"
+                          IsChecked="{Binding IncludeDone, Mode=TwoWay}"
+                          Foreground="{DynamicResource Brush.Text.Secondary}"
+                          Content="{DynamicResource IncludeDone}" />
+                <CheckBox VerticalAlignment="Center"
+                          IsChecked="{Binding IncludeArchived, Mode=TwoWay}"
+                          Foreground="{DynamicResource Brush.Text.Secondary}"
+                          Content="{DynamicResource IncludeArchived}" />
+            </WrapPanel>
         </StackPanel>
 
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">

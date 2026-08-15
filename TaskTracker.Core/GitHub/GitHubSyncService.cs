@@ -252,11 +252,9 @@ namespace TaskTracker.Core.GitHub
             var shouldBeDone = remoteState == "closed";
             if (task.IsDone == shouldBeDone)
                 return;
-            var target = shouldBeDone ? project.FirstDoneColumn : project.FirstColumn;
-            if (target != null)
-                project.MoveTaskToColumn(task, target);
-            else
-                task.IsDone = shouldBeDone;
+            // Via TaskCompletion, not task.IsDone: closing an issue for a recurring task
+            // has to spawn its next occurrence just like completing it on the board does.
+            Services.TaskCompletion.SetDone(project, task, shouldBeDone);
             if (shouldBeDone) closedLocally++; else reopenedLocally++;
         }
 

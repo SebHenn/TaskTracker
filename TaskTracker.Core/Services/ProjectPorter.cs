@@ -13,10 +13,20 @@ namespace TaskTracker.Core.Services
             File.WriteAllText(path, JsonSerializer.Serialize(projects.ToList(), CoreJson.Options));
         }
 
+        /// <summary>
+        /// A row per task, for spreadsheets and one-way analysis.
+        ///
+        /// Not a backup format and not re-importable — <see cref="ExportJson"/> is the
+        /// lossless one. It does now carry the checklist, recurrence, ordering and issue
+        /// link, which it silently dropped before, so a sheet built from it is not
+        /// missing the columns most likely to be pivoted on.
+        /// </summary>
         public static void ExportCsv(IEnumerable<ProjectModel> projects, string path)
         {
             var sb = new StringBuilder();
-            sb.AppendLine("Project,Title,Description,Column,Done,Priority,DueDate,Labels,CreatedAtUtc,CompletedAtUtc,TrackedHours");
+            sb.AppendLine("Project,Title,Description,Column,Done,Priority,DueDate,Labels," +
+                          "CreatedAtUtc,CompletedAtUtc,TrackedHours,SubTaskProgress,SubTasks," +
+                          "Recurrence,RecurrenceInterval,SortOrder,GitHubIssue,Notes");
             foreach (var project in projects)
             {
                 foreach (var task in project.Tasks)
@@ -32,7 +42,16 @@ namespace TaskTracker.Core.Services
                         Csv(string.Join(";", task.Labels)),
                         task.CreatedAtUtc?.ToString("O") ?? "",
                         task.CompletedAtUtc?.ToString("O") ?? "",
-                        (task.TrackedSeconds / 3600).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)));
+                        (task.TrackedSeconds / 3600).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture),
+                        Csv(task.SubTaskProgress),
+                        // Semicolon-joined like Labels, with the tick carried so a
+                        // half-finished checklist is readable in a cell.
+                        Csv(string.Join(";", task.SubTasks.Select(s => (s.IsDone ? "[x] " : "[ ] ") + s.Title))),
+                        task.Recurrence,
+                        task.RecurrenceInterval.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                        task.SortOrder?.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) ?? "",
+                        task.GitHubIssueNumber?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "",
+                        task.Activity.Count.ToString(System.Globalization.CultureInfo.InvariantCulture)));
                 }
             }
             File.WriteAllText(path, sb.ToString());

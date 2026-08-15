@@ -1,0 +1,119 @@
+<UserControl x:Class="TaskTracker.Views.Pages.AgendaView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:TaskTracker.Views.Pages"
+             mc:Ignorable="d"
+             d:DesignHeight="450" d:DesignWidth="800">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <StackPanel>
+            <TextBlock Style="{StaticResource Text.Title}" Text="{DynamicResource Agenda}" />
+            <TextBlock Style="{StaticResource Text.Secondary}" Text="{Binding RangeText}" Margin="0,4,0,0" />
+        </StackPanel>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="0,16,0,0">
+            <StackPanel>
+                <StackPanel.Resources>
+                    <!-- Shared by the overdue list and every day row, so a task looks the
+                         same wherever it appears. Matches the home dashboard's row. -->
+                    <DataTemplate x:Key="AgendaTaskRow">
+                        <Border Padding="10,6" Margin="0,0,0,4" MinWidth="360" MaxWidth="560" Cursor="Hand"
+                                CornerRadius="{DynamicResource Radius.Card}"
+                                Background="{DynamicResource Brush.Card.Background}"
+                                BorderThickness="1"
+                                AutomationProperties.Name="{Binding Task.Title}">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Setter Property="BorderBrush" Value="{DynamicResource Brush.Card.Border}" />
+                                    <Style.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="BorderBrush" Value="{DynamicResource Brush.Accent.Strong}" />
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <Border.InputBindings>
+                                <MouseBinding Gesture="LeftClick"
+                                              Command="{Binding DataContext.TaskClickCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                              CommandParameter="{Binding}" />
+                            </Border.InputBindings>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Style="{StaticResource Text.BodyStrong}" Text="{Binding Task.Title}"
+                                               TextTrimming="CharacterEllipsis" />
+                                    <TextBlock Style="{StaticResource Text.Caption}" Text="{Binding Project.Name}"
+                                               TextTrimming="CharacterEllipsis" />
+                                </StackPanel>
+                                <!-- Priority rather than the date: the date is the row's
+                                     heading here, so repeating it would say nothing. -->
+                                <Border Grid.Column="1" Style="{StaticResource TaskChip}"
+                                        VerticalAlignment="Center" Margin="12,0,0,0">
+                                    <TextBlock Style="{StaticResource TaskChipText}" Text="{Binding Task.Priority}" />
+                                </Border>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </StackPanel.Resources>
+
+                <!-- Overdue sits above the week and outside it: it has no place on a
+                     calendar of the days ahead, but hiding it would be the one thing an
+                     agenda must not do. -->
+                <StackPanel Visibility="{Binding HasOverdue, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=True}"
+                            Margin="0,0,0,20">
+                    <TextBlock Style="{StaticResource Text.Subtitle}" Text="{DynamicResource OverdueSection}"
+                               Foreground="{DynamicResource Brush.Danger.Text}" Margin="0,0,0,8" />
+                    <ItemsControl ItemsSource="{Binding Overdue}" ItemTemplate="{StaticResource AgendaTaskRow}"
+                                  HorizontalAlignment="Left" />
+                </StackPanel>
+
+                <ItemsControl ItemsSource="{Binding Days}" HorizontalAlignment="Left">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Margin="0,0,0,16">
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                    <!-- Today is marked with a bar rather than a colour
+                                         change alone, so it survives a colourblind reader
+                                         and a high-contrast theme. -->
+                                    <Rectangle Width="3" Height="18" Margin="0,0,8,0" RadiusX="1.5" RadiusY="1.5"
+                                               Fill="{DynamicResource Brush.Accent.Strong}"
+                                               Visibility="{Binding IsToday, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=True}" />
+                                    <TextBlock Style="{StaticResource Text.Subtitle}" Text="{Binding DayName}"
+                                               VerticalAlignment="Center" />
+                                    <TextBlock Style="{StaticResource Text.Caption}" Text="{Binding DateText}"
+                                               VerticalAlignment="Center" Margin="8,1,0,0" />
+                                    <Border Style="{StaticResource TaskChip}" VerticalAlignment="Center" Margin="8,1,0,0"
+                                            Visibility="{Binding Count, Converter={StaticResource CountToVisibilityConverter}}">
+                                        <TextBlock Style="{StaticResource TaskChipText}" Text="{Binding Count}" />
+                                    </Border>
+                                </StackPanel>
+
+                                <ItemsControl ItemsSource="{Binding Items}" ItemTemplate="{StaticResource AgendaTaskRow}"
+                                              HorizontalAlignment="Left" />
+
+                                <!-- Empty days are kept and labelled, not dropped: the gaps
+                                     are what makes the week readable as a shape. -->
+                                <TextBlock Style="{StaticResource Text.Caption}" Text="{DynamicResource AgendaNothingScheduled}"
+                                           Foreground="{DynamicResource Brush.Text.Hint}" Margin="4,0,0,0"
+                                           Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=True}" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <TextBlock Style="{StaticResource Text.Subtitle}" Text="{DynamicResource AgendaAllClear}"
+                           Foreground="{DynamicResource Brush.Text.Hint}" Margin="0,8,0,0"
+                           Visibility="{Binding HasAnything, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=False}" />
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

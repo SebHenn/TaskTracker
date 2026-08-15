@@ -19,6 +19,10 @@ namespace TaskTracker.Services
         private readonly IProjectsService _projectsService;
         private readonly ILanguageService _languageService;
         private readonly HashSet<Guid> _notifiedTaskIds = new();
+
+        /// <summary>Day <see cref="_notifiedTaskIds"/> was last reset; see NotifyNewlyDueTasks.</summary>
+        private DateTime _notifiedOn = DateTime.Today;
+
         private System.Windows.Forms.NotifyIcon? _icon;
         private System.Windows.Threading.DispatcherTimer? _dueCheckTimer;
 
@@ -71,6 +75,24 @@ namespace TaskTracker.Services
             WeakReferenceMessenger.Default.Register<NewIssuesImportedMessage>(this, (_, message) => NotifyNewIssues(message));
         }
 
+        /// <summary>
+        /// Puts the running timer in the tray tooltip, so it is visible even when the
+        /// window is minimised — which is exactly when a forgotten timer runs longest.
+        /// </summary>
+        public void ShowRunningTimer(string? taskTitle, string elapsed)
+        {
+            if (_icon == null)
+                return;
+
+            var text = string.IsNullOrEmpty(taskTitle)
+                ? "TaskTracker"
+                : $"TaskTracker — {elapsed} · {taskTitle}";
+
+            // NotifyIcon.Text throws above 63 characters rather than truncating, and a
+            // task title is user input of any length.
+            _icon.Text = text.Length <= 63 ? text : text[..62] + "…";
+        }
+
         private void NotifyNewIssues(NewIssuesImportedMessage message)
         {
             if (_icon == null || message.Issues.Count == 0)
@@ -102,6 +124,20 @@ namespace TaskTracker.Services
         private void NotifyNewlyDueTasks()
         {
             var overview = DueTasks.Collect(_projectsService.projectModels);
+
+            // The seen-set is per day, not per process. It used to be neither cleared nor
+            // pruned, so leaving the app running announced each task exactly once ever:
+            // a task still overdue tomorrow said nothing, and one rescheduled and then
+            // overdue again was silent for the rest of the session.
+            var today = DateTime.Today;
+            if (_notifiedOn != today)
+            {
+                _notifiedTaskIds.Clear();
+                _notifiedOn = today;
+            }
+            var stillDue = overview.Overdue.Concat(overview.DueToday).Select(i => i.Task.Id).ToHashSet();
+            _notifiedTaskIds.IntersectWith(stillDue);
+
             var fresh = overview.Overdue.Concat(overview.DueToday)
                 .Where(i => _notifiedTaskIds.Add(i.Task.Id))
                 .ToList();

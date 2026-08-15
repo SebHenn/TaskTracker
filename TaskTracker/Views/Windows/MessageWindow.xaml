@@ -1,0 +1,63 @@
+<Window x:Class="TaskTracker.Views.Windows.MessageWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:TaskTracker.Views.Windows"
+        mc:Ignorable="d" WindowStyle="None"
+        Title="TaskTracker" SizeToContent="Height" Width="420"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize" ShowInTaskbar="False">
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="30" ResizeBorderThickness="0" CornerRadius="0"
+                      GlassFrameThickness="0" UseAeroCaptionButtons="False" />
+    </WindowChrome.WindowChrome>
+    <Border Background="{DynamicResource Brush.Window.Background}"
+            BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="auto" />
+            </Grid.RowDefinitions>
+
+            <Border Height="30">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <Label Content="{Binding Title}" Foreground="{DynamicResource Brush.Text.Primary}" Margin="5,2,0,0" />
+                    <Button Style="{DynamicResource TitleCloseButton}" Height="30" Width="46"
+                            Click="CloseButton_Click" Grid.Column="1" HorizontalAlignment="Right"
+                            WindowChrome.IsHitTestVisibleInChrome="True"
+                            AutomationProperties.Name="{DynamicResource WindowClose}">
+                        <Path Style="{DynamicResource TitleBarGlyph}" Data="{DynamicResource Glyph.Close}" />
+                    </Button>
+                </Grid>
+            </Border>
+
+            <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="16,8,16,16">
+                <!-- A coloured bar rather than an icon: it carries severity without
+                     needing a third asset per theme, and it is the same device the
+                     agenda uses to mark today. -->
+                <Rectangle Width="3" Margin="0,0,12,0" RadiusX="1.5" RadiusY="1.5"
+                           Fill="{Binding AccentBrush}" />
+                <TextBlock Style="{StaticResource Text.Body}" Text="{Binding Message}"
+                           TextWrapping="Wrap" MaxWidth="360"
+                           AutomationProperties.Name="{Binding Message}" />
+            </StackPanel>
+
+            <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="16,0,16,16">
+                <Button Style="{DynamicResource SubtleButton}" Padding="16,4" Margin="0,0,8,0"
+                        Click="CancelButton_Click" MinWidth="88"
+                        Content="{DynamicResource Cancel}"
+                        Visibility="{Binding IsConfirm, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=True}" />
+                <Button x:Name="ConfirmButton" Style="{DynamicResource AccentButton}" Padding="16,4" MinWidth="88"
+                        Click="ConfirmButton_Click" IsDefault="True"
+                        Content="{Binding ConfirmText}" />
+            </StackPanel>
+        </Grid>
+    </Border>
+</Window>

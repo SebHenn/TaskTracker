@@ -1,5 +1,12 @@
 namespace TaskTracker.Core.GitHub
 {
+    /// <param name="UpdatedAt">
+    /// Nothing reads this, deliberately. Sync resolves conflicts with a three-way merge
+    /// against the state and title recorded at the last sync, which beats comparing a
+    /// remote clock with a local one. It stays on the record because this type mirrors
+    /// the API response, and a future consumer would otherwise have to add the parsing
+    /// back before it could use it.
+    /// </param>
     public record GitHubIssue(
         int Number,
         string Title,

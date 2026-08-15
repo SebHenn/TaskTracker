@@ -77,9 +77,12 @@ public class TimeTrackingTests
             var path = Path.Combine(dir, "e.csv");
             ProjectPorter.ExportCsv(new[] { project }, path);
 
+            // By column position rather than end-of-line: the export gained columns after
+            // TrackedHours, and asserting on the last field would break again next time.
             var lines = File.ReadAllLines(path);
-            Assert.EndsWith("TrackedHours", lines[0]);
-            Assert.EndsWith("1.5", lines[1]);
+            var column = Array.IndexOf(lines[0].Split(','), "TrackedHours");
+            Assert.True(column >= 0, "TrackedHours column is missing from the CSV header.");
+            Assert.Equal("1.5", lines[1].Split(',')[column]);
         }
         finally
         {

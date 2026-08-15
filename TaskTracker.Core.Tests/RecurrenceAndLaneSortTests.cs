@@ -16,6 +16,80 @@ public class RecurrenceAndLaneSortTests
     }
 
     [Theory]
+    [InlineData("none", true)]
+    [InlineData("daily", true)]
+    [InlineData("WEEKLY", true)]
+    [InlineData("Monthly", true)]
+    [InlineData("fortnightly", false)]
+    [InlineData("", false)]
+    [InlineData(null, false)]
+    public void RecurrenceRules_IsValid_AcceptsOnlyTheKnownRules(string? value, bool expected)
+        => Assert.Equal(expected, RecurrenceRules.IsValid(value));
+
+    [Theory]
+    [InlineData("WEEKLY", RecurrenceRules.Weekly)]
+    [InlineData("Daily", RecurrenceRules.Daily)]
+    [InlineData("fortnightly", RecurrenceRules.None)]
+    [InlineData(null, RecurrenceRules.None)]
+    public void RecurrenceRules_Normalize_LowercasesKnownRulesAndDropsTheRest(string? value, string expected)
+        => Assert.Equal(expected, RecurrenceRules.Normalize(value));
+
+    [Fact]
+    public void MonthlyRecurrence_ClampsToTheShorterMonth()
+    {
+        // Jan 31 + 1 month has no 31st to land on. AddMonths clamps to Feb 28; pinning it
+        // down so a future change to the date maths cannot silently drift the due date.
+        var project = ProjectWithColumns();
+        var task = new TaskModel
+        {
+            Title = "Pay rent",
+            DueDate = new DateTime(2026, 1, 31),
+            Recurrence = RecurrenceRules.Monthly,
+        };
+        project.Tasks.Add(task);
+        task.ColumnId = project.Columns[0].Id;
+
+        project.MoveTaskToColumn(task, project.FirstDoneColumn!);
+
+        Assert.Equal(new DateTime(2026, 2, 28), project.Tasks[1].DueDate);
+    }
+
+    [Fact]
+    public void UnknownRecurrence_DoesNotSpawn()
+    {
+        // Belt and braces: ProjectStore.NormalizeTasks turns these into "none" on load,
+        // but an in-memory value must not produce a phantom occurrence either.
+        var project = ProjectWithColumns();
+        var task = new TaskModel { Title = "T", DueDate = new DateTime(2026, 7, 17), Recurrence = "fortnightly" };
+        project.Tasks.Add(task);
+        task.ColumnId = project.Columns[0].Id;
+
+        var spawned = project.MoveTaskToColumn(task, project.FirstDoneColumn!);
+
+        Assert.Null(spawned);
+        Assert.Single(project.Tasks);
+    }
+
+    [Fact]
+    public void ZeroInterval_StillAdvancesByOne()
+    {
+        var project = ProjectWithColumns();
+        var task = new TaskModel
+        {
+            Title = "T",
+            DueDate = new DateTime(2026, 7, 17),
+            Recurrence = RecurrenceRules.Daily,
+            RecurrenceInterval = 0,
+        };
+        project.Tasks.Add(task);
+        task.ColumnId = project.Columns[0].Id;
+
+        project.MoveTaskToColumn(task, project.FirstDoneColumn!);
+
+        Assert.Equal(new DateTime(2026, 7, 18), project.Tasks[1].DueDate);
+    }
+
+    [Theory]
     [InlineData(RecurrenceRules.Daily, 1, "2026-07-18")]
     [InlineData(RecurrenceRules.Daily, 3, "2026-07-20")]
     [InlineData(RecurrenceRules.Weekly, 1, "2026-07-24")]

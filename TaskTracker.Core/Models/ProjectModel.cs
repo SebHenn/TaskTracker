@@ -72,15 +72,17 @@ namespace TaskTracker.Core.Models
         /// <summary>
         /// The single place task placement happens: sets the column and derives
         /// IsDone from it, so timestamps/sync/stats stay coherent. Completing a
-        /// recurring task spawns its next occurrence.
+        /// recurring task spawns its next occurrence, which is returned so callers
+        /// can report it; null when nothing was spawned.
         /// </summary>
-        public void MoveTaskToColumn(TaskModel task, BoardColumn column)
+        public TaskModel? MoveTaskToColumn(TaskModel task, BoardColumn column)
         {
             var wasDone = task.IsDone;
             task.ColumnId = column.Id;
             task.IsDone = column.IsDoneColumn;
-            if (!wasDone && task.IsDone)
-                Services.Recurrence.SpawnNextIfRecurring(this, task);
+            return !wasDone && task.IsDone
+                ? Services.Recurrence.SpawnNextIfRecurring(this, task)
+                : null;
         }
 
         /// <summary>Resolves a task's column, falling back by done-state for unassigned/stale ids.</summary>

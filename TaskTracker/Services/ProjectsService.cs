@@ -222,16 +222,6 @@ namespace TaskTracker.Services
             project.Description = newDescription;
         }
 
-        public void AddTaskToProject(ProjectModel project, TaskModel task)
-        {
-            project.Tasks.Add(task);
-        }
-
-        public void RemoveTaskFromProject(ProjectModel project, TaskModel task)
-        {
-            project.Tasks.Remove(task);
-        }
-
         public void Dispose()
         {
             _watcher?.Dispose();

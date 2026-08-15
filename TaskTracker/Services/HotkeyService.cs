@@ -2,19 +2,19 @@ using System;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
+using TaskTracker.Core.Services;
+using TaskTracker.Core.Storage;
 
 namespace TaskTracker.Services
 {
     /// <summary>
-    /// Registers the global quick-add hotkey (Ctrl+Alt+T). Failure to register
-    /// (hotkey taken by another app) is non-fatal and only logged.
+    /// Registers the global quick-add hotkey, Ctrl+Alt+T unless settings say otherwise.
+    /// Failure to register (the combination is taken by another app) is non-fatal —
+    /// <see cref="IsRegistered"/> is how the settings page says so.
     /// </summary>
     public class HotkeyService : IDisposable
     {
         private const int HotkeyId = 0xA11C; // arbitrary app-unique id
-        private const uint ModControl = 0x0002;
-        private const uint ModAlt = 0x0001;
-        private const uint VkT = 0x54;
         private const int WmHotkey = 0x0312;
 
         [DllImport("user32.dll")]
@@ -29,13 +29,40 @@ namespace TaskTracker.Services
 
         public event EventHandler? HotkeyPressed;
 
+        /// <summary>True when the current combination was actually claimed from Windows.</summary>
+        public bool IsRegistered => _registered;
+
         /// <summary>Call after the main window has a handle.</summary>
-        public void Initialize(Window window)
+        public void Initialize(Window window, string? hotkey = null)
         {
             _handle = new WindowInteropHelper(window).EnsureHandle();
             _source = HwndSource.FromHwnd(_handle);
             _source?.AddHook(WndProc);
-            _registered = RegisterHotKey(_handle, HotkeyId, ModControl | ModAlt, VkT);
+            Rebind(hotkey);
+        }
+
+        /// <summary>
+        /// Claims a new combination, releasing the old one first. Returns false when
+        /// the text does not parse or Windows refuses it — the caller keeps whatever it
+        /// had rather than silently ending up with no hotkey at all.
+        /// </summary>
+        public bool Rebind(string? hotkey)
+        {
+            if (_handle == IntPtr.Zero)
+                return false;
+
+            var binding = HotkeyBinding.Parse(hotkey) ?? HotkeyBinding.Parse(HotkeyBinding.Default)!;
+
+            if (_registered)
+            {
+                UnregisterHotKey(_handle, HotkeyId);
+                _registered = false;
+            }
+
+            _registered = RegisterHotKey(_handle, HotkeyId, binding.Modifiers, binding.VirtualKey);
+            if (!_registered)
+                AppLog.Write("hotkey", $"Could not register '{binding.Text}'; it is probably in use by another application.");
+            return _registered;
         }
 
         private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)

@@ -20,9 +20,9 @@ namespace TaskTracker.Services
 
         void ChangeProjectDescription(ProjectModel project, string newDescription);
 
-        void AddTaskToProject(ProjectModel project, TaskModel task);
-
-        void RemoveTaskFromProject(ProjectModel project, TaskModel task);
+        // No AddTaskToProject/RemoveTaskFromProject: they were one-line wrappers over
+        // project.Tasks with no callers, and removing a task has to go through
+        // Core.Services.Trash rather than straight off the list.
 
         /// <summary>
         /// Snapshot the current state now and write it in the background. Returns as

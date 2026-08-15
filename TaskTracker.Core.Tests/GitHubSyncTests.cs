@@ -62,6 +62,57 @@ public class GitHubSyncTests
     private readonly GitHubSyncService _sync = new();
 
     [Fact]
+    public async Task ClosingIssueForRecurringTask_SpawnsTheNextOccurrence()
+    {
+        // ApplyRemoteState used to set task.IsDone directly, so a recurring task closed
+        // on GitHub was completed locally but never came back.
+        var project = LinkedProject();
+        foreach (var column in BoardColumnDefaults.NewProjectColumns())
+            project.Columns.Add(column);
+        var task = LinkedTask(1, isDone: false, lastSyncedState: "open");
+        task.Recurrence = RecurrenceRules.Weekly;
+        task.DueDate = new DateTime(2026, 8, 1);
+        task.ColumnId = project.FirstColumn!.Id;
+        project.Tasks.Add(task);
+
+        var api = new FakeGitHubApi();
+        api.Issues.Add(Issue(1, "closed", title: "t1"));
+
+        var result = await _sync.SyncAsync(project, api);
+
+        Assert.Equal(1, result.ClosedLocally);
+        Assert.True(task.IsDone);
+        var next = Assert.Single(project.Tasks.Where(t => t.Id != task.Id));
+        Assert.Equal(new DateTime(2026, 8, 8), next.DueDate);
+        Assert.False(next.IsDone);
+        // The spawn is a distinct piece of work, so the export pass — which runs last in
+        // the same sync — files it as its own issue rather than relinking the closed one.
+        Assert.NotEqual(1, next.GitHubIssueNumber);
+        Assert.Equal(1, result.Exported);
+    }
+
+    [Fact]
+    public async Task ClosingIssueLocally_PutsTheTaskInADoneColumn()
+    {
+        // Remote-driven completion has to be as coherent as completing on the board:
+        // IsDone and ColumnId must agree, not just the flag.
+        var project = LinkedProject();
+        foreach (var column in BoardColumnDefaults.NewProjectColumns())
+            project.Columns.Add(column);
+        var task = LinkedTask(1, isDone: false, lastSyncedState: "open");
+        task.ColumnId = project.FirstColumn!.Id;
+        project.Tasks.Add(task);
+
+        var api = new FakeGitHubApi();
+        api.Issues.Add(Issue(1, "closed", title: "t1"));
+
+        await _sync.SyncAsync(project, api);
+
+        Assert.True(task.IsDone);
+        Assert.True(project.ColumnOf(task)!.IsDoneColumn);
+    }
+
+    [Fact]
     public async Task UnlinkedProject_Throws()
     {
         await Assert.ThrowsAsync<InvalidOperationException>(

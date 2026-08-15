@@ -1,4 +1,4 @@
-# TaskTracker
+﻿# TaskTracker
 
 A Jira-style desktop task tracker for Windows (WPF, .NET 8) with GitHub issue
 synchronisation and an MCP server that lets Claude Code (or any MCP client)
@@ -45,8 +45,8 @@ read and manage your projects.
   issues import as tasks, unfinished tasks are filed as new issues, and
   completing a task closes the issue and vice versa
 - **MCP server** — `TaskTracker.Mcp` exposes the same data over the Model
-  Context Protocol so Claude Code can manage projects, tasks, columns, and
-  checklists
+  Context Protocol so Claude Code can manage projects, tasks, board columns,
+  checklists, recurrence, timers, the trash and GitHub links
 - **Safety** — autosave with atomic writes and three rolling backups,
   project-delete confirmation, single-instance guard; deleted tasks go to a
   per-project trash (30-day retention) so they stay recoverable long after
@@ -144,17 +144,52 @@ server via `dotnet run`. Open the repo in Claude Code and approve the server,
 then ask things like *"what's still open in project X?"* or *"add a task to
 prepare the release notes, due Friday, high priority"*.
 
-Available tools: `list_projects`, `get_project`, `create_project`,
-`update_project`, `delete_project`, `project_stats`, `list_tasks`,
-`create_task`, `create_tasks` (bulk), `update_task`, `move_task`,
-`delete_task`, `add_subtask`, `update_subtask`, `add_note`, `search_tasks`,
-`due_overview`, `weekly_review`, `github_sync`.
+Available tools:
+
+| Area | Tools |
+|---|---|
+| Projects | `list_projects`, `get_project`, `create_project`, `update_project`, `delete_project`, `project_stats` |
+| Tasks | `list_tasks`, `create_task`, `create_tasks` (bulk), `update_task`, `move_task`, `delete_task`, `reorder_tasks`, `set_recurrence`, `search_tasks` |
+| Board columns | `list_columns`, `add_column`, `update_column`, `delete_column`, `reorder_columns` |
+| Checklists & notes | `add_subtask`, `update_subtask`, `delete_subtask`, `add_note`, `list_activity`, `delete_activity` |
+| Trash | `list_trash`, `restore_task`, `empty_trash` |
+| Time tracking | `start_timer`, `stop_timer`, `timer_status` |
+| GitHub | `link_github`, `unlink_github`, `github_status`, `github_sync`, `push_task_to_github` |
+| Overview | `due_overview`, `weekly_review`, `list_labels`, `store_info` |
+
+There are also three prompts, which appear as slash commands: `plan_my_day`,
+`review_my_week`, and `triage_project`.
+
+Deleting a task is recoverable for 30 days — `list_trash` and `restore_task`
+reach the same trash the desktop app does. `delete_project` and `empty_trash`
+are the only irreversible operations and both require `confirm=true`.
+
+**Response shape.** `list_tasks`, `search_tasks` and `get_project` return a page
+— `{ Total, Returned, Offset, Items }` — where `Total` is the count before
+paging, so you can tell a complete answer from a truncated one. Tasks come back
+compact by default: identity plus the fields you filter and triage on, with
+empty and null fields omitted and the description left out. Pass `detail=full`
+for the whole record, and `limit`/`offset` to page. On a 60-task project the
+compact default costs roughly a fifth of what the full indented form does.
+
+`list_tasks` filters by any combination of state (`all`/`open`/`done`), `label`,
+`due` (`any`/`overdue`/`today`/`week`/`none`) and `priority`, using the same due
+buckets as the desktop board and the Today dashboard.
 
 ### Using TaskTracker from another repository
 
 The `.mcp.json` above resolves `--project TaskTracker.Mcp` relative to the
 working directory, so it only works inside a clone of this repository. To drive
-your boards from any other project, install the server as a global tool:
+your boards from any other project, install the server as a global tool.
+
+Every tagged release attaches the `.nupkg`, so the usual route is to download it
+and install from the folder you put it in:
+
+```
+dotnet tool install --global --add-source <folder-with-the-nupkg> SebHenn.TaskTracker.Mcp
+```
+
+Or build it yourself from a clone:
 
 ```
 dotnet pack TaskTracker.Mcp -c Release          # writes artifacts/nupkg
@@ -203,16 +238,25 @@ dotnet pack TaskTracker.Mcp -c Release
 dotnet tool update --global --add-source artifacts/nupkg SebHenn.TaskTracker.Mcp
 ```
 
+Ask the server which version answered — `store_info` reports it alongside the
+data directory and the save revision. That is the quickest way to tell a stale
+install from a real bug, since neither failure above is loud.
+
+CI fails a pull request that changes the server or Core without bumping
+`<Version>`, and the release workflow fails a tag that disagrees with it.
+
 ## Verification status
 
 Core logic (storage, board projection, filtering, trash, bulk actions, sync,
-search, stats, MCP handlers) is covered by 272 unit tests and runs on any OS.
+search, stats, agenda, cross-project moves, MCP handlers) is covered by 419
+unit tests and runs on any OS.
 CI builds the whole solution on Linux, runs those tests, and gates on
 `dotnet format`.
 
 The WPF UI is validated by compilation only in CI, so a manual pass on a
 Windows machine is expected after UI changes: theme switching at several DPI
-scalings, drag & drop, the dialogs, and the sync button.
+scalings, drag & drop, the dialogs, the agenda, the undo and running-timer
+strips, and the sync button.
 
 ## Contributing
 

@@ -22,7 +22,9 @@
     <helpers:NullableIntConverter x:Key="NullableIntConverter" />
     <helpers:ColorStringToBrushConverter x:Key="ColorStringToBrushConverter" />
     <helpers:SidebarWidthConverter x:Key="SidebarWidthConverter" />
+    <helpers:BoardWidthConverter x:Key="BoardWidthConverter" />
     <helpers:UtcToLocalConverter x:Key="UtcToLocalConverter" />
+    <helpers:InverseBoolConverter x:Key="InverseBoolConverter" />
 
     <!-- A chip is a token, not a button: bordered rather than filled, so a row of them
          does not read as a row of things to click. -->
@@ -179,6 +181,19 @@
                                 </Style>
                             </Border.Style>
                             <TextBlock Style="{StaticResource TaskChipText}" Text="{Binding SubTaskProgress}" />
+                        </Border>
+
+                        <!-- Running timer. Accent-filled rather than a neutral chip, since
+                             the point is to catch the eye of someone who has forgotten it
+                             is running; the shell strip carries the elapsed time, so this
+                             only has to say which card. -->
+                        <Border Style="{StaticResource TaskChip}"
+                                Background="{DynamicResource Brush.Accent.Strong}"
+                                BorderBrush="{DynamicResource Brush.Accent.Strong}"
+                                ToolTip="{DynamicResource TimerRunning}"
+                                Visibility="{Binding TimerStartedAtUtc, Converter={StaticResource NullToVisibilityConverter}, ConverterParameter=False}">
+                            <TextBlock Style="{StaticResource TaskChipText}" Text="{DynamicResource TimerRunning}"
+                                       Foreground="#FFFFFFFF" FontWeight="SemiBold" />
                         </Border>
 
                         <!-- Recurring. Spelled out and localized rather than an emoji

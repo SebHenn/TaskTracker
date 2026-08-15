@@ -63,6 +63,12 @@
                                       Icon="{StaticResource Icon.Home}"
                                       Content="{DynamicResource Home}" />
 
+                <controls:ProjectItem IsChecked="{Binding IsAgendaSelected}"
+                                      Command="{Binding NavigateToAgendaCommand}"
+                                      GroupName="checkboxes"
+                                      Icon="{StaticResource Icon.Calendar}"
+                                      Content="{DynamicResource Agenda}" />
+
                 <Rectangle Height="1" Margin="4,8" Fill="{DynamicResource Brush.Divider}" />
 
                 <controls:CustomTextBox x:Name="SearchBox" Height="32" Margin="0,0,0,4"
@@ -138,8 +144,71 @@
                 CornerRadius="{DynamicResource Radius.Panel}"
                 Background="{DynamicResource Brush.Content.Background}"
                 BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1">
-            <ContentControl Margin="{DynamicResource Pad.Page}"
-                            Content="{Binding NavigationService.CurrentView}" />
+            <Grid>
+                <!-- Page, then the two transient strips stacked beneath it. Separate rows
+                     rather than one: both can be up at once (delete a card while a timer
+                     runs) and in a shared row they would draw on top of each other. -->
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="auto" />
+                    <RowDefinition Height="auto" />
+                </Grid.RowDefinitions>
+
+                <ContentControl Margin="{DynamicResource Pad.Page}"
+                                Content="{Binding NavigationService.CurrentView}" />
+
+                <!-- Undo bar. In the shell because the actions it covers span pages —
+                     archiving and deleting a project both navigate away from the board
+                     that started them, so a bar living on that board would leave with it. -->
+                <Border Grid.Row="1" Padding="12,8" Margin="8,0,8,8"
+                        CornerRadius="{DynamicResource Radius.Card}"
+                        Background="{DynamicResource Brush.Card.Background}"
+                        BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1"
+                        Visibility="{Binding Undo.IsVisible, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=True}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Style="{StaticResource Text.Body}" VerticalAlignment="Center"
+                                   Text="{Binding Undo.Text}" TextTrimming="CharacterEllipsis"
+                                   ToolTip="{Binding Undo.Text}" />
+                        <Button Grid.Column="1" Style="{DynamicResource SubtleButton}" Padding="12,2" Margin="12,0,0,0"
+                                Command="{Binding Undo.UndoCommand}"
+                                Content="{DynamicResource Undo}" />
+                    </Grid>
+                </Border>
+
+                <!-- Running-timer strip. In the shell rather than the board because the
+                     timer belongs to the store, not to whichever project happens to be
+                     open: it used to be visible only in the task detail drawer, so
+                     closing the drawer left it running out of sight. -->
+                <Border Grid.Row="2" Padding="12,8" Margin="8,0,8,8"
+                        CornerRadius="{DynamicResource Radius.Card}"
+                        Background="{DynamicResource Brush.Card.Background}"
+                        BorderBrush="{DynamicResource Brush.Accent.Strong}" BorderThickness="1"
+                        Visibility="{Binding IsTimerRunning, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=True}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="auto" />
+                            <ColumnDefinition Width="auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <Ellipse Width="8" Height="8" VerticalAlignment="Center" Margin="0,0,8,0"
+                                 Fill="{DynamicResource Brush.Accent.Strong}" />
+                        <TextBlock Grid.Column="1" Style="{StaticResource Text.Body}" VerticalAlignment="Center"
+                                   Text="{Binding RunningTimerTitle}" TextTrimming="CharacterEllipsis"
+                                   ToolTip="{Binding RunningTimerTitle}" />
+                        <TextBlock Grid.Column="2" Style="{StaticResource Text.BodyStrong}" VerticalAlignment="Center"
+                                   Margin="12,0,12,0" Text="{Binding RunningTimerText}" />
+                        <Button Grid.Column="3" Style="{DynamicResource SubtleButton}" Padding="10,2"
+                                Command="{Binding StopRunningTimerCommand}"
+                                Content="{DynamicResource StopTimer}" />
+                    </Grid>
+                </Border>
+            </Grid>
         </Border>
     </Grid>
 </Window>

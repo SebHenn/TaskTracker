@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <resheader name="resmimetype">
     <value>text/microsoft-resx</value>
@@ -165,7 +165,6 @@
   <data name="NothingDue" xml:space="preserve"><value>Nothing due. Enjoy it.</value></data>
   <data name="CompactCardsSetting" xml:space="preserve"><value>Compact cards</value></data>
   <data name="RecurringChip" xml:space="preserve"><value>Repeats</value></data>
-  <data name="DoneColumnLabel" xml:space="preserve"><value>Done column</value></data>
   <data name="WipLimitReached" xml:space="preserve"><value>Over the column limit</value></data>
 
   <!-- Bulk actions -->
@@ -207,4 +206,25 @@
   <data name="CloseDetails" xml:space="preserve"><value>Close details</value></data>
   <data name="MoveUp" xml:space="preserve"><value>Move up</value></data>
   <data name="MoveDown" xml:space="preserve"><value>Move down</value></data>
+  <!-- Agenda page -->
+  <data name="Agenda" xml:space="preserve"><value>Agenda</value></data>
+  <data name="Today" xml:space="preserve"><value>Today</value></data>
+  <data name="AgendaRangeFormat" xml:space="preserve"><value>{0:d MMM} – {1:d MMM}</value></data>
+  <data name="AgendaNothingScheduled" xml:space="preserve"><value>Nothing scheduled</value></data>
+  <data name="AgendaAllClear" xml:space="preserve"><value>Nothing due in the week ahead.</value></data>
+  <data name="TimerRunning" xml:space="preserve"><value>Timer running</value></data>
+  <data name="OK" xml:space="preserve"><value>OK</value></data>
+  <data name="Yes" xml:space="preserve"><value>Yes</value></data>
+  <data name="TasksMovedUndo" xml:space="preserve"><value>Moved {0} task(s) to {1}</value></data>
+  <data name="ProjectArchivedUndo" xml:space="preserve"><value>Archived “{0}”</value></data>
+  <data name="ProjectDeletedUndo" xml:space="preserve"><value>Deleted “{0}”</value></data>
+  <data name="MoveToProject" xml:space="preserve"><value>Move to project</value></data>
+  <data name="Move" xml:space="preserve"><value>Move</value></data>
+  <data name="TaskMovedToProjectUndo" xml:space="preserve"><value>Moved “{0}” to {1}</value></data>
+  <data name="FollowSystemTheme" xml:space="preserve"><value>Follow Windows theme</value></data>
+  <data name="QuickAddHotkeyCombo" xml:space="preserve"><value>Quick add shortcut</value></data>
+  <data name="HotkeyInvalid" xml:space="preserve"><value>Needs a modifier and a key, e.g. Ctrl+Alt+T</value></data>
+  <data name="HotkeyInUse" xml:space="preserve"><value>In use by another app</value></data>
+  <data name="IncludeDone" xml:space="preserve"><value>Include done</value></data>
+  <data name="IncludeArchived" xml:space="preserve"><value>Include archived</value></data>
 </root>
