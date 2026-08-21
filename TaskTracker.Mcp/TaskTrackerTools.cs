@@ -409,11 +409,21 @@ public static partial class TaskTrackerTools
         return ToJson(new { entry!.Id, entry.AtUtc, entry.Text });
     }
 
-    [McpServerTool(Name = "weekly_review", ReadOnly = true, Title = "Weekly review"), Description("What happened in the last 7 days: completed and created tasks per project, plus open/overdue counts and tracked hours.")]
-    public static string WeeklyReview()
+    /// <summary>
+    /// The only report that crosses projects, which is why it is the only one where a
+    /// label earns its keep: list_tasks can already answer "which of this project's tasks
+    /// carry it", but not "which boards is this effort spread over, and what is left".
+    /// </summary>
+    [McpServerTool(Name = "weekly_review", ReadOnly = true, Title = "Weekly review"), Description("What happened recently, across projects: completed and created tasks per project, plus open/overdue counts and tracked hours. Scope it to a label to review one cross-project effort as a whole.")]
+    public static string WeeklyReview(
+        [Description("Only tasks carrying this label, and only projects that have one (see list_labels for the exact spelling)")] string? label = null,
+        [Description("Length of the window in days, counting back from now (default 7)")] int days = ReviewReport.DefaultDays)
     {
+        if (days < 1)
+            throw new McpException($"days must be at least 1 (got {days}).");
+
         var data = LoadData();
-        return ToJson(ReviewReport.Compute(data.Projects));
+        return ToJson(ReviewReport.Compute(data.Projects, label: label, days: days));
     }
 
     [McpServerTool(Name = "update_project", Idempotent = true, Title = "Update project"), Description("Update a project's name, description, or archived state. Only provided fields change.")]
