@@ -30,6 +30,9 @@ public static class TaskTrackerPrompts
     public static string ReviewMyWeek()
         => """
            Call weekly_review for the last seven days, then due_overview for what is coming.
+           If the user named an effort that spans several boards, pass its label to
+           weekly_review (list_labels has the spellings) so the review is about that
+           effort rather than about everything.
 
            Write a short review:
            - What was completed, grouped by project. Lead with the substantial items rather

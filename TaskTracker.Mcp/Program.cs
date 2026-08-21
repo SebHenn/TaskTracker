@@ -41,6 +41,9 @@ builder.Services
               descriptions. Pass detail=full when you need the body, and use limit/offset
               to page — the response reports the unpaged total.
             - Recurrence is one of none, daily, weekly, monthly.
+            - weekly_review is the only report that crosses projects. Scope it with label to
+              review an effort spread over several boards as one thing, and with days to
+              widen the window past the default 7.
             """;
     })
     .WithStdioServerTransport()

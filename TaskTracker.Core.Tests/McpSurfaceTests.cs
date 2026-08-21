@@ -386,4 +386,59 @@ public class McpSurfaceTests : IDisposable
         Assert.Empty(Reload().Tasks[0].SubTasks);
         Assert.Empty(Reload().Tasks[0].Activity);
     }
+
+    [Fact]
+    public void WeeklyReview_ScopedToALabel_ReportsOnlyTheBoardsThatEffortTouches()
+    {
+        // The whole point of the label: the set of boards an effort spans is not known
+        // in advance, so it cannot be expressed as a list of project ids.
+        SeedNamed("cifail", ("port the analyzer", "cartographer"), ("unrelated chore", null));
+        SeedNamed("dotnet-tia", ("wire up the diff", "cartographer"));
+        SeedNamed("Wordle", ("guess five letters", null));
+
+        var review = Parse(TaskTrackerTools.WeeklyReview(label: "cartographer"));
+
+        var names = review.GetProperty("Projects").EnumerateArray()
+            .Select(p => p.GetProperty("ProjectName").GetString())
+            .ToList();
+        Assert.Equal(new[] { "cifail", "dotnet-tia" }, names);
+        Assert.Equal("cartographer", review.GetProperty("Label").GetString());
+        Assert.Equal(2, review.GetProperty("TotalCreated").GetInt32());
+    }
+
+    [Fact]
+    public void WeeklyReview_Unscoped_OmitsTheLabelKeyEntirely()
+    {
+        SeedNamed("Wordle", ("guess five letters", null));
+
+        var review = Parse(TaskTrackerTools.WeeklyReview());
+
+        Assert.False(review.TryGetProperty("Label", out _));
+    }
+
+    [Fact]
+    public void WeeklyReview_RejectsAWindowThatIsNotAWindow()
+    {
+        var ex = Assert.Throws<ModelContextProtocol.McpException>(() => TaskTrackerTools.WeeklyReview(days: 0));
+        Assert.Contains("days", ex.Message);
+    }
+
+    private void SeedNamed(string projectName, params (string Title, string? Label)[] tasks)
+    {
+        var project = new ProjectModel { Name = projectName };
+        foreach (var column in BoardColumnDefaults.NewProjectColumns())
+            project.Columns.Add(column);
+        foreach (var (title, label) in tasks)
+        {
+            var task = new TaskModel { Title = title, ColumnId = project.FirstColumn!.Id };
+            if (label != null)
+                task.Labels.Add(label);
+            project.Tasks.Add(task);
+        }
+
+        var store = Store;
+        var data = store.Load();
+        data.Projects.Add(project);
+        store.Save(data);
+    }
 }

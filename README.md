@@ -176,6 +176,12 @@ compact default costs roughly a fifth of what the full indented form does.
 `due` (`any`/`overdue`/`today`/`week`/`none`) and `priority`, using the same due
 buckets as the desktop board and the Today dashboard.
 
+`weekly_review` is the only report that spans projects, so it takes the same
+`label` filter — the way to review an effort whose boards are not known in
+advance, since a label is set per task rather than per project. Scoped, it counts
+only the tasks carrying the label and lists only the boards that have one; `days`
+widens the window past the default 7.
+
 ### Using TaskTracker from another repository
 
 The `.mcp.json` above resolves `--project TaskTracker.Mcp` relative to the
